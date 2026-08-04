@@ -1,0 +1,6 @@
+{
+  "name": "Инженерный Терминал",
+  "description": "Система управления обслуживанием автомобиля с ИИ-помощником и интерфейсом в стиле Technical Blueprint.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "Car": {
+      "title": "Car",
+      "description": "Vehicle profile managed by the user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique vehicle ID" },
+        "make": { "type": "string", "description": "Vehicle manufacturer (e.g., BMW)" },
+        "model": { "type": "string", "description": "Vehicle model name (e.g., M3)" },
+        "year": { "type": "integer", "description": "Manufacturing year" },
+        "vin": { "type": "string", "description": "17-character Vehicle Identification Number" },
+        "licensePlate": { "type": "string", "description": "License plate number" },
+        "mileage": { "type": "integer", "description": "Current mileage of the car (km or miles)" },
+        "ownerId": { "type": "string", "description": "Firebase Auth user UID of the owner" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of last modification" }
+      },
+      "required": ["id", "make", "model", "year", "ownerId", "mileage"]
+    },
+    "Record": {
+      "title": "Maintenance Record",
+      "description": "Maintenance work, parts replacement, or general expense logged on a car.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique record ID" },
+        "carId": { "type": "string", "description": "Referenced Car ID" },
+        "description": { "type": "string", "description": "Detailed description of the work done" },
+        "mileage": { "type": "integer", "description": "Mileage at which the maintenance was performed" },
+        "partsPrice": { "type": "number", "description": "Total cost of spare parts used" },
+        "laborPrice": { "type": "number", "description": "Total cost of professional labor" },
+        "date": { "type": "string", "format": "date", "description": "Date of maintenance" },
+        "category": { "type": "string", "enum": ["Engine", "Suspension", "Brakes", "Transmission", "Electrical", "Body", "Oil & Fluids", "Diagnostics", "Other"], "description": "Maintenance work category" },
+        "partsUsed": { "type": "array", "description": "List of parts names replaced/used", "items": { "type": "string" } },
+        "photoUrls": { "type": "array", "description": "Array of URLs pointing to photos in Firebase Storage", "items": { "type": "string" } },
+        "voiceTranscript": { "type": "string", "description": "Original raw voice recording transcript if voice-entered" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last modification timestamp" }
+      },
+      "required": ["id", "carId", "description", "mileage", "partsPrice", "laborPrice", "date", "category"]
+    },
+    "Part": {
+      "title": "Spare Part",
+      "description": "Spare parts inventory owned by the user, representing garage stock.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique part ID" },
+        "carId": { "type": "string", "description": "Optional referenced Car ID for compatibility" },
+        "name": { "type": "string", "description": "Name of the spare part (e.g., Oil Filter)" },
+        "partNumber": { "type": "string", "description": "OEM or aftermarket part catalog number" },
+        "quantity": { "type": "integer", "description": "In-stock quantity" },
+        "price": { "type": "number", "description": "Purchase cost of a single unit" },
+        "supplier": { "type": "string", "description": "Vendor or supplier name" },
+        "location": { "type": "string", "description": "Physical storage shelf or bin inside the garage" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Inventory log timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last inventory update timestamp" }
+      },
+      "required": ["id", "name", "quantity", "price"]
+    }
+  },
+  "firestore": {
+    "cars/{carId}": {
+      "schema": { "$ref": "Car" },
+      "description": "User's cars profiles"
+    },
+    "cars/{carId}/records/{recordId}": {
+      "schema": { "$ref": "Record" },
+      "description": "Maintenance history of a specific vehicle"
+    },
+    "parts/{partId}": {
+      "schema": { "$ref": "Part" },
+      "description": "Garage inventory of spare parts and replacement items"
+    }
+  }
+}

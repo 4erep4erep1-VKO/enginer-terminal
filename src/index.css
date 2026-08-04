@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Space+Mono:wght@400;700&family=Inter:wght@400;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-syne: "Syne", sans-serif;
+  --color-blueprint-bg: #030708;
+  --color-blueprint-bg-card: rgba(10, 20, 25, 0.85);
+  --color-blueprint-grid: rgba(224, 251, 252, 0.02);
+  --color-blueprint-line: rgba(224, 251, 252, 0.15);
+  --color-blueprint-cyan: #00ffcc;
+  --color-blueprint-blue: #00e5ff;
+  --color-blueprint-amber: #ffaa00;
+  --color-blueprint-danger: #ff0055;
+  --color-blueprint-ink: #e0fbfc;
+}
+
+/* Custom technical blueprint background and styles */
+@layer base {
+  body {
+    background-color: #030708;
+    background-image: 
+      radial-gradient(circle at 20% 30%, rgba(0, 255, 204, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(0, 255, 255, 0.05) 0%, transparent 40%),
+      repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0,0,0,0.2) 2px),
+      url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0z' fill='rgba(224,251,252,0.02)'/%3E%3C/svg%3E");
+    font-family: var(--font-sans);
+    color: #e0fbfc; /* --ink */
+  }
+}
+
+/* Custom Blueprint CSS Grids (Bento Style) */
+.blueprint-grid {
+  background-color: #030708;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(0, 255, 204, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(0, 255, 255, 0.05) 0%, transparent 40%),
+    repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0,0,0,0.2) 2px),
+    url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0z' fill='rgba(224,251,252,0.02)'/%3E%3C/svg%3E");
+}
+
+/* Reusable Bento Grid Card style with left accent border to match the design panel */
+.bento-card {
+  position: relative;
+  background-color: rgba(10, 20, 25, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(224, 251, 252, 0.15);
+  border-left: 4px solid #00ffcc;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  border-color: rgba(0, 255, 204, 0.4);
+  border-left-color: #00ffcc;
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+  background-color: rgba(10, 20, 25, 0.95);
+}
+
+/* Bento Solid Square Corners */
+.blueprint-corner {
+  position: relative;
+}
+
+.blueprint-corner::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 5px;
+  height: 5px;
+  background-color: #00ffcc;
+  pointer-events: none;
+  box-shadow: 0 0 8px #00ffcc;
+}
+
+.blueprint-corner::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 5px;
+  height: 5px;
+  background-color: #00ffcc;
+  pointer-events: none;
+  box-shadow: 0 0 8px #00ffcc;
+}
+
+/* Active Highlight for Bento Grid Items */
+.bento-card-active {
+  border: 2px solid #00ffcc !important;
+  border-left: 4px solid #00ffcc !important;
+  background: linear-gradient(90deg, rgba(0, 255, 204, 0.1), transparent) !important;
+  box-shadow: 0 0 25px rgba(0, 255, 204, 0.15) !important;
+}
+
+/* Technical crosshair indicator */
+.blueprint-crosshair {
+  position: relative;
+}
+.blueprint-crosshair::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -10px;
+  width: 20px;
+  height: 1px;
+  background-color: rgba(0, 255, 204, 0.4);
+  transform: translateY(-50%);
+}
+.blueprint-crosshair::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  width: 1px;
+  height: 20px;
+  background-color: rgba(0, 255, 204, 0.4);
+  transform: translateX(-50%);
+}
+
+/* Custom scrollbar for blueprint aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #030708;
+  border-left: 1px solid rgba(224, 251, 252, 0.15);
+}
+::-webkit-scrollbar-thumb {
+  background: #00ffcc;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00e5ff;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
