@@ -66,7 +66,7 @@ export function ConfirmModal({
         </div>
 
         {/* Footer actions */}
-        <div className="border-t border-cyan-800/20 px-4 py-4 md:py-3.5 flex flex-col-reverse sm:flex-row gap-3 justify-end bg-black/40 relative z-10 pb-8 sm:pb-3.5">
+        <div className="border-t border-cyan-800/20 px-4 py-4 md:py-3.5 flex flex-col-reverse sm:flex-row gap-3 justify-end bg-black/40 relative z-10 pb-24 sm:pb-3.5">
           <button
             type="button"
             onClick={() => {

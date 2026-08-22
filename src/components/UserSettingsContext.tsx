@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserSettings, Currency, DistanceUnit, VolumeUnit, AssistantTone } from '../types';
+import { UserSettings, Currency, DistanceUnit, VolumeUnit, PressureUnit, AssistantTone } from '../types';
 
 interface UserSettingsContextType {
   settings: UserSettings;
@@ -8,8 +8,10 @@ interface UserSettingsContextType {
   formatMileage: (km: number) => string;
   convertDistance: (km: number) => number;
   unconvertDistance: (miles: number) => number;
+  formatPressure: (barValue: number) => string;
   distanceLabel: string;
   volumeLabel: string;
+  pressureLabel: string;
   currencySymbol: string;
 }
 
@@ -17,14 +19,18 @@ const defaultSettings: UserSettings = {
   currency: 'KZT',
   distanceUnit: 'km',
   volumeUnit: 'L',
+  pressureUnit: 'bar',
   assistantTone: 'vasilich',
+  garageMode: false,
 };
 
 const UserSettingsContext = createContext<UserSettingsContextType | undefined>(undefined);
 
 export function UserSettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<UserSettings>(() => {
-    const saved = localStorage.getItem('blueprint_user_settings');
+    const savedAppSettings = localStorage.getItem('app_settings');
+    const savedBlueprint = localStorage.getItem('blueprint_user_settings');
+    const saved = savedAppSettings || savedBlueprint;
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -37,7 +43,16 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
   });
 
   useEffect(() => {
-    localStorage.setItem('blueprint_user_settings', JSON.stringify(settings));
+    const jsonStr = JSON.stringify(settings);
+    localStorage.setItem('app_settings', jsonStr);
+    localStorage.setItem('blueprint_user_settings', jsonStr);
+    if (typeof document !== 'undefined') {
+      if (settings.garageMode) {
+        document.documentElement.classList.add('garage-mode');
+      } else {
+        document.documentElement.classList.remove('garage-mode');
+      }
+    }
   }, [settings]);
 
   const updateSettings = (newSettings: Partial<UserSettings>) => {
@@ -62,7 +77,7 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
 
   const formatCurrency = (amount: number) => {
     // Format with thousand separators
-    const formatted = amount.toLocaleString('ru-RU', {
+    const formatted = (amount || 0).toLocaleString('ru-RU', {
       maximumFractionDigits: 0,
     });
     return `${formatted} ${currencySymbol}`;
@@ -84,6 +99,18 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
 
   const distanceLabel = settings.distanceUnit === 'mi' ? 'миль' : 'км';
   const volumeLabel = settings.volumeUnit === 'gal' ? 'гал.' : 'л';
+  const pressureUnit = settings.pressureUnit || 'bar';
+  const pressureLabel = pressureUnit === 'kPa' ? 'кПа' : pressureUnit === 'PSI' ? 'PSI' : 'бар';
+
+  const formatPressure = (barValue: number) => {
+    if (pressureUnit === 'kPa') {
+      return `${Math.round(barValue * 100)} кПа`;
+    }
+    if (pressureUnit === 'PSI') {
+      return `${(barValue * 14.5038).toFixed(1)} PSI`;
+    }
+    return `${barValue.toFixed(1)} бар`;
+  };
 
   const formatMileage = (km: number) => {
     const converted = convertDistance(km);
@@ -99,8 +126,10 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
         formatMileage,
         convertDistance,
         unconvertDistance,
+        formatPressure,
         distanceLabel,
         volumeLabel,
+        pressureLabel,
         currencySymbol,
       }}
     >
@@ -112,7 +141,19 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
 export function useUserSettings() {
   const context = useContext(UserSettingsContext);
   if (!context) {
-    throw new Error('useUserSettings must be used within a UserSettingsProvider');
+    return {
+      settings: defaultSettings,
+      updateSettings: () => {},
+      formatCurrency: (val: number) => `${(val || 0).toLocaleString('ru-RU')} ₸`,
+      formatMileage: (km: number) => `${(km || 0).toLocaleString('ru-RU')} км`,
+      convertDistance: (val: number) => val,
+      unconvertDistance: (val: number) => val,
+      formatPressure: (barVal: number) => `${barVal.toFixed(1)} бар`,
+      distanceLabel: 'км',
+      volumeLabel: 'л',
+      pressureLabel: 'бар',
+      currencySymbol: '₸'
+    } as unknown as UserSettingsContextType;
   }
   return context;
 }

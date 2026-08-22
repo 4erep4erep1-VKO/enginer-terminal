@@ -11,7 +11,17 @@ const categoryMap: Record<string, RecordCategory> = {
   'Подвеска': 'Suspension',
   'Электрика': 'Electrical',
   'Тормоза': 'Brakes',
-  'Расходники': 'Oil & Fluids'
+  'Расходники': 'Oil & Fluids',
+  'ТО': 'Oil & Fluids',
+  'Техническое обслуживание': 'Oil & Fluids',
+  'Ремонт': 'Engine',
+  'Запчасть': 'Other',
+  'Запчасти': 'Other',
+  'Кузов': 'Body',
+  'КПП': 'Transmission',
+  'Коробка': 'Transmission',
+  'Трансмиссия': 'Transmission',
+  'Диагностика': 'Diagnostics'
 };
 
 export function useRecordParser() {

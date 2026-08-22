@@ -4,129 +4,37 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Car, MaintenanceRecord, Part, VehicleTask } from './types';
-import { RecordCard } from './components/RecordCard';
-import { AddRecordForm } from './components/AddRecordForm';
-import { GarageManager } from './components/GarageManager';
+import { Car, MaintenanceRecord, Part, VehicleTask, DiagnosticSession } from './types';
+import { migrateAndSanitizeLocalStorage } from './lib/dataIntegrity';
+import { ServiceHub } from './components/ServiceHub';
+import { GarageHub } from './components/GarageHub';
 import { RagAssistant } from './components/RagAssistant';
 import { ConfirmModal } from './components/ConfirmModal';
-import { VehicleTasks } from './components/VehicleTasks';
-import { SettingsPanel } from './components/SettingsPanel';
+import { ObdScanner } from './components/ObdScanner';
+import { TechSpecsModal } from './components/TechSpecsModal';
+import { DiagnosticSessionsModal } from './components/DiagnosticSessionsModal';
+import { Header, MainNavTab } from './components/Header';
+import { VehicleDashboard } from './components/VehicleDashboard';
+import { RecordDetailModal } from './components/RecordDetailModal';
 import { useUserSettings } from './components/UserSettingsContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { 
-  Wrench, 
-  Settings, 
+  Car as CarIcon,
+  Cpu, 
+  ClipboardList, 
+  Bot, 
+  Warehouse, 
   Plus, 
-  Info,
-  Clock,
-  Download,
-  Smartphone,
-  Wifi,
-  WifiOff,
-  CheckCircle2
+  Check, 
+  Trash2, 
+  X, 
+  Settings, 
+  BookOpen,
+  Activity
 } from 'lucide-react';
 
-// PRE-POPULATED LOCAL DATA FOR INSTANT OUT-OF-THE-BOX WORKING INTERFACE
-const DEFAULT_CARS: Car[] = [
-  {
-    id: 'lada-kalina',
-    make: 'Lada',
-    model: 'Kalina',
-    year: 2010,
-    vin: 'XTA111830A0123456',
-    licensePlate: 'А123ВВ163',
-    mileage: 229000,
-    ownerId: 'local-owner',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
-const DEFAULT_RECORDS: MaintenanceRecord[] = [
-  {
-    id: 'rec-1',
-    carId: 'lada-kalina',
-    description: 'Замена моторного масла и масляного фильтра Роснефть Max',
-    category: 'Oil & Fluids',
-    mileage: 225000,
-    partsPrice: 3200.00,
-    laborPrice: 1000.00,
-    date: '2026-04-12',
-    partsUsed: ['Роснефть Maximum 10W-40 (4L)', 'Фильтр масляный Салют GB-102'],
-    photoUrls: [
-      'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&q=80&w=200'
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'rec-2',
-    carId: 'lada-kalina',
-    description: 'Замена комплекта ГРМ и регулировка тепловых зазоров клапанов',
-    category: 'Engine',
-    mileage: 228000,
-    partsPrice: 4800.00,
-    laborPrice: 3000.00,
-    date: '2026-05-20',
-    partsUsed: ['Ремень ГРМ Gates с роликом PowerGrip', 'Прокладка клапанной крышки БРТ'],
-    voiceTranscript: 'Поменял ремень ГРМ гейтс вместе с натяжным роликом и отрегулировал зазоры клапанов на пробеге двести двадцать восемь тысяч',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
-const DEFAULT_PARTS: Part[] = [
-  {
-    id: 'part-1',
-    name: 'Ремень генератора БРТ 6PK882',
-    partNumber: '1118-1041150',
-    quantity: 1,
-    price: 650.00,
-    supplier: 'Exist.ru',
-    location: 'Стеллаж А-3',
-    ownerId: 'local-owner',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'part-2',
-    name: 'Тормозные колодки передние ТИИР-299',
-    partNumber: '2110-3501080',
-    quantity: 2,
-    price: 1100.00,
-    supplier: 'Autodoc.ru',
-    location: 'Шкаф Б-1',
-    ownerId: 'local-owner',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
-const DEFAULT_TASKS: VehicleTask[] = [
-  {
-    id: 'task-1',
-    carId: 'lada-kalina',
-    title: 'Замена моторного масла и фильтра',
-    type: 'mileage',
-    targetMileage: 230000,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'task-2',
-    carId: 'lada-kalina',
-    title: 'Купить новые щетки стеклоочистителя',
-    type: 'simple',
-    targetDate: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split('T')[0],
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
 export default function App() {
-  const { formatCurrency } = useUserSettings();
+  const { formatCurrency, currencySymbol } = useUserSettings();
 
   // Pure Local State - Initialize from LocalStorage or defaults
   const [cars, setCars] = useState<Car[]>([]);
@@ -134,63 +42,57 @@ export default function App() {
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
   const [tasks, setTasks] = useState<VehicleTask[]>([]);
+  const [diagnosticSessions, setDiagnosticSessions] = useState<DiagnosticSession[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [ragInitialQuestion, setRagInitialQuestion] = useState<string | null>(null);
+  const [showTechSpecs, setShowTechSpecs] = useState(false);
+  const [isDiagnosticModalOpen, setIsDiagnosticModalOpen] = useState(false);
+  const [selectedDiagnosticSessionId, setSelectedDiagnosticSessionId] = useState<string | null>(null);
 
   // PWA Install & Offline State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState<boolean>(false);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
-  // 1. Initial LocalStorage Load
+  // Main Navigation State
+  const [activeTab, setActiveTab] = useState<MainNavTab>('dashboard');
+  const [serviceSubTab, setServiceSubTab] = useState<'plan' | 'history'>('history');
+  const [garageSubTab, setGarageSubTab] = useState<'cars' | 'parts' | 'settings'>('cars');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [partsSearchFilter, setPartsSearchFilter] = useState('');
+  const [isCarSelectorOpen, setIsCarSelectorOpen] = useState(false);
+  const [isGarageModalOpen, setIsGarageModalOpen] = useState(false);
+  const [selectedRecordForDetail, setSelectedRecordForDetail] = useState<MaintenanceRecord | null>(null);
+  const [focusedDtcCode, setFocusedDtcCode] = useState<string | null>(null);
+
+  // Pre-filled record values state for when using a part or completing task
+  const [initialRecordValues, setInitialRecordValues] = useState<{
+    description?: string;
+    partsPrice?: number;
+    partsUsed?: string[];
+    category?: any;
+    relatedDtc?: string;
+    source?: 'task' | 'obd' | 'manual';
+  } | undefined>(undefined);
+
+  // 1. Initial LocalStorage Load with Automated Migration and Strict Schema Sanitization
   useEffect(() => {
     try {
-      // Cars
-      const savedCarsStr = localStorage.getItem('terminal_cars_v2') || localStorage.getItem('blueprint_cars_guest');
-      let loadedCars: Car[] = savedCarsStr ? JSON.parse(savedCarsStr) : [];
-      if (!loadedCars || loadedCars.length === 0) {
-        loadedCars = DEFAULT_CARS;
-        localStorage.setItem('terminal_cars_v2', JSON.stringify(DEFAULT_CARS));
-      }
-      setCars(loadedCars);
-
-      // Active Car
-      const savedActiveCarId = localStorage.getItem('terminal_active_car_id_v2') || localStorage.getItem('blueprint_active_car_guest');
-      const validActiveId = loadedCars.find(c => c.id === savedActiveCarId) ? savedActiveCarId : loadedCars[0]?.id || null;
-      setActiveCarId(validActiveId);
-
-      // Records
-      const savedRecordsStr = localStorage.getItem('terminal_records_v2') || localStorage.getItem('blueprint_records_guest');
-      let loadedRecords: MaintenanceRecord[] = savedRecordsStr ? JSON.parse(savedRecordsStr) : [];
-      if (!loadedRecords || loadedRecords.length === 0) {
-        loadedRecords = DEFAULT_RECORDS;
-        localStorage.setItem('terminal_records_v2', JSON.stringify(DEFAULT_RECORDS));
-      }
-      setRecords(loadedRecords);
-
-      // Parts
-      const savedPartsStr = localStorage.getItem('terminal_parts_v2') || localStorage.getItem('blueprint_parts_guest');
-      let loadedParts: Part[] = savedPartsStr ? JSON.parse(savedPartsStr) : [];
-      if (!loadedParts || loadedParts.length === 0) {
-        loadedParts = DEFAULT_PARTS;
-        localStorage.setItem('terminal_parts_v2', JSON.stringify(DEFAULT_PARTS));
-      }
-      setParts(loadedParts);
-
-      // Tasks
-      const savedTasksStr = localStorage.getItem('terminal_tasks_v2') || localStorage.getItem('blueprint_tasks_guest');
-      let loadedTasks: VehicleTask[] = savedTasksStr ? JSON.parse(savedTasksStr) : [];
-      if (!loadedTasks || loadedTasks.length === 0) {
-        loadedTasks = DEFAULT_TASKS;
-        localStorage.setItem('terminal_tasks_v2', JSON.stringify(DEFAULT_TASKS));
-      }
-      setTasks(loadedTasks);
+      const migrated = migrateAndSanitizeLocalStorage();
+      setCars(migrated.cars);
+      setActiveCarId(migrated.activeCarId);
+      setRecords(migrated.records);
+      setParts(migrated.parts);
+      setTasks(migrated.tasks);
+      setDiagnosticSessions(migrated.diagnosticSessions);
     } catch (e) {
-      console.error('Error reading localStorage:', e);
-      setCars(DEFAULT_CARS);
-      setActiveCarId(DEFAULT_CARS[0].id);
-      setRecords(DEFAULT_RECORDS);
-      setParts(DEFAULT_PARTS);
-      setTasks(DEFAULT_TASKS);
+      console.error('Critical error initializing and migrating store:', e);
+      setCars([]);
+      setActiveCarId(null);
+      setRecords([]);
+      setParts([]);
+      setTasks([]);
+      setDiagnosticSessions([]);
     } finally {
       setIsLoaded(true);
     }
@@ -223,6 +125,11 @@ export default function App() {
     if (!isLoaded) return;
     localStorage.setItem('terminal_tasks_v2', JSON.stringify(tasks));
   }, [tasks, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    localStorage.setItem('terminal_diagnostic_sessions_v2', JSON.stringify(diagnosticSessions));
+  }, [diagnosticSessions, isLoaded]);
 
   // 3. PWA Event Listeners & Online/Offline status
   useEffect(() => {
@@ -265,65 +172,6 @@ export default function App() {
     }
     setDeferredPrompt(null);
   };
-
-  // Panel state / navigation
-  const [activeTab, setActiveTab] = useState<'records' | 'rag' | 'parts' | 'tasks' | 'settings'>('records');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [timeStr, setTimeStr] = useState('');
-
-  // Pre-filled record values state for when using a part or completing task
-  const [initialRecordValues, setInitialRecordValues] = useState<{
-    description?: string;
-    partsPrice?: number;
-    partsUsed?: string[];
-  } | undefined>(undefined);
-
-  // Confirmation Modal State
-  const [confirmState, setConfirmState] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText?: string;
-    cancelText?: string;
-    onConfirm: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-  });
-
-  // Parts Inventory add modal state
-  const [newPartName, setNewPartName] = useState('');
-  const [newPartNum, setNewPartNum] = useState('');
-  const [newPartQty, setNewPartQty] = useState(1);
-  const [newPartPrice, setNewPartPrice] = useState(0);
-  const [newPartLoc, setNewPartLoc] = useState('');
-
-  // Update clock/telemetry
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      
-      const offsetMinutes = now.getTimezoneOffset();
-      const offsetSign = offsetMinutes <= 0 ? '+' : '-';
-      const absOffsetMinutes = Math.abs(offsetMinutes);
-      const offsetHours = String(Math.floor(absOffsetMinutes / 60)).padStart(2, '0');
-      const offsetMins = String(absOffsetMinutes % 60).padStart(2, '0');
-      const offsetStr = `GMT${offsetSign}${offsetHours}:${offsetMins}`;
-
-      setTimeStr(`${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${offsetStr}`);
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Header Scroll and Auto-Hide Logic
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -373,8 +221,31 @@ export default function App() {
     .filter(r => r.carId === activeCarId)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Calculation of garage stats
-  const totalSpendOnActiveCar = activeCarRecords.reduce((sum, r) => sum + r.partsPrice + r.laborPrice, 0);
+  // Quick Mileage Update Handler
+  const handleQuickUpdateMileage = (newMileage: number) => {
+    if (!activeCar) return;
+    handleUpdateCar({
+      ...activeCar,
+      mileage: newMileage,
+      updatedAt: new Date().toISOString(),
+    });
+    if (navigator.vibrate) navigator.vibrate(20);
+  };
+
+  // Confirmation Modal State
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   const handleAddCar = (newCarData: Omit<Car, 'ownerId' | 'createdAt' | 'updatedAt'>) => {
     const fullCar: Car = {
@@ -387,19 +258,40 @@ export default function App() {
     setActiveCarId(fullCar.id);
   };
 
+  const handleUpdateCar = (updatedCar: Car) => {
+    setCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
+  };
+
   const handleDeleteCar = (id: string) => {
     const car = cars.find(c => c.id === id);
     const carName = car ? `${car.make} ${car.model}` : '';
+
+    if (cars.length <= 1) {
+      setConfirmState({
+        isOpen: true,
+        title: 'ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ',
+        message: `Вы намерены удалить единственный автомобиль ${carName}. В вашем гараже не останется активных машин. Продолжить?`,
+        confirmText: 'УДАЛИТЬ',
+        cancelText: 'ОТМЕНА',
+        onConfirm: () => {
+          setCars([]);
+          setActiveCarId(null);
+          setConfirmState(prev => ({ ...prev, isOpen: false }));
+        }
+      });
+      return;
+    }
+
     setConfirmState({
       isOpen: true,
       title: 'ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ',
-      message: `Вы уверены, что хотите удалить автомобиль ${carName}? Это действие сотрет историю его ремонта и запчастей из локальной памяти.`,
+      message: `Вы уверены, что хотите удалить автомобиль ${carName}? Это действие сотрет его параметры из гаража.`,
       confirmText: 'УДАЛИТЬ',
       cancelText: 'ОТМЕНА',
       onConfirm: () => {
-        setCars(prev => prev.filter(c => c.id !== id));
+        const remaining = cars.filter(c => c.id !== id);
+        setCars(remaining);
         if (activeCarId === id) {
-          const remaining = cars.filter(c => c.id !== id);
           setActiveCarId(remaining[0]?.id || null);
         }
         setConfirmState(prev => ({ ...prev, isOpen: false }));
@@ -416,9 +308,17 @@ export default function App() {
     setRecords(prev => [fullRecord, ...prev]);
     setShowAddForm(false);
 
-    // Automatically update car's active mileage if record mileage is higher
     if (activeCar && newRecData.mileage > activeCar.mileage) {
       const updatedCar = { ...activeCar, mileage: newRecData.mileage };
+      setCars(prev => prev.map(c => c.id === activeCar.id ? updatedCar : c));
+    }
+  };
+
+  const handleUpdateRecord = (updatedRecord: MaintenanceRecord) => {
+    setRecords(prev => prev.map(r => r.id === updatedRecord.id ? updatedRecord : r));
+    
+    if (activeCar && updatedRecord.mileage > activeCar.mileage) {
+      const updatedCar = { ...activeCar, mileage: updatedRecord.mileage };
       setCars(prev => prev.map(c => c.id === activeCar.id ? updatedCar : c));
     }
   };
@@ -436,30 +336,6 @@ export default function App() {
         setConfirmState(prev => ({ ...prev, isOpen: false }));
       }
     });
-  };
-
-  const handleAddPart = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPartName.trim()) return;
-
-    const fullPart: Part = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: newPartName.trim(),
-      partNumber: newPartNum.trim() || undefined,
-      quantity: newPartQty,
-      price: newPartPrice,
-      location: newPartLoc.trim() || undefined,
-      ownerId: 'local-owner',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    setParts(prev => [...prev, fullPart]);
-    setNewPartName('');
-    setNewPartNum('');
-    setNewPartQty(1);
-    setNewPartPrice(0);
-    setNewPartLoc('');
   };
 
   const handleDeletePart = (id: string) => {
@@ -491,7 +367,8 @@ export default function App() {
       partsPrice: part.price,
       partsUsed: [part.name],
     });
-    setActiveTab('records');
+    setActiveTab('service');
+    setServiceSubTab('history');
     setShowAddForm(true);
 
     if (newQty === 0) {
@@ -525,15 +402,68 @@ export default function App() {
     setTasks(prev => [newTask, ...prev]);
   };
 
+  const handleUpdateTask = (updatedTask: VehicleTask) => {
+    const oldTask = tasks.find(t => t.id === updatedTask.id);
+    
+    // If status transitioned from pending to completed via modal
+    if (oldTask && oldTask.status === 'pending' && updatedTask.status === 'completed') {
+      if (updatedTask.relatedPartIds && updatedTask.relatedPartIds.length > 0) {
+        setParts(prevParts => prevParts.map(p => {
+          if (updatedTask.relatedPartIds!.includes(p.id)) {
+            return {
+              ...p,
+              quantity: Math.max(0, p.quantity - 1),
+              reservedQuantity: Math.max(0, (p.reservedQuantity || 0) - 1),
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return p;
+        }));
+      }
+    } else if (oldTask && oldTask.status === 'completed' && updatedTask.status === 'pending') {
+      // If task is re-opened from completed to pending, restore consumed part quantity and re-reserve
+      if (updatedTask.relatedPartIds && updatedTask.relatedPartIds.length > 0) {
+        setParts(prevParts => prevParts.map(p => {
+          if (updatedTask.relatedPartIds!.includes(p.id)) {
+            return {
+              ...p,
+              quantity: p.quantity + 1,
+              reservedQuantity: (p.reservedQuantity || 0) + 1,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return p;
+        }));
+      }
+    }
+
+    setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+  };
+
   const handleDeleteTask = (id: string) => {
     const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
     setConfirmState({
       isOpen: true,
       title: 'ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ',
-      message: `Вы уверены, что хотите удалить задачу "${task?.title || ''}"?`,
+      message: `Вы уверены, что хотите удалить задачу "${task.title || ''}"?`,
       confirmText: 'УДАЛИТЬ',
       cancelText: 'ОТМЕНА',
       onConfirm: () => {
+        // If task was pending and had reserved parts, release the reservation
+        if (task.status === 'pending' && task.relatedPartIds && task.relatedPartIds.length > 0) {
+          setParts(prevParts => prevParts.map(p => {
+            if (task.relatedPartIds!.includes(p.id)) {
+              return {
+                ...p,
+                reservedQuantity: Math.max(0, (p.reservedQuantity || 0) - 1),
+                updatedAt: new Date().toISOString()
+              };
+            }
+            return p;
+          }));
+        }
         setTasks(prev => prev.filter(t => t.id !== id));
         setConfirmState(prev => ({ ...prev, isOpen: false }));
       }
@@ -544,496 +474,673 @@ export default function App() {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
 
+    // Avoid double completion and duplicate parts deduction
+    if (task.status === 'completed') return;
+
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'completed', updatedAt: new Date().toISOString() } : t));
+
+    // Consume reserved parts and calculate prices
+    let consumedPartsPrice = 0;
+    const consumedPartsNames: string[] = [];
+
+    if (task.relatedPartIds && task.relatedPartIds.length > 0) {
+      setParts(prevParts => prevParts.map(p => {
+        if (task.relatedPartIds!.includes(p.id)) {
+          consumedPartsPrice += p.price || 0;
+          consumedPartsNames.push(p.name);
+          return {
+            ...p,
+            quantity: Math.max(0, p.quantity - 1),
+            reservedQuantity: Math.max(0, (p.reservedQuantity || 0) - 1),
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return p;
+      }));
+    }
 
     setInitialRecordValues({
       description: task.title,
-      partsPrice: 0,
-      partsUsed: []
+      partsPrice: consumedPartsPrice,
+      partsUsed: consumedPartsNames,
+      category: task.category || (task.relatedDtc ? 'Engine' : 'Other'),
+      relatedDtc: task.relatedDtc,
+      source: 'task'
     });
-    setActiveTab('records');
+    setActiveTab('service');
+    setServiceSubTab('history');
     setShowAddForm(true);
+    if (navigator.vibrate) navigator.vibrate(20);
+  };
+
+  const handleCreateTaskFromDtc = (
+    taskParam: string | {
+      title: string;
+      description?: string;
+      relatedDtc: string;
+      relatedPartIds?: string[];
+      category?: any;
+    },
+    descParam?: string
+  ) => {
+    if (!activeCarId) return;
+
+    let title = '';
+    let relatedDtc: string | undefined;
+    let relatedPartIds: string[] | undefined;
+    let category: any = 'Engine';
+
+    if (typeof taskParam === 'string') {
+      title = `${taskParam}: ${descParam || ''}`;
+      relatedDtc = taskParam;
+    } else {
+      title = taskParam.title;
+      relatedDtc = taskParam.relatedDtc;
+      relatedPartIds = taskParam.relatedPartIds;
+      category = taskParam.category || 'Engine';
+    }
+
+    // Protection against duplicate pending tasks for the same DTC on this car
+    const existingPendingTask = tasks.find(t => 
+      t.carId === activeCarId && 
+      t.status === 'pending' && 
+      t.relatedDtc === relatedDtc &&
+      (t.title === title || (relatedDtc && t.relatedDtc === relatedDtc))
+    );
+
+    if (existingPendingTask) {
+      // Prevent duplicate task and duplicate reservation; navigate to plan
+      setActiveTab('service');
+      setServiceSubTab('plan');
+      return;
+    }
+
+    const newTask: VehicleTask = {
+      id: `task-dtc-${Date.now()}`,
+      carId: activeCarId,
+      title,
+      type: 'simple',
+      targetDate: new Date().toISOString().split('T')[0],
+      status: 'pending',
+      relatedDtc,
+      relatedPartIds,
+      category,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Reserve selected parts in inventory (clamped to available quantity)
+    if (relatedPartIds && relatedPartIds.length > 0) {
+      setParts(prevParts => prevParts.map(p => {
+        if (relatedPartIds!.includes(p.id)) {
+          const currentRes = p.reservedQuantity || 0;
+          const newRes = Math.min(p.quantity, currentRes + 1);
+          return {
+            ...p,
+            reservedQuantity: newRes,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return p;
+      }));
+    }
+
+    setTasks(prev => [newTask, ...prev]);
+    setActiveTab('service');
+    setServiceSubTab('plan');
+    if (navigator.vibrate) navigator.vibrate(20);
+  };
+
+  const handleAddCandidatePartToStock = (partName: string) => {
+    const newPart: Part = {
+      id: `part-${Date.now()}`,
+      name: partName,
+      quantity: 1,
+      price: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setParts(prev => [newPart, ...prev]);
+    setPartsSearchFilter(partName);
+    setActiveTab('garage');
+    setGarageSubTab('parts');
+  };
+
+  const handleNavigateToPartsWithFilter = (filterText: string) => {
+    setPartsSearchFilter(filterText);
+    setActiveTab('garage');
+    setGarageSubTab('parts');
+  };
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 4. DIAGNOSTIC SESSION LIFECYCLE (ЭТАП 5 & 6)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const handleStartDiagnosticSession = (carId?: string, initialDtc?: string[]) => {
+    const targetCarId = carId || activeCarId;
+    if (!targetCarId) return;
+
+    const targetCar = cars.find(c => c.id === targetCarId) || activeCar;
+    const currentOdo = targetCar?.mileage || 0;
+    const dtcList = initialDtc || [];
+
+    // Check if an active session already exists for this car
+    const existingActive = diagnosticSessions.find(
+      s => s.carId === targetCarId && (s.status === 'active' || s.status === 'waiting_recheck')
+    );
+
+    if (existingActive) {
+      // If same or overlapping DTCs, switch to existing session to prevent duplicate fragmentation
+      setSelectedDiagnosticSessionId(existingActive.id);
+      setIsDiagnosticModalOpen(true);
+      if (navigator.vibrate) navigator.vibrate(15);
+      return;
+    }
+
+    const newSessionId = `session-${Date.now()}`;
+    const newSession: DiagnosticSession = {
+      id: newSessionId,
+      carId: targetCarId,
+      status: 'active',
+      startedAt: new Date().toISOString(),
+      startOdometer: currentOdo,
+      currentOdometer: currentOdo,
+      initialDtcCodes: dtcList,
+      currentDtcCodes: dtcList,
+      initialDtc: dtcList,
+      checks: dtcList.map((dtc, idx) => ({
+        id: `chk-${Date.now()}-${idx}`,
+        title: `Проверка узла и цепи для ${dtc}`,
+        status: 'pending',
+        targetComponent: dtc,
+        procedure: `Визуальный осмотр проводки, проверка мультиметром/осциллографом опорного напряжения и сопротивления датчика.`
+      })),
+      stepsHistory: [
+        {
+          timestamp: new Date().toISOString(),
+          step: 'scan',
+          title: 'Инициализация диагностической сессии',
+          notes: dtcList.length > 0 
+            ? `Обнаружены коды ошибок: ${dtcList.join(', ')}. Зафиксирован одометр ${currentOdo.toLocaleString()} км.`
+            : `Сессия запущена в режиме комплексной проверки ЭБУ. Одометр: ${currentOdo.toLocaleString()} км.`
+        }
+      ],
+      linkedTaskIds: [],
+      linkedRecordIds: []
+    };
+
+    setDiagnosticSessions(prev => [newSession, ...prev]);
+    setSelectedDiagnosticSessionId(newSessionId);
+    setIsDiagnosticModalOpen(true);
+    if (navigator.vibrate) navigator.vibrate(20);
+  };
+
+  const handleUpdateDiagnosticSession = (updatedSession: DiagnosticSession) => {
+    // Prevent modifying completed/cancelled sessions accidentally
+    const existing = diagnosticSessions.find(s => s.id === updatedSession.id);
+    if (existing && (existing.status === 'resolved' || existing.status === 'cancelled') && updatedSession.status === existing.status) {
+      // Allow metadata updates if necessary, but keep integrity
+    }
+    setDiagnosticSessions(prev => prev.map(s => s.id === updatedSession.id ? updatedSession : s));
+  };
+
+  const handleRecheckDiagnosticSession = (sessionId: string) => {
+    const session = diagnosticSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    // Check if there are any remaining DTCs in car-specific or global obd snapshot
+    const carSnapshotStr = localStorage.getItem(`obd_snapshot_${session.carId}`) || localStorage.getItem('terminal_obd_snapshot');
+    let remainingDtc: string[] = [];
+    let snapshotAgeMinutes = 999;
+    let hasSnapshot = false;
+
+    if (carSnapshotStr) {
+      try {
+        const snap = JSON.parse(carSnapshotStr);
+        remainingDtc = Array.isArray(snap.dtcCodes) ? snap.dtcCodes : [];
+        if (snap.timestamp) {
+          snapshotAgeMinutes = (Date.now() - new Date(snap.timestamp).getTime()) / 60000;
+          hasSnapshot = true;
+        }
+      } catch (e) {
+        remainingDtc = [];
+      }
+    }
+
+    const now = new Date().toISOString();
+
+    // If no recent snapshot (adapter offline or not scanned recently)
+    if (!hasSnapshot || snapshotAgeMinutes > 10) {
+      const updatedSession: DiagnosticSession = {
+        ...session,
+        status: 'waiting_recheck',
+        stepsHistory: [
+          ...(session.stepsHistory || []),
+          {
+            timestamp: now,
+            step: 'recheck',
+            title: 'Повторное сканирование (Recheck): OBD не подключен',
+            notes: 'Результат диагностики не подтвержден: сканер OBD-II отключен или данные устарели. Подключите ELM327 во вкладке «Диагностика» для подтверждения отсутствия ошибок.'
+          }
+        ]
+      };
+      handleUpdateDiagnosticSession(updatedSession);
+      setSelectedDiagnosticSessionId(sessionId);
+      setIsDiagnosticModalOpen(true);
+      return;
+    }
+
+    const isResolved = remainingDtc.length === 0;
+
+    // Check if new DTCs appeared
+    const initialSet = new Set(session.initialDtcCodes || []);
+    const newCodes = remainingDtc.filter(c => !initialSet.has(c));
+
+    let noteText = '';
+    if (isResolved) {
+      noteText = 'Контроллер ЭБУ не вернул активных ошибок. Все DTC устранены, проблема решена!';
+    } else if (newCodes.length > 0) {
+      noteText = `Обнаружены новые коды ошибок: ${newCodes.join(', ')}. Остаточные: ${remainingDtc.join(', ')}.`;
+    } else {
+      noteText = `Коды ошибок сохраняются в памяти ЭБУ: ${remainingDtc.join(', ')}. Требуется дополнительная проверка узла.`;
+    }
+
+    const updatedSession: DiagnosticSession = {
+      ...session,
+      status: isResolved ? 'resolved' : 'waiting_recheck',
+      currentDtcCodes: remainingDtc,
+      finalDtcCodes: remainingDtc,
+      resolvedAt: isResolved ? now : session.resolvedAt,
+      stepsHistory: [
+        ...(session.stepsHistory || []),
+        {
+          timestamp: now,
+          step: 'recheck',
+          title: `Контрольное сканирование: ${isResolved ? 'Ошибок нет' : `${remainingDtc.length} DTC`}`,
+          notes: noteText
+        }
+      ]
+    };
+
+    handleUpdateDiagnosticSession(updatedSession);
+    setSelectedDiagnosticSessionId(sessionId);
+    setIsDiagnosticModalOpen(true);
+  };
+
+  const handleCloseDiagnosticSession = (sessionId: string, result: 'resolved' | 'unresolved' | 'cancelled') => {
+    const session = diagnosticSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    const now = new Date().toISOString();
+    const updatedSession: DiagnosticSession = {
+      ...session,
+      status: result,
+      resolvedAt: now,
+      stepsHistory: [
+        ...(session.stepsHistory || []),
+        {
+          timestamp: now,
+          step: 'recheck',
+          title: `Сессия завершена со статусом: ${result === 'resolved' ? 'Исправлено' : result === 'unresolved' ? 'Не решено' : 'Отменено'}`,
+          notes: `Сессия закрыта инженером. Дата: ${new Date().toLocaleDateString('ru-RU')}`
+        }
+      ]
+    };
+
+    handleUpdateDiagnosticSession(updatedSession);
+  };
+
+  const handleOpenDiagnosticSessionModal = (sessionId?: string) => {
+    if (sessionId) {
+      setSelectedDiagnosticSessionId(sessionId);
+    } else {
+      const activeSession = diagnosticSessions.find(s => s.carId === activeCarId && (s.status === 'active' || s.status === 'waiting_recheck'));
+      setSelectedDiagnosticSessionId(activeSession ? activeSession.id : null);
+    }
+    setIsDiagnosticModalOpen(true);
   };
 
   return (
-    <div className="min-h-screen bg-blueprint-bg blueprint-grid pb-12 flex flex-col justify-between">
+    <div className={
+      activeTab === 'rag'
+        ? "h-[100dvh] bg-[#080B11] text-slate-100 flex flex-col overflow-hidden select-text"
+        : "min-h-screen bg-blueprint-bg text-slate-100 pb-12 flex flex-col justify-between selection:bg-cyan-500/30 selection:text-cyan-200"
+    }>
 
       {/* 1. TOP MAIN HUD BAR */}
-      <header className={`border-b-2 border-blueprint-cyan bg-black/85 px-4 sm:px-6 py-4 sticky top-0 z-50 backdrop-blur-md shadow-[0_0_15px_rgba(0,255,204,0.15)] transition-transform duration-300 ease-in-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          
-          {/* Logo Title & PWA Status */}
-          <div className="flex items-center justify-between w-full md:w-auto gap-4">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-[44px] h-[44px] sm:w-[50px] sm:h-[50px] border-3 border-blueprint-cyan flex items-center justify-center -skew-x-15 bg-black/90 text-blueprint-cyan shadow-[-5px_0_0_#ff0055,5px_0_20px_rgba(0,255,204,0.3)] shrink-0">
-                <Wrench className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse skew-x-15" />
-              </div>
-              <div>
-                <div className="font-mono text-[9px] sm:text-[10px] tracking-[0.3em] text-blueprint-cyan flex items-center gap-2">
-                  <span>TERMINAL_PWA v2.5</span>
-                  <span className="text-emerald-400 font-bold bg-emerald-950/60 px-1.5 py-0.2 border border-emerald-500/30 text-[8px] uppercase">
-                    LOCAL
-                  </span>
-                </div>
-                <h1 className="font-syne text-xl sm:text-2xl md:text-3.5xl font-black italic uppercase leading-none text-white tracking-tighter" style={{ textShadow: '2px 2px 0 #ff0055' }}>
-                  ИНЖЕНЕРНЫЙ ТЕРМИНАЛ
-                </h1>
-              </div>
-            </div>
+      <Header
+        isHeaderVisible={isHeaderVisible}
+        activeCar={activeCar}
+        onOpenCarSelector={() => setIsCarSelectorOpen(true)}
+        deferredPrompt={deferredPrompt}
+        isInstalled={isInstalled}
+        onInstallClick={handleInstallClick}
+        isOnline={isOnline}
+        activeTab={activeTab}
+        onSelectTab={(tab) => {
+          setActiveTab(tab);
+          if (tab === 'service') {
+            setShowAddForm(false);
+          }
+        }}
+        onOpenTechSpecs={() => setShowTechSpecs(true)}
+      />
 
-            {/* PWA INSTALL BUTTON OR INSTALLED BADGE */}
-            <div className="flex items-center gap-2">
-              {deferredPrompt && !isInstalled && (
+      {/* CAR SELECTOR MODAL OVERLAY */}
+      {isCarSelectorOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#121824] border border-cyan-500/30 p-5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] space-y-4 font-sans">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="text-cyan-300 font-bold text-sm flex items-center gap-2 truncate pr-2">
+                <CarIcon className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span className="truncate">Выбор автомобиля ({cars.length})</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={handleInstallClick}
-                  className="bg-blueprint-cyan text-blueprint-bg hover:bg-cyan-300 font-mono font-black text-[11px] sm:text-xs px-3 py-1.5 transition-all shadow-[0_0_15px_rgba(0,255,204,0.4)] flex items-center gap-1.5 cursor-pointer animate-pulse shrink-0 uppercase"
-                  title="Установить PWA на устройство"
+                  type="button"
+                  onClick={() => {
+                    setIsCarSelectorOpen(false);
+                    setActiveTab('garage');
+                    setGarageSubTab('cars');
+                  }}
+                  className="text-xs font-semibold text-cyan-300 hover:text-cyan-100 flex items-center gap-1 cursor-pointer py-1 px-2.5 rounded-lg border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/60 transition-all"
+                  title="Добавить новый автомобиль"
+                  id="btn-add-car-modal-header"
                 >
-                  <Download className="w-4 h-4 shrink-0" />
-                  <span className="hidden xs:inline">[ УСТАНОВИТЬ ПРИЛОЖЕНИЕ ]</span>
-                  <span className="xs:hidden">УСТАНОВИТЬ</span>
+                  <Plus className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Добавить</span>
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setIsCarSelectorOpen(false)}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
 
-              {isInstalled && (
-                <div className="hidden sm:flex items-center gap-1 bg-slate-900 border border-blueprint-cyan/40 px-2 py-1 text-[10px] font-mono text-blueprint-cyan">
-                  <Smartphone className="w-3.5 h-3.5 text-blueprint-cyan" />
-                  <span>PWA УСТАНОВЛЕНО</span>
+            <div className="max-h-72 overflow-y-auto space-y-2 py-1">
+              {cars.length === 0 ? (
+                <div className="p-4 text-center text-slate-400 text-xs">
+                  Нет добавленных автомобилей
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Navigation controls */}
-          <nav className="overflow-x-auto whitespace-nowrap scrollbar-none w-full md:w-auto flex items-center gap-1 p-1 -skew-x-15">
-            <button
-              onClick={() => {
-                if (navigator.vibrate) navigator.vibrate(15);
-                setActiveTab('records'); 
-                setShowAddForm(false); 
-              }}
-              className={`text-xs px-2.5 py-1.5 md:text-sm md:px-4 md:py-2 flex-shrink-0 font-mono font-bold uppercase transition-all border cursor-pointer ${
-                activeTab === 'records'
-                  ? 'bg-blueprint-cyan text-blueprint-bg border-blueprint-cyan shadow-[0_0_20px_rgba(0,255,204,0.3)]'
-                  : 'bg-transparent text-blueprint-ink border-blueprint-line hover:border-blueprint-cyan hover:text-blueprint-cyan'
-              }`}
-              id="nav-records"
-            >
-              <span className="inline-block skew-x-15">ЖУРНАЛ<span className="hidden sm:inline"> РАБОТ</span></span>
-            </button>
-            <button
-              onClick={() => { 
-                if (navigator.vibrate) navigator.vibrate(15);
-                setActiveTab('rag'); 
-              }}
-              className={`text-xs px-2.5 py-1.5 md:text-sm md:px-4 md:py-2 flex-shrink-0 font-mono font-bold uppercase transition-all border cursor-pointer ${
-                activeTab === 'rag'
-                  ? 'bg-blueprint-cyan text-blueprint-bg border-blueprint-cyan shadow-[0_0_20px_rgba(0,255,204,0.3)]'
-                  : 'bg-transparent text-blueprint-ink border-blueprint-line hover:border-blueprint-cyan hover:text-blueprint-cyan'
-              }`}
-              id="nav-rag"
-            >
-              <span className="inline-block skew-x-15">
-                <span className="hidden md:inline">СОВЕТ ВАСИЛИЧА</span>
-                <span className="inline md:hidden">ВАСИЛИЧ</span>
-              </span>
-            </button>
-            <button
-              onClick={() => { 
-                if (navigator.vibrate) navigator.vibrate(15);
-                setActiveTab('parts'); 
-              }}
-              className={`text-xs px-2.5 py-1.5 md:text-sm md:px-4 md:py-2 flex-shrink-0 font-mono font-bold uppercase transition-all border cursor-pointer ${
-                activeTab === 'parts'
-                  ? 'bg-blueprint-cyan text-blueprint-bg border-blueprint-cyan shadow-[0_0_20px_rgba(0,255,204,0.3)]'
-                  : 'bg-transparent text-blueprint-ink border-blueprint-line hover:border-blueprint-cyan hover:text-blueprint-cyan'
-              }`}
-              id="nav-parts"
-            >
-              <span className="inline-block skew-x-15">ЗАПЧАСТИ<span className="hidden md:inline"> В НАЛИЧИИ</span></span>
-            </button>
-            <button
-              onClick={() => { 
-                if (navigator.vibrate) navigator.vibrate(15);
-                setActiveTab('tasks'); 
-              }}
-              className={`text-xs px-2.5 py-1.5 md:text-sm md:px-4 md:py-2 flex-shrink-0 font-mono font-bold uppercase transition-all border cursor-pointer ${
-                activeTab === 'tasks'
-                  ? 'bg-blueprint-cyan text-blueprint-bg border-blueprint-cyan shadow-[0_0_20px_rgba(0,255,204,0.3)]'
-                  : 'bg-transparent text-blueprint-ink border-blueprint-line hover:border-blueprint-cyan hover:text-blueprint-cyan'
-              }`}
-              id="nav-tasks"
-            >
-              <span className="inline-block skew-x-15">ЗАДАЧИ<span className="hidden md:inline"> И ТО</span></span>
-            </button>
-            <button
-              onClick={() => { 
-                if (navigator.vibrate) navigator.vibrate(15);
-                setActiveTab('settings'); 
-              }}
-              className={`text-xs px-2.5 py-1.5 md:text-sm md:px-4 md:py-2 flex-shrink-0 font-mono font-bold uppercase transition-all border cursor-pointer ${
-                activeTab === 'settings'
-                  ? 'bg-blueprint-cyan text-blueprint-bg border-blueprint-cyan shadow-[0_0_20px_rgba(0,255,204,0.3)]'
-                  : 'bg-transparent text-blueprint-ink border-blueprint-line hover:border-blueprint-cyan hover:text-blueprint-cyan'
-              }`}
-              id="nav-settings"
-            >
-              <span className="inline-block skew-x-15">НАСТРОЙКИ</span>
-            </button>
-          </nav>
-
-          {/* Telemetry Metrics & Offline Indicator */}
-          <div className="hidden lg:flex items-center gap-6 text-right font-mono text-[10px] text-cyan-400/60 pb-1">
-            <div>
-              <span className="block text-blueprint-cyan text-[9px] tracking-wider uppercase">SYS_TIME</span>
-              <span className="text-cyan-200 font-semibold flex items-center justify-end gap-1">
-                <Clock className="w-3 h-3 text-blueprint-cyan" /> {timeStr || '---'}
-              </span>
-            </div>
-            <div className="border-l border-blueprint-line/40 pl-4">
-              <span className="block text-blueprint-cyan text-[9px] tracking-wider uppercase">STATUS</span>
-              {isOnline ? (
-                <span className="text-green-400 font-bold flex items-center gap-1">
-                  <Wifi className="w-3 h-3" /> ONLINE
-                </span>
               ) : (
-                <span className="text-amber-400 font-bold flex items-center gap-1">
-                  <WifiOff className="w-3 h-3" /> OFFLINE (LOCAL)
-                </span>
+                cars.map((car) => {
+                  const isSelected = car.id === activeCarId;
+                  return (
+                    <div
+                      key={car.id}
+                      onClick={() => {
+                        setActiveCarId(car.id);
+                        setIsCarSelectorOpen(false);
+                        if (navigator.vibrate) navigator.vibrate(15);
+                      }}
+                      className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between border cursor-pointer ${
+                        isSelected 
+                          ? 'bg-cyan-500/10 border-cyan-400/60 text-cyan-200 font-semibold shadow-[0_0_14px_rgba(0,229,255,0.15)]'
+                          : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-850'
+                      }`}
+                    >
+                      <div className="truncate pr-2 min-w-0 flex-1">
+                        <div className="font-bold text-sm text-slate-100 truncate">{car.make} {car.model}</div>
+                        <div className="text-xs text-slate-400 font-mono mt-0.5 truncate">
+                          {car.year} г. • {car.mileage.toLocaleString('ru-RU')} км {car.licensePlate ? `• ${car.licensePlate}` : ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isSelected && <Check className="w-4 h-4 text-cyan-400 shrink-0" />}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCar(car.id);
+                          }}
+                          className="p-1.5 rounded-lg border border-red-500/20 hover:border-red-500/60 bg-red-950/20 hover:bg-red-900/40 text-red-400/80 hover:text-red-300 cursor-pointer transition-all"
+                          title="Удалить авто"
+                          id={`btn-del-car-modal-${car.id}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
-          </div>
 
-        </div>
-      </header>
+            <div className="pt-2 border-t border-slate-800 flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCarSelectorOpen(false);
+                  setActiveTab('garage');
+                  setGarageSubTab('cars');
+                }}
+                className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl text-slate-200 text-xs font-semibold text-center cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                id="btn-open-garage-settings"
+              >
+                <Warehouse className="w-4 h-4 text-cyan-400" />
+                <span>Управление гаражом</span>
+              </button>
 
-      {/* 2. MAIN LAYOUT GRID */}
-      <main className="max-w-7xl mx-auto px-4 mt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* LEFT SIDEBAR: GARAGE & VEHICLE GENERAL METRICS (Occupies 4 cols on large screens) */}
-          <section className="lg:col-span-4 space-y-6">
-            <GarageManager
-              cars={cars}
-              activeCarId={activeCarId}
-              onSelectCar={(id) => { setActiveCarId(id); setShowAddForm(false); }}
-              onAddCar={handleAddCar}
-              onDeleteCar={handleDeleteCar}
-            />
-
-            {/* General financial stats card */}
-            {activeCar && (
-              <div className="bento-card blueprint-corner p-5 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(#06b6d4_1px,transparent_1px)] [background-size:12px_12px] opacity-5"></div>
-                <div className="absolute top-0 right-0 p-1 bg-cyan-500 text-[#050a14] text-[8px] font-bold uppercase font-mono">ИТОГО СУММА</div>
-                <h4 className="text-xs font-bold text-blueprint-cyan font-mono tracking-wider uppercase mb-3 border-b border-cyan-800/30 pb-1.5">
-                  ФИНАНСОВЫЙ УЧЕТ (LOCAL)
-                </h4>
-                <div className="space-y-2.5 font-mono text-xs text-cyan-200/70">
-                  <div className="flex justify-between border-b border-dashed border-cyan-800/20 pb-1.5">
-                    <span>Выполненные работы:</span>
-                    <span className="font-semibold text-cyan-100">{activeCarRecords.length} шт</span>
-                  </div>
-                  <div className="flex justify-between border-b border-dashed border-cyan-800/20 pb-1.5">
-                    <span>Общие расходы:</span>
-                    <span className="font-semibold text-cyan-400 text-sm font-bold">{formatCurrency(totalSpendOnActiveCar)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Средняя стоимость ремонта:</span>
-                    <span className="font-semibold text-cyan-100">
-                      {activeCarRecords.length > 0 ? formatCurrency(totalSpendOnActiveCar / activeCarRecords.length) : formatCurrency(0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Offline PWA Info Box */}
-            <div className="bento-card blueprint-corner p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-1 bg-cyan-800/30 text-cyan-400 text-[8px] font-bold uppercase font-mono">PWA_OFFLINE</div>
-              <span className="text-[10px] text-blueprint-cyan font-mono font-bold tracking-widest uppercase block mb-1.5 flex items-center">
-                <Info className="w-3.5 h-3.5 mr-1.5 text-blueprint-cyan shrink-0 animate-pulse" />
-                АВТОНОМНЫЙ ГАРАЖНЫЙ РЕЖИМ
-              </span>
-              <p className="text-[11px] text-cyan-300/70 font-mono leading-relaxed">
-                Приложение работает полностью в вашем устройстве через <strong className="text-blueprint-cyan">localStorage</strong>. Вы можете использовать его в смотровой яме или гараже даже при полном отсутствии мобильной связи.
-              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCarSelectorOpen(false);
+                  setShowTechSpecs(true);
+                }}
+                className="py-2.5 px-3.5 bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-900/60 text-cyan-300 rounded-xl text-xs font-semibold text-center cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                title="Справочник механика"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Справочник</span>
+              </button>
             </div>
-          </section>
-
-          {/* RIGHT VIEW: DYNAMIC VIEWPORTS (Occupies 8 cols on large screens) */}
-          <section className="lg:col-span-8 space-y-6">
-            
-            {/* TAB 1: MAINTENANCE RECORDS AND WORKS */}
-            {activeTab === 'records' && (
-              <div className="space-y-6">
-                
-                {/* View header HUD controls */}
-                <div className="bento-card p-5 blueprint-corner flex flex-col sm:flex-row justify-between items-center gap-4">
-                  <div className="absolute top-0 right-0 p-1 bg-cyan-800/30 text-cyan-400 text-[8px] font-bold uppercase font-mono">ИСТОРИЯ РЕМОНТА</div>
-                  <div>
-                    <span className="text-[9px] text-blueprint-cyan tracking-widest font-mono uppercase block">ИСТОРИЯ РЕМОНТА</span>
-                    <h2 className="text-md font-extrabold text-cyan-100 font-mono uppercase">
-                      Журнал технического обслуживания автомобиля
-                    </h2>
-                  </div>
-                  
-                  {activeCarId && !showAddForm && (
-                    <button
-                      onClick={() => setShowAddForm(true)}
-                      className="w-full sm:w-auto justify-center bg-blueprint-cyan text-blueprint-bg font-extrabold font-mono text-xs px-5 py-2 hover:bg-cyan-400 transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] flex items-center cursor-pointer"
-                      id="btn-show-add-record"
-                    >
-                      <Plus className="w-4 h-4 mr-1.5 animate-pulse" />
-                      ДОБАВИТЬ ЗАПИСЬ
-                    </button>
-                  )}
-                </div>
-
-                {/* Show dynamic AI Form */}
-                {showAddForm && activeCar && (
-                  <AddRecordForm
-                    carId={activeCar.id}
-                    currentCarMileage={activeCar.mileage}
-                    onRecordAdded={(record) => {
-                      handleAddRecord(record);
-                      setInitialRecordValues(undefined);
-                    }}
-                    onCancel={() => {
-                      setShowAddForm(false);
-                      setInitialRecordValues(undefined);
-                    }}
-                    initialValues={initialRecordValues}
-                  />
-                )}
-
-                {/* List of active records or empty state */}
-                <div className="space-y-4">
-                  {activeCarRecords.length > 0 ? (
-                    activeCarRecords.map((record) => (
-                      <RecordCard
-                        key={record.id}
-                        record={record}
-                        onDelete={handleDeleteRecord}
-                      />
-                    ))
-                  ) : (
-                    <div className="bento-card border-dashed border-cyan-800/40 p-12 text-center blueprint-corner">
-                      <Wrench className="w-12 h-12 text-blueprint-cyan/30 mx-auto mb-3 animate-bounce" />
-                      <h4 className="text-xs font-bold text-cyan-200/80 font-mono uppercase mb-1">
-                        Журнал спецификаций пуст
-                      </h4>
-                      <p className="text-[11px] text-cyan-400/40 font-mono max-w-sm mx-auto mb-4">
-                        Для выбранного автомобиля нет зарегистрированных записей о ремонте и замене расходников.
-                      </p>
-                      {activeCar && !showAddForm && (
-                        <button
-                          onClick={() => setShowAddForm(true)}
-                          className="border border-blueprint-cyan text-blueprint-cyan hover:bg-blueprint-cyan/10 px-4 py-1.5 text-xs font-mono cursor-pointer transition-all"
-                          id="btn-empty-add"
-                        >
-                          ЗАРЕГИСТРИРОВАТЬ ПЕРВУЮ СПЕЦИФИКАЦИЮ
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-              </div>
-            )}
-
-            {/* TAB 2: AI CONSULTANT WITH INTEGRATED RAG SEARCH */}
-            {activeTab === 'rag' && (
-              <RagAssistant activeCar={activeCar} records={activeCarRecords} parts={parts} tasks={tasks} />
-            )}
-
-            {/* TAB 4: VEHICLE MAINTENANCE TASKS & PLAN */}
-            {activeTab === 'tasks' && activeCar && (
-              <VehicleTasks
-                activeCarId={activeCar.id}
-                activeCarMileage={activeCar.mileage}
-                tasks={tasks}
-                onAddTask={handleAddTask}
-                onDeleteTask={handleDeleteTask}
-                onMarkTaskCompleted={handleMarkTaskCompleted}
-              />
-            )}
-
-            {/* TAB 5: SYSTEM SETTINGS */}
-            {activeTab === 'settings' && (
-              <SettingsPanel />
-            )}
-
-            {/* TAB 3: BILL OF MATERIALS (BOM) PARTS WAREHOUSE STOCK */}
-            {activeTab === 'parts' && (
-              <div className="space-y-6">
-                
-                {/* Warehouse HUD Header */}
-                <div className="bento-card p-5 blueprint-corner relative">
-                  <div className="absolute top-0 right-0 p-1 bg-cyan-800/30 text-cyan-400 text-[8px] font-bold uppercase font-mono">ЗАПЧАСТИ В НАЛИЧИИ</div>
-                  <span className="text-[9px] text-blueprint-cyan tracking-widest font-mono uppercase block">ЗАПЧАСТИ В НАЛИЧИИ</span>
-                  <h2 className="text-md font-extrabold text-cyan-100 font-mono uppercase">
-                    Склад деталей и расходных материалов (Гаражный инвентарь)
-                  </h2>
-                </div>
-
-                {/* Add new part form */}
-                <form onSubmit={handleAddPart} className="bento-card p-5 blueprint-corner space-y-3.5 relative">
-                  <div className="absolute top-0 right-0 p-1 bg-cyan-800/20 text-cyan-400 text-[8px] font-bold uppercase font-mono">ДОБАВЛЕНИЕ ДЕТАЛИ</div>
-                  <div className="text-[10px] text-blueprint-cyan/60 tracking-wider font-mono uppercase">
-                    Добавление новой детали на склад
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="flex flex-col">
-                      <label className="text-[9px] text-blueprint-cyan font-mono uppercase mb-0.5">Наименование детали *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="например, Свеча зажигания NGK Laser Iridium"
-                        value={newPartName}
-                        onChange={(e) => setNewPartName(e.target.value)}
-                        className="border border-cyan-800/40 bg-blueprint-bg/60 p-2 text-xs text-cyan-100 font-mono focus:outline-none focus:border-blueprint-cyan"
-                        id="part-name"
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className="text-[9px] text-blueprint-cyan font-mono uppercase mb-0.5">Каталожный номер (артикул)</label>
-                      <input
-                        type="text"
-                        placeholder="например, 12120037581"
-                        value={newPartNum}
-                        onChange={(e) => setNewPartNum(e.target.value)}
-                        className="border border-cyan-800/40 bg-blueprint-bg/60 p-2 text-xs text-cyan-100 font-mono focus:outline-none focus:border-blueprint-cyan"
-                        id="part-number"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="flex flex-col">
-                      <label className="text-[9px] text-blueprint-cyan font-mono uppercase mb-0.5">Количество (шт) *</label>
-                      <input
-                        type="number"
-                        required
-                        min="1"
-                        value={newPartQty}
-                        onChange={(e) => setNewPartQty(Number(e.target.value))}
-                        className="border border-cyan-800/40 bg-blueprint-bg/60 p-2 text-xs text-cyan-100 font-mono focus:outline-none"
-                        id="part-qty"
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className="text-[9px] text-blueprint-cyan font-mono uppercase mb-0.5">Стоимость за ед. (₽) *</label>
-                      <input
-                        type="number"
-                        required
-                        min="0"
-                        step="0.01"
-                        value={newPartPrice}
-                        onChange={(e) => setNewPartPrice(Number(e.target.value))}
-                        className="border border-cyan-800/40 bg-blueprint-bg/60 p-2 text-xs text-cyan-100 font-mono focus:outline-none"
-                        id="part-price"
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className="text-[9px] text-blueprint-cyan font-mono uppercase mb-0.5">Место хранения</label>
-                      <input
-                        type="text"
-                        placeholder="например, Полка А-2"
-                        value={newPartLoc}
-                        onChange={(e) => setNewPartLoc(e.target.value)}
-                        className="border border-cyan-800/40 bg-blueprint-bg/60 p-2 text-xs text-cyan-100 font-mono focus:outline-none"
-                        id="part-location"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="submit"
-                      className="w-full md:w-auto justify-center flex bg-blueprint-cyan text-blueprint-bg font-bold font-mono text-xs px-5 py-2 hover:bg-cyan-400 transition-colors cursor-pointer"
-                      id="btn-save-part"
-                    >
-                      ДОБАВИТЬ НА СКЛАД
-                    </button>
-                  </div>
-                </form>
-
-                {/* Parts list table */}
-                <div className="bento-card blueprint-corner overflow-hidden">
-                  <div className="overflow-x-auto w-full">
-                    <table className="w-full text-left border-collapse font-mono text-xs min-w-[600px]">
-                      <thead>
-                        <tr className="border-b border-cyan-800/40 bg-cyan-950/20 text-blueprint-cyan font-bold uppercase tracking-wider text-[10px]">
-                          <th className="p-3">Наименование</th>
-                          <th className="p-3">Артикул</th>
-                          <th className="p-3 text-center">Кол-во</th>
-                          <th className="p-3 text-right">Цена (₽)</th>
-                          <th className="p-3">Место</th>
-                          <th className="p-3 text-right">Управление</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-cyan-800/20 text-cyan-200/80">
-                        {parts.length > 0 ? (
-                          parts.map((part) => (
-                            <tr key={part.id} className="hover:bg-blue-950/10">
-                              <td className="p-3 font-semibold text-cyan-100">{part.name}</td>
-                              <td className="p-3 text-[10px] text-cyan-400/50">{part.partNumber || '---'}</td>
-                              <td className="p-3 text-center font-mono">
-                                {part.quantity > 0 ? (
-                                  <span className="text-cyan-200">{part.quantity} шт</span>
-                                ) : (
-                                  <span className="text-red-400 font-bold bg-red-950/40 px-1.5 py-0.5 border border-red-500/20 uppercase text-[9px] whitespace-nowrap inline-block">Нет в наличии</span>
-                                )}
-                              </td>
-                              <td className="p-3 text-right">{part.price.toFixed(2)} ₽</td>
-                              <td className="p-3 text-[10px] text-blueprint-cyan">{part.location || '---'}</td>
-                              <td className="p-3 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    onClick={() => handleUsePart(part)}
-                                    disabled={part.quantity <= 0}
-                                    className={`px-2.5 py-1 text-[10px] font-bold border uppercase transition-colors ${
-                                      part.quantity > 0 
-                                        ? 'border-blueprint-cyan text-blueprint-cyan hover:bg-blueprint-cyan hover:text-blueprint-bg cursor-pointer' 
-                                        : 'border-cyan-900 text-cyan-800 cursor-not-allowed'
-                                    }`}
-                                  >
-                                    ИСПОЛЬЗОВАТЬ
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeletePart(part.id)}
-                                    className="p-1 text-red-400/60 hover:text-red-400 hover:bg-red-950/40 transition-colors"
-                                    title="Удалить со склада"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={6} className="p-8 text-center text-cyan-400/40 font-mono text-xs">
-                              Склад деталями пока не укомплектован
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-          </section>
-
+          </div>
         </div>
+      )}
+
+      {/* 2. MAIN LAYOUT CONTAINER */}
+      <main className={
+        activeTab === 'rag'
+          ? "w-full flex-1 flex flex-col min-h-0 overflow-hidden p-0 pb-16 md:pb-0"
+          : "max-w-7xl mx-auto px-3 md:px-6 pt-4 md:pt-6 pb-24 md:pb-8 flex-1 w-full"
+      }>
+        
+        {/* 1. ГЛАВНАЯ (DASHBOARD) */}
+        {activeTab === 'dashboard' && (
+          <div className="max-w-5xl mx-auto space-y-6">
+            <ErrorBoundary>
+              <VehicleDashboard
+                activeCar={activeCar}
+                cars={cars}
+                records={records}
+                tasks={tasks}
+                parts={parts}
+                diagnosticSessions={diagnosticSessions}
+                onOpenGarageManager={() => {
+                  setActiveTab('garage');
+                  setGarageSubTab('cars');
+                }}
+                onOpenAddRecord={() => {
+                  setShowAddForm(true);
+                  setActiveTab('service');
+                  setServiceSubTab('history');
+                }}
+                onOpenAddTask={() => {
+                  setActiveTab('service');
+                  setServiceSubTab('plan');
+                }}
+                onOpenAddPart={() => {
+                  setActiveTab('garage');
+                  setGarageSubTab('parts');
+                }}
+                onOpenTechSpecs={() => setShowTechSpecs(true)}
+                onNavigateTab={(tab, dtcCode) => {
+                  if (dtcCode) setFocusedDtcCode(dtcCode);
+                  setActiveTab(tab);
+                  setShowAddForm(false);
+                }}
+                onNavigateToRagWithQuestion={(question) => {
+                  setRagInitialQuestion(question);
+                  setActiveTab('rag');
+                }}
+                onViewRecord={(rec) => setSelectedRecordForDetail(rec)}
+                onQuickUpdateMileage={handleQuickUpdateMileage}
+                onMarkTaskCompleted={handleMarkTaskCompleted}
+                onCreateTaskFromDtc={handleCreateTaskFromDtc}
+                onStartDiagnosticSession={handleStartDiagnosticSession}
+                onOpenDiagnosticSessionModal={handleOpenDiagnosticSessionModal}
+                onRecheckDiagnosticSession={handleRecheckDiagnosticSession}
+              />
+            </ErrorBoundary>
+          </div>
+        )}
+
+        {/* 2. ДИАГНОСТИКА (OBD2, DTC, LIVE DATA, OEM) */}
+        {activeTab === 'obd' && (
+          <div className="max-w-5xl mx-auto">
+            <ErrorBoundary>
+              <ObdScanner 
+                activeCar={activeCar} 
+                parts={parts}
+                focusedDtcCode={focusedDtcCode}
+                activeSession={diagnosticSessions.find(s => s.carId === activeCar?.id && (s.status === 'active' || s.status === 'waiting_recheck'))}
+                onAddRecord={handleAddRecord}
+                onNavigateToRag={(questionOrPayload?: any) => {
+                  if (questionOrPayload) {
+                    if (typeof questionOrPayload === 'string') {
+                      setRagInitialQuestion(questionOrPayload);
+                    } else if (questionOrPayload.prompt) {
+                      setRagInitialQuestion(questionOrPayload.prompt);
+                    }
+                  }
+                  setActiveTab('rag');
+                }}
+                onCreateTaskFromDtc={handleCreateTaskFromDtc}
+                onNavigateToPartsWithFilter={handleNavigateToPartsWithFilter}
+                onAddCandidatePartToStock={handleAddCandidatePartToStock}
+                onStartDiagnosticSession={handleStartDiagnosticSession}
+                onOpenDiagnosticSessionModal={handleOpenDiagnosticSessionModal}
+                onRecheckDiagnosticSession={handleRecheckDiagnosticSession}
+              />
+            </ErrorBoundary>
+          </div>
+        )}
+
+        {/* 3. ТО (ПЛАН И ИСТОРИЯ) */}
+        {activeTab === 'service' && (
+          <div className="max-w-5xl mx-auto">
+            <ErrorBoundary>
+              <ServiceHub
+                activeCar={activeCar}
+                records={records}
+                tasks={tasks}
+                onAddRecord={handleAddRecord}
+                onUpdateRecord={handleUpdateRecord}
+                onDeleteRecord={handleDeleteRecord}
+                showAddForm={showAddForm}
+                onOpenAddForm={() => setShowAddForm(true)}
+                onCloseAddForm={() => {
+                  setShowAddForm(false);
+                  setInitialRecordValues(undefined);
+                }}
+                initialRecordValues={initialRecordValues}
+                onClearInitialValues={() => setInitialRecordValues(undefined)}
+                onAddTask={handleAddTask}
+                onUpdateTask={handleUpdateTask}
+                onMarkTaskCompleted={handleMarkTaskCompleted}
+                onDeleteTask={handleDeleteTask}
+                initialSubTab={serviceSubTab}
+              />
+            </ErrorBoundary>
+          </div>
+        )}
+
+        {/* 4. ВАСИЛИЧ (AI RAG CONSULTANT) */}
+        {activeTab === 'rag' && (
+          <div className="w-full h-full flex-1 flex flex-col min-h-0">
+            <ErrorBoundary>
+              <RagAssistant 
+                activeCar={activeCar} 
+                records={activeCarRecords} 
+                parts={parts} 
+                tasks={tasks}
+                diagnosticSessions={diagnosticSessions}
+                initialQuestion={ragInitialQuestion}
+                onClearInitialQuestion={() => setRagInitialQuestion(null)}
+                onAddTask={handleAddTask}
+                onCreateTaskFromDtc={handleCreateTaskFromDtc}
+                onAddRecord={handleAddRecord}
+                onUpdateRecord={handleUpdateRecord}
+                onDeleteRecord={(id) => {
+                  setRecords(prev => prev.filter(r => r.id !== id));
+                }}
+                onUpdateCar={handleUpdateCar}
+                onNavigateTab={(tab, dtc) => {
+                  if (dtc) {
+                    setFocusedDtcCode(dtc);
+                  }
+                  setActiveTab(tab as any);
+                }}
+              />
+            </ErrorBoundary>
+          </div>
+        )}
+
+        {/* 5. ГАРАЖ (АВТОПАРК, СКЛАД, НАСТРОЙКИ) */}
+        {activeTab === 'garage' && (
+          <div className="max-w-5xl mx-auto">
+            <ErrorBoundary>
+              <GarageHub
+                cars={cars}
+                activeCarId={activeCarId}
+                parts={parts}
+                onSelectCar={(id) => {
+                  setActiveCarId(id);
+                  setShowAddForm(false);
+                }}
+                onAddCar={handleAddCar}
+                onUpdateCar={handleUpdateCar}
+                onDeleteCar={handleDeleteCar}
+                onAddPart={(partData) => {
+                  const newPart: Part = {
+                    ...partData,
+                    id: `part-${Date.now()}`,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                  };
+                  setParts(prev => [newPart, ...prev]);
+                }}
+                onDeletePart={handleDeletePart}
+                onUsePart={handleUsePart}
+                partsSearchFilter={partsSearchFilter}
+                initialSubTab={garageSubTab}
+              />
+            </ErrorBoundary>
+          </div>
+        )}
+
       </main>
 
-      {/* 3. CONFIRMATION MODAL */}
+      {/* RECORD DETAIL MODAL */}
+      {selectedRecordForDetail && (
+        <RecordDetailModal
+          record={selectedRecordForDetail}
+          isOpen={true}
+          onClose={() => setSelectedRecordForDetail(null)}
+          onEdit={(rec) => {
+            setSelectedRecordForDetail(null);
+            handleUpdateRecord(rec);
+          }}
+          onDelete={(id) => {
+            setSelectedRecordForDetail(null);
+            handleDeleteRecord(id);
+          }}
+        />
+      )}
+
+      {/* CONFIRMATION MODAL */}
       <ConfirmModal
         isOpen={confirmState.isOpen}
         title={confirmState.title}
@@ -1044,11 +1151,133 @@ export default function App() {
         onCancel={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
       />
 
-      {/* 4. FOOTER HUD */}
-      <footer className="max-w-7xl mx-auto px-4 mt-12 text-center text-[10px] font-mono text-cyan-400/40 space-y-1">
-        <p>ИНЖЕНЕРНЫЙ ТЕРМИНАЛ • АВТОНОМНЫЙ ПОРТАТИВНЫЙ ГАРАЖНЫЙ КОМПЛЕКС • PWA STANDALONE</p>
-        <p>ВСЕ ДАННЫЕ ХРАНЯТСЯ ЛОКАЛЬНО В ПАМЯТИ ВАШЕГО УСТРОЙСТВА (LOCALSTORAGE)</p>
-      </footer>
+      {/* TECH SPECS MECHANIC MODAL */}
+      {showTechSpecs && (
+        <TechSpecsModal
+          activeCar={activeCar}
+          onClose={() => setShowTechSpecs(false)}
+          onAskVasilich={(question) => {
+            setRagInitialQuestion(question);
+            setActiveTab('rag');
+          }}
+        />
+      )}
+
+      {/* DIAGNOSTIC SESSIONS MODAL (ЭТАП 5) */}
+      <DiagnosticSessionsModal
+        isOpen={isDiagnosticModalOpen}
+        onClose={() => setIsDiagnosticModalOpen(false)}
+        sessions={diagnosticSessions}
+        activeCar={activeCar}
+        cars={cars}
+        parts={parts}
+        tasks={tasks}
+        records={records}
+        onStartSession={handleStartDiagnosticSession}
+        onUpdateSession={handleUpdateDiagnosticSession}
+        onRecheckSession={handleRecheckDiagnosticSession}
+        onCloseSession={handleCloseDiagnosticSession}
+        onNavigateToRag={(query) => {
+          if (query) setRagInitialQuestion(query);
+          setActiveTab('rag');
+        }}
+        onNavigateToSchematics={(dtc) => {
+          if (dtc) setFocusedDtcCode(dtc);
+          setActiveTab('obd');
+        }}
+        onNavigateToPartsWithFilter={handleNavigateToPartsWithFilter}
+        onCreateTaskFromSession={(taskData) => {
+          handleCreateTaskFromDtc(taskData);
+        }}
+        selectedSessionId={selectedDiagnosticSessionId}
+      />
+
+      {/* FOOTER HUD - Only shown when NOT on Vasilich screen */}
+      {activeTab !== 'rag' && (
+        <footer className="max-w-7xl mx-auto px-4 mt-8 pb-20 md:pb-8 text-center text-xs text-slate-500 space-y-1 font-sans">
+          <p className="font-medium text-slate-400">Инженерный Терминал • Автономный центр управления автомобилем • PWA Standalone</p>
+          <p className="text-[11px] font-mono text-slate-600">Все данные хранятся локально в памяти устройства (localStorage)</p>
+        </footer>
+      )}
+
+      {/* MOBILE FIXED BOTTOM NAVIGATION BAR (4 CORE SECTIONS) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-16 pb-[env(safe-area-inset-bottom)] bg-[#080b11]/95 border-t border-cyan-500/20 backdrop-blur-xl px-1 flex items-center justify-around font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.8)]">
+        
+        {/* 1. ГЛАВНАЯ */}
+        <button
+          type="button"
+          onClick={() => {
+            if (navigator.vibrate) navigator.vibrate(15);
+            setActiveTab('dashboard');
+            setShowAddForm(false);
+          }}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer rounded-xl ${
+            activeTab === 'dashboard'
+              ? 'text-cyan-300 font-bold bg-cyan-500/10 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+          id="mob-tab-dashboard"
+        >
+          <CarIcon className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] font-medium tracking-tight">Главная</span>
+        </button>
+
+        {/* 2. ТО */}
+        <button
+          type="button"
+          onClick={() => {
+            if (navigator.vibrate) navigator.vibrate(15);
+            setActiveTab('service');
+            setShowAddForm(false);
+          }}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer rounded-xl ${
+            activeTab === 'service'
+              ? 'text-cyan-300 font-bold bg-cyan-500/10 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+          id="mob-tab-service"
+        >
+          <ClipboardList className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] font-medium tracking-tight">ТО</span>
+        </button>
+
+        {/* 3. ВАСИЛИЧ */}
+        <button
+          type="button"
+          onClick={() => {
+            if (navigator.vibrate) navigator.vibrate(15);
+            setActiveTab('rag');
+          }}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer rounded-xl ${
+            activeTab === 'rag'
+              ? 'text-cyan-300 font-bold bg-cyan-500/10 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+          id="mob-tab-rag"
+        >
+          <Bot className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] font-medium tracking-tight">Василич</span>
+        </button>
+
+        {/* 4. ГАРАЖ */}
+        <button
+          type="button"
+          onClick={() => {
+            if (navigator.vibrate) navigator.vibrate(15);
+            setActiveTab('garage');
+          }}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer rounded-xl ${
+            activeTab === 'garage'
+              ? 'text-cyan-300 font-bold bg-cyan-500/10 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+          id="mob-tab-garage"
+        >
+          <Warehouse className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] font-medium tracking-tight">Гараж</span>
+        </button>
+
+      </nav>
     </div>
   );
 }

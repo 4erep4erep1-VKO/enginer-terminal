@@ -6,27 +6,29 @@
 import React, { useState } from 'react';
 import { 
   CheckSquare, 
-  Square, 
+  Plus, 
   Calendar, 
   Gauge, 
-  Plus, 
-  Trash2, 
-  AlertOctagon, 
   Clock, 
+  AlertOctagon, 
+  Trash2, 
   Check, 
-  Compass,
-  Play,
-  X
+  X,
+  Edit3,
+  Camera,
+  ZoomIn
 } from 'lucide-react';
-import { VehicleTask, TaskType } from '../types';
+import { VehicleTask, TaskType, TaskStatus } from '../types';
+import { EditTaskModal } from './EditTaskModal';
 
 interface VehicleTasksProps {
-  activeCarId: string | null;
+  activeCarId: string;
   activeCarMileage: number;
   tasks: VehicleTask[];
-  onAddTask: (task: { title: string; type: TaskType; targetMileage?: number; targetDate?: string }) => void;
-  onDeleteTask: (id: string) => void;
-  onMarkTaskCompleted: (id: string) => void;
+  onAddTask: (newTaskData: { title: string; type: TaskType; targetMileage?: number; targetDate?: string }) => void;
+  onUpdateTask?: (task: VehicleTask) => void;
+  onMarkTaskCompleted: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
 export function VehicleTasks({
@@ -34,15 +36,20 @@ export function VehicleTasks({
   activeCarMileage,
   tasks,
   onAddTask,
-  onDeleteTask,
+  onUpdateTask,
   onMarkTaskCompleted,
+  onDeleteTask,
 }: VehicleTasksProps) {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [filter, setFilter] = useState<'pending' | 'completed' | 'all'>('pending');
+  const [editingTask, setEditingTask] = useState<VehicleTask | null>(null);
+  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+
+  // Form State
   const [title, setTitle] = useState('');
   const [type, setType] = useState<TaskType>('simple');
   const [targetMileage, setTargetMileage] = useState<number | ''>('');
   const [targetDate, setTargetDate] = useState('');
-  const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending');
 
   const activeCarTasks = tasks.filter(t => t.carId === activeCarId);
 
@@ -59,66 +66,56 @@ export function VehicleTasks({
     onAddTask({
       title: title.trim(),
       type,
-      targetMileage: type === 'mileage' && targetMileage ? Number(targetMileage) : undefined,
+      targetMileage: type === 'mileage' && targetMileage !== '' ? Number(targetMileage) : undefined,
       targetDate: type === 'simple' && targetDate ? targetDate : undefined,
     });
 
+    // Reset Form
     setTitle('');
+    setType('simple');
     setTargetMileage('');
     setTargetDate('');
     setShowAddForm(false);
+    if (navigator.vibrate) navigator.vibrate(20);
   };
 
-  if (!activeCarId) {
-    return (
-      <div className="bento-card border-dashed border-cyan-800/40 p-12 text-center blueprint-corner">
-        <Compass className="w-12 h-12 text-blueprint-cyan/30 mx-auto mb-3 animate-pulse" />
-        <h4 className="text-xs font-bold text-cyan-200/80 font-mono uppercase mb-1">
-          АВТОМОБИЛЬ НЕ ВЫБРАН
-        </h4>
-        <p className="text-[11px] text-cyan-400/40 font-mono max-w-sm mx-auto">
-          Пожалуйста, выберите или добавьте автомобиль в левой панели гаража для просмотра планируемых работ и ТО.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* 1. HUD HEADER */}
-      <div className="bento-card p-5 blueprint-corner flex flex-col sm:flex-row justify-between items-center gap-4 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-1 bg-cyan-800/30 text-cyan-400 text-[8px] font-bold uppercase font-mono">ПЛАНИРОВАНИЕ ТО</div>
+    <div className="space-y-4 font-sans">
+      {/* 1. HEADER & CONTROLS */}
+      <div className="bg-[#10151E] border border-[#1E2638] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3.5 shadow-sm">
         <div>
-          <span className="text-[9px] text-blueprint-cyan tracking-widest font-mono uppercase block">ЗАДАЧИ И ТЕХОБСЛУЖИВАНИЕ</span>
-          <h2 className="text-md font-extrabold text-cyan-100 font-mono uppercase">
-            Планируемые работы и напоминания
+          <span className="text-[10px] text-cyan-400 font-mono tracking-wider uppercase block mb-0.5">
+            ПЛАНИРОВАНИЕ ТО
+          </span>
+          <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+            <CheckSquare className="w-5 h-5 text-cyan-400" />
+            <span>План обслуживания и задачи</span>
           </h2>
         </div>
-        
+
         {!showAddForm && (
           <button
             onClick={() => {
               if (navigator.vibrate) navigator.vibrate(15);
               setShowAddForm(true);
             }}
-            className="w-full sm:w-auto justify-center bg-blueprint-cyan text-blueprint-bg font-extrabold font-mono text-xs px-5 py-2 hover:bg-cyan-400 transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] flex items-center cursor-pointer uppercase"
+            className="btn-primary min-h-[40px] px-4 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto shadow-sm"
             id="btn-show-add-task"
           >
-            <Plus className="w-4 h-4 mr-1.5" />
-            ДОБАВИТЬ ЗАДАЧУ
+            <Plus className="w-4 h-4" />
+            <span>Добавить задачу</span>
           </button>
         )}
       </div>
 
-      {/* 2. ADD TASK FORM */}
+      {/* 2. ADD TASK MODAL/FORM */}
       {showAddForm && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-sm transition-all duration-300 ease-out">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-950/80 backdrop-blur-md transition-all duration-300 ease-out">
           <form 
             onSubmit={handleSubmit} 
-            className="w-full md:max-w-xl bg-[#050b18] border-t-2 md:border-2 border-blueprint-cyan rounded-t-2xl md:rounded-none shadow-[0_-10px_25px_rgba(0,255,204,0.15)] md:shadow-[0_0_30px_rgba(0,255,204,0.25)] p-6 relative space-y-4 font-mono max-h-[90vh] overflow-y-auto"
+            className="w-full md:max-w-xl bg-[#10151E] border-t md:border border-[#1E2638] rounded-t-2xl md:rounded-2xl shadow-2xl p-4 sm:p-6 pb-28 md:pb-6 relative space-y-4 max-h-[calc(100vh-70px)] md:max-h-[90vh] overflow-y-auto"
           >
-            {/* Drag handle for iOS style bottom sheet */}
-            <div className="w-12 h-1 bg-cyan-800/40 rounded-full mx-auto mb-4 md:hidden" />
+            <div className="w-12 h-1 bg-[#1E2638] rounded-full mx-auto mb-4 md:hidden" />
 
             <button
               type="button"
@@ -126,17 +123,20 @@ export function VehicleTasks({
                 if (navigator.vibrate) navigator.vibrate(15);
                 setShowAddForm(false);
               }}
-              className="absolute top-3 right-3 md:top-4 md:right-4 text-blueprint-cyan hover:text-cyan-400 p-1.5 hover:bg-cyan-950/40 transition-colors cursor-pointer z-20"
+              className="absolute top-3 right-3 md:top-4 md:right-4 text-slate-400 hover:text-white p-2 rounded-xl hover:bg-[#151B25] transition-colors cursor-pointer z-20"
               title="Закрыть"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="absolute top-0 right-0 p-1 bg-blueprint-cyan text-[#050a14] text-[8px] font-bold uppercase font-mono hidden md:block">НОВАЯ ЗАДАЧА</div>
+            <div className="border-b border-[#1E2638] pb-3">
+              <span className="text-[10px] text-cyan-400 font-semibold uppercase tracking-wider block">Планирование</span>
+              <h3 className="text-lg font-bold text-white">Новая сервисная задача</h3>
+            </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-[10px] text-blueprint-cyan font-mono uppercase mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                   Название задачи / Вид ТО *
                 </label>
                 <input
@@ -145,13 +145,13 @@ export function VehicleTasks({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Замена масла, купить колодки, проверить ГРМ..."
-                  className="w-full border border-cyan-800/40 bg-blueprint-bg/60 p-2.5 text-xs text-cyan-100 font-mono focus:outline-none focus:border-blueprint-cyan focus:shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                  className="w-full border border-[#1E2638] bg-[#151B25] p-3 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                   id="task-title-input"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] text-blueprint-cyan font-mono uppercase mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                   Тип контроля выполнения
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -161,10 +161,10 @@ export function VehicleTasks({
                       if (navigator.vibrate) navigator.vibrate(15);
                       setType('simple');
                     }}
-                    className={`py-2 px-3 text-xs font-mono border transition-all cursor-pointer ${
+                    className={`py-2.5 px-3 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
                       type === 'simple'
-                        ? 'bg-blueprint-cyan/15 border-blueprint-cyan text-blueprint-cyan'
-                        : 'border-cyan-800/40 text-cyan-200/50 hover:text-cyan-100'
+                        ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
+                        : 'border-[#1E2638] bg-[#151B25] text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     Обычная задача
@@ -175,35 +175,33 @@ export function VehicleTasks({
                       if (navigator.vibrate) navigator.vibrate(15);
                       setType('mileage');
                     }}
-                    className={`py-2 px-3 text-xs font-mono border transition-all cursor-pointer ${
+                    className={`py-2.5 px-3 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
                       type === 'mileage'
-                        ? 'bg-blueprint-cyan/15 border-blueprint-cyan text-blueprint-cyan'
-                        : 'border-cyan-800/40 text-cyan-200/50 hover:text-cyan-100'
+                        ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
+                        : 'border-[#1E2638] bg-[#151B25] text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     По пробегу (ТО)
                   </button>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {type === 'simple' ? (
                 <div>
-                  <label className="block text-[10px] text-blueprint-cyan font-mono uppercase mb-1.5 flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" /> Срок выполнения (необязательно)
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1">
+                    <Calendar className="w-4 h-4 text-cyan-400" /> Срок выполнения (необязательно)
                   </label>
                   <input
                     type="date"
                     value={targetDate}
                     onChange={(e) => setTargetDate(e.target.value)}
-                    className="w-full border border-cyan-800/40 bg-blueprint-bg/60 p-2 text-xs text-cyan-100 font-mono focus:outline-none focus:border-blueprint-cyan focus:shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                    className="w-full border border-[#1E2638] bg-[#151B25] p-3 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-cyan-400"
                   />
                 </div>
               ) : (
                 <div>
-                  <label className="block text-[10px] text-blueprint-cyan font-mono uppercase mb-1.5 flex items-center gap-1">
-                    <Gauge className="w-3.5 h-3.5" /> Целевой пробег автомобиля (км) *
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1">
+                    <Gauge className="w-4 h-4 text-cyan-400" /> Целевой пробег автомобиля (км) *
                   </label>
                   <input
                     type="number"
@@ -212,35 +210,35 @@ export function VehicleTasks({
                     value={targetMileage}
                     onChange={(e) => setTargetMileage(e.target.value === '' ? '' : Number(e.target.value))}
                     placeholder={`Например: ${activeCarMileage + 10000}`}
-                    className="w-full border border-cyan-800/40 bg-blueprint-bg/60 p-2 text-xs text-cyan-100 font-mono focus:outline-none focus:border-blueprint-cyan focus:shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                    className="w-full border border-[#1E2638] bg-[#151B25] p-3 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400"
                   />
-                  <span className="text-[9px] text-cyan-400/40 font-mono mt-1 block">
+                  <span className="text-[11px] text-slate-400 mt-1 block font-mono">
                     Текущий пробег автомобиля: {activeCarMileage.toLocaleString()} км
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-cyan-800/20">
+            <div className="sticky bottom-0 bg-[#10151E] pt-3 pb-3 md:pb-0 -mx-4 sm:-mx-6 px-4 sm:px-6 border-t border-[#1E2638] flex flex-col sm:flex-row justify-end gap-3 z-10">
               <button
                 type="button"
                 onClick={() => {
                   if (navigator.vibrate) navigator.vibrate(15);
                   setShowAddForm(false);
                 }}
-                className="w-full sm:w-auto justify-center flex border border-cyan-800/40 text-cyan-200/60 hover:text-cyan-100 hover:bg-cyan-950/20 px-5 py-2.5 md:py-2 text-xs font-mono transition-colors cursor-pointer"
+                className="btn-secondary min-h-[42px] px-4 text-xs font-semibold rounded-xl cursor-pointer"
               >
-                ОТМЕНА
+                Отмена
               </button>
               <button
                 type="submit"
                 onClick={() => {
                   if (navigator.vibrate) navigator.vibrate(15);
                 }}
-                className="w-full sm:w-auto justify-center flex bg-blueprint-cyan text-blueprint-bg font-bold font-mono tracking-wider text-xs px-6 py-2.5 hover:bg-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all items-center cursor-pointer uppercase"
+                className="btn-primary min-h-[42px] px-6 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Check className="w-4 h-4 mr-1.5" />
-                СОХРАНИТЬ ЗАДАЧУ
+                <Check className="w-4 h-4" />
+                Сохранить задачу
               </button>
             </div>
           </form>
@@ -248,47 +246,47 @@ export function VehicleTasks({
       )}
 
       {/* 3. TASK FILTER TABS */}
-      <div className="flex border-b border-cyan-800/20 font-mono text-xs gap-4 pb-2">
+      <div className="flex border-b border-[#1E2638] text-xs gap-6 pb-2">
         <button
           onClick={() => {
             if (navigator.vibrate) navigator.vibrate(15);
             setFilter('pending');
           }}
-          className={`pb-1 px-1 relative transition-all cursor-pointer ${
-            filter === 'pending' ? 'text-blueprint-cyan font-bold' : 'text-cyan-200/40 hover:text-cyan-100'
+          className={`pb-2 px-1 relative transition-all cursor-pointer font-semibold ${
+            filter === 'pending' ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          АКТИВНЫЕ ({activeCarTasks.filter(t => t.status === 'pending').length})
-          {filter === 'pending' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blueprint-cyan"></span>}
+          Активные ({activeCarTasks.filter(t => t.status === 'pending').length})
+          {filter === 'pending' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full"></span>}
         </button>
         <button
           onClick={() => {
             if (navigator.vibrate) navigator.vibrate(15);
             setFilter('completed');
           }}
-          className={`pb-1 px-1 relative transition-all cursor-pointer ${
-            filter === 'completed' ? 'text-blueprint-cyan font-bold' : 'text-cyan-200/40 hover:text-cyan-100'
+          className={`pb-2 px-1 relative transition-all cursor-pointer font-semibold ${
+            filter === 'completed' ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          ВЫПОЛНЕННЫЕ ({activeCarTasks.filter(t => t.status === 'completed').length})
-          {filter === 'completed' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blueprint-cyan"></span>}
+          Выполненные ({activeCarTasks.filter(t => t.status === 'completed').length})
+          {filter === 'completed' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full"></span>}
         </button>
         <button
           onClick={() => {
             if (navigator.vibrate) navigator.vibrate(15);
             setFilter('all');
           }}
-          className={`pb-1 px-1 relative transition-all cursor-pointer ${
-            filter === 'all' ? 'text-blueprint-cyan font-bold' : 'text-cyan-200/40 hover:text-cyan-100'
+          className={`pb-2 px-1 relative transition-all cursor-pointer font-semibold ${
+            filter === 'all' ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          ВСЕ ({activeCarTasks.length})
-          {filter === 'all' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blueprint-cyan"></span>}
+          Все ({activeCarTasks.length})
+          {filter === 'all' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full"></span>}
         </button>
       </div>
 
       {/* 4. TASKS LIST */}
-      <div className="space-y-3.5">
+      <div className="space-y-3">
         {filteredTasks.length > 0 ? (
           filteredTasks.map((task) => {
             const isOverdue = 
@@ -297,105 +295,176 @@ export function VehicleTasks({
               task.targetMileage !== undefined && 
               activeCarMileage >= task.targetMileage;
 
+            const hasPhotos = task.photos && task.photos.length > 0;
+
             return (
               <div 
-                key={task.id} 
-                className={`bento-card p-4 blueprint-corner relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all ${
+                key={task.id}
+                onClick={() => {
+                  if (navigator.vibrate) navigator.vibrate(15);
+                  setEditingTask(task);
+                }}
+                className={`bg-[#10151E] border p-4 sm:p-5 relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all cursor-pointer group rounded-2xl ${
                   isOverdue 
-                    ? 'border-red-500 bg-red-950/10 shadow-[0_0_15px_rgba(239,68,68,0.15)]' 
+                    ? 'border-rose-500/60 bg-rose-950/20' 
                     : task.status === 'completed'
-                    ? 'border-cyan-800/20 bg-cyan-950/5 opacity-60'
-                    : 'border-cyan-800/40 bg-[#081226]/40 hover:border-blueprint-cyan hover:shadow-[0_0_15px_rgba(6,182,212,0.05)]'
+                    ? 'border-[#1E2638] bg-[#10151E]/60 opacity-75 hover:opacity-100'
+                    : 'border-[#1E2638] hover:border-cyan-500/50 hover:bg-[#151B25]'
                 }`}
               >
-                {/* Visual side accent border */}
-                {isOverdue && (
-                  <div className="absolute top-0 bottom-0 left-0 w-1 bg-red-500 animate-pulse"></div>
-                )}
-                {task.status === 'completed' && (
-                  <div className="absolute top-0 bottom-0 left-0 w-1 bg-green-500"></div>
-                )}
-
                 {/* Left side: details */}
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     {task.type === 'mileage' ? (
-                      <span className="text-[9px] font-mono font-bold bg-blueprint-cyan/10 border border-blueprint-cyan/20 text-blueprint-cyan px-2 py-0.5 uppercase tracking-wider">
-                        ПО ПРОБЕГУ (ТО)
+                      <span className="text-[10px] font-semibold bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 px-2.5 py-0.5 rounded-lg tracking-wide">
+                        По пробегу (ТО)
                       </span>
                     ) : (
-                      <span className="text-[9px] font-mono font-bold bg-cyan-800/10 border border-cyan-800/20 text-cyan-300 px-2 py-0.5 uppercase tracking-wider">
-                        ОБЫЧНАЯ
+                      <span className="text-[10px] font-semibold bg-[#151B25] border border-[#1E2638] text-slate-300 px-2.5 py-0.5 rounded-lg">
+                        Обычная
+                      </span>
+                    )}
+
+                    {task.relatedDtc && (
+                      <span className="text-[10px] font-mono font-bold bg-rose-950/90 border border-rose-500/50 text-rose-300 px-2 py-0.5 rounded-lg">
+                        DTC: {task.relatedDtc}
+                      </span>
+                    )}
+
+                    {task.relatedPartIds && task.relatedPartIds.length > 0 && (
+                      <span className="text-[10px] font-semibold bg-amber-950/80 border border-amber-500/40 text-amber-300 px-2 py-0.5 rounded-lg">
+                        Резерв деталей: {task.relatedPartIds.length} шт
                       </span>
                     )}
 
                     {isOverdue && (
-                      <span className="text-[9px] font-mono font-extrabold bg-red-600/20 border border-red-500 text-red-400 px-2 py-0.5 uppercase tracking-wider flex items-center gap-1 shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse">
-                        <AlertOctagon className="w-3 h-3 text-red-400" />
-                        ТРЕБУЕТСЯ ОБСЛУЖИВАНИЕ!
+                      <span className="text-[10px] font-bold bg-rose-950 border border-rose-500/50 text-rose-300 px-2.5 py-0.5 rounded-lg flex items-center gap-1">
+                        <AlertOctagon className="w-3.5 h-3.5 text-rose-400" />
+                        Требуется обслуживание!
                       </span>
                     )}
 
                     {task.status === 'completed' && (
-                      <span className="text-[9px] font-mono font-bold bg-green-950 border border-green-500/50 text-green-400 px-2 py-0.5 uppercase tracking-wider">
-                        ВЫПОЛНЕНО
+                      <span className="text-[10px] font-bold bg-emerald-950 border border-emerald-500/50 text-emerald-300 px-2.5 py-0.5 rounded-lg">
+                        Выполнено
+                      </span>
+                    )}
+
+                    {/* Camera / Photo badge indicator */}
+                    {hasPhotos && (
+                      <span className="text-[10px] font-medium bg-[#151B25] text-cyan-300 px-2 py-0.5 rounded-lg flex items-center gap-1 border border-[#1E2638]">
+                        <Camera className="w-3 h-3 text-cyan-400" />
+                        {task.photos!.length} фото
                       </span>
                     )}
                   </div>
 
-                  <h3 className={`text-xs font-mono font-semibold text-cyan-100 uppercase tracking-wide ${task.status === 'completed' ? 'line-through text-cyan-200/40' : ''}`}>
+                  <h3 className={`text-sm font-semibold text-slate-100 group-hover:text-cyan-300 transition-colors ${task.status === 'completed' ? 'line-through text-slate-500' : ''}`}>
                     {task.title}
                   </h3>
 
-                  <div className="flex items-center gap-4 text-[10px] font-mono text-cyan-300/60">
+                  <div className="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
                     {task.type === 'mileage' && task.targetMileage !== undefined && (
-                      <span className="flex items-center gap-1">
-                        <Gauge className="w-3.5 h-3.5 text-blueprint-cyan" />
+                      <span className="flex items-center gap-1 font-mono">
+                        <Gauge className="w-3.5 h-3.5 text-cyan-400" />
                         Цель: {task.targetMileage.toLocaleString()} км 
-                        <span className="text-cyan-400/40">
+                        <span className="text-slate-500">
                           (осталось: {(task.targetMileage - activeCarMileage).toLocaleString()} км)
                         </span>
                       </span>
                     )}
                     {task.type === 'simple' && task.targetDate && (
                       <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-blueprint-cyan" />
+                        <Calendar className="w-3.5 h-3.5 text-cyan-400" />
                         Срок: {new Date(task.targetDate).toLocaleDateString()}
                       </span>
                     )}
-                    <span className="flex items-center gap-1 text-[9px] text-cyan-400/30">
+                    <span className="flex items-center gap-1 text-slate-500 text-[11px]">
                       <Clock className="w-3 h-3" />
                       Создана: {new Date(task.createdAt).toLocaleDateString()}
                     </span>
                   </div>
+
+                  {/* Photo Thumbnails strip on card */}
+                  {hasPhotos && (
+                    <div className="flex items-center gap-2 pt-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                      {task.photos!.slice(0, 4).map((photo, pIdx) => (
+                        <div
+                          key={pIdx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (navigator.vibrate) navigator.vibrate(10);
+                            setSelectedPhotoUrl(photo);
+                          }}
+                          className="w-10 h-10 border border-[#1E2638] hover:border-cyan-400 rounded-lg overflow-hidden bg-[#151B25] cursor-pointer relative group/thumb transition-all"
+                          title="Нажмите для полноэкранного просмотра фото"
+                        >
+                          <img src={photo} alt={`Миниатюра ${pIdx + 1}`} className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity">
+                            <ZoomIn className="w-3.5 h-3.5 text-cyan-200" />
+                          </div>
+                        </div>
+                      ))}
+                      {task.photos!.length > 4 && (
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingTask(task);
+                          }}
+                          className="w-10 h-10 border border-[#1E2638] bg-[#151B25] rounded-lg flex items-center justify-center text-xs text-cyan-300 font-bold cursor-pointer hover:border-cyan-400"
+                        >
+                          +{task.photos!.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Right side: Actions */}
-                <div className="flex items-center gap-2 self-stretch md:self-auto justify-end border-t md:border-t-0 border-cyan-800/10 pt-2.5 md:pt-0 shrink-0">
+                <div 
+                  className="flex items-center gap-2 self-stretch md:self-auto justify-end border-t md:border-t-0 border-[#1E2638] pt-3 md:pt-0 shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (navigator.vibrate) navigator.vibrate(15);
+                      setEditingTask(task);
+                    }}
+                    className="p-2 border border-[#1E2638] hover:border-cyan-400 bg-[#151B25] hover:bg-[#1B2431] text-slate-300 hover:text-white rounded-xl cursor-pointer shrink-0 transition-all flex items-center gap-1 text-xs font-semibold"
+                    title="Редактировать задачу и прикрепить фото"
+                    id={`btn-edit-task-${task.id}`}
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="hidden sm:inline">Редактировать</span>
+                  </button>
+
                   {task.status === 'pending' && (
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (navigator.vibrate) navigator.vibrate(15);
                         onMarkTaskCompleted(task.id);
                       }}
-                      className={`text-[10px] font-mono font-bold px-3 py-1.5 transition-all cursor-pointer whitespace-nowrap tracking-wide flex items-center gap-1.5 uppercase ${
+                      className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                         isOverdue
-                          ? 'bg-red-600 text-white hover:bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
-                          : 'bg-blueprint-cyan text-blueprint-bg hover:bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
+                          ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-md shadow-rose-600/30'
+                          : 'btn-primary'
                       }`}
                       id={`btn-complete-task-${task.id}`}
                     >
                       <CheckSquare className="w-3.5 h-3.5" />
-                      ОТМЕТИТЬ ВЫПОЛНЕННОЙ
+                      Отметить выполненной
                     </button>
                   )}
 
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (navigator.vibrate) navigator.vibrate(15);
                       onDeleteTask(task.id);
                     }}
-                    className="p-2 border border-red-500/20 hover:border-red-500/50 hover:bg-red-950/20 text-red-400/60 hover:text-red-400 cursor-pointer shrink-0 transition-colors"
+                    className="p-2 border border-rose-500/20 hover:border-rose-500/50 hover:bg-rose-950/30 text-rose-400 rounded-xl cursor-pointer shrink-0 transition-colors"
                     title="Удалить задачу"
                     id={`btn-del-task-${task.id}`}
                   >
@@ -406,19 +475,66 @@ export function VehicleTasks({
             );
           })
         ) : (
-          <div className="bento-card border-dashed border-cyan-800/40 p-12 text-center blueprint-corner">
-            <CheckSquare className="w-12 h-12 text-blueprint-cyan/20 mx-auto mb-3 animate-pulse" />
-            <h4 className="text-xs font-bold text-cyan-200/80 font-mono uppercase mb-1">
+          <div className="bg-[#10151E] border border-dashed border-[#1E2638] p-12 text-center rounded-2xl">
+            <CheckSquare className="w-12 h-12 text-slate-700 mx-auto mb-3" />
+            <h4 className="text-sm font-bold text-slate-300 mb-1">
               {filter === 'pending' ? 'Нет активных задач' : filter === 'completed' ? 'Нет выполненных задач' : 'Список задач пуст'}
             </h4>
-            <p className="text-[11px] text-cyan-400/40 font-mono max-w-sm mx-auto">
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
               {filter === 'pending' 
-                ? 'Все дела сделаны! Можете запланировать новое техобслуживание или замену деталей.'
+                ? 'Все задачи выполнены! Вы можете запланировать новое техобслуживание или замену деталей.'
                 : 'Пока нет записей в этом фильтре.'}
             </p>
           </div>
         )}
       </div>
+
+      {/* Edit Task & Photo Upload Modal */}
+      <EditTaskModal
+        isOpen={!!editingTask}
+        task={editingTask}
+        activeCarMileage={activeCarMileage}
+        onClose={() => setEditingTask(null)}
+        onSave={(updated) => {
+          if (onUpdateTask) {
+            onUpdateTask(updated);
+          }
+          setEditingTask(null);
+        }}
+      />
+
+      {/* Fullscreen Photo Lightbox from Card Click */}
+      {selectedPhotoUrl && (
+        <div 
+          className="fixed inset-0 z-[120] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setSelectedPhotoUrl(null)}
+        >
+          <div 
+            className="relative max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-2xl p-3 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+              <span className="text-xs text-cyan-300 font-semibold flex items-center gap-2">
+                <Camera className="w-4 h-4 text-cyan-400" />
+                Просмотр фотоотчета ремонта
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedPhotoUrl(null)}
+                className="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <img
+              src={selectedPhotoUrl}
+              alt="Просмотр фотоотчета"
+              className="max-h-[75vh] w-auto max-w-full object-contain mx-auto rounded-lg"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

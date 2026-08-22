@@ -10,7 +10,7 @@ import {
   query, 
   where 
 } from './firebaseConfig';
-import { Car, MaintenanceRecord, Part, VehicleTask, UserSettings } from '../types';
+import { Car, MaintenanceRecord, Part, VehicleTask, UserSettings, DiagnosticSession } from '../types';
 
 // CARS CRUD
 export async function fetchUserCars(userId: string): Promise<Car[]> {
@@ -151,3 +151,33 @@ export async function saveUserSettingsToFirestore(userId: string, settings: User
     console.error('Error saving user settings to Firestore:', error);
   }
 }
+
+// DIAGNOSTIC SESSIONS CRUD
+export async function fetchUserDiagnosticSessions(userId: string): Promise<DiagnosticSession[]> {
+  try {
+    const q = query(collection(db, 'diagnostic_sessions'), where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DiagnosticSession));
+  } catch (error) {
+    console.error('Error fetching diagnostic sessions from Firestore:', error);
+    return [];
+  }
+}
+
+export async function saveDiagnosticSessionToFirestore(session: DiagnosticSession): Promise<void> {
+  try {
+    const sessionRef = doc(db, 'diagnostic_sessions', session.id);
+    await setDoc(sessionRef, session, { merge: true });
+  } catch (error) {
+    console.error('Error saving diagnostic session to Firestore:', error);
+  }
+}
+
+export async function deleteDiagnosticSessionFromFirestore(sessionId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'diagnostic_sessions', sessionId));
+  } catch (error) {
+    console.error('Error deleting diagnostic session from Firestore:', error);
+  }
+}
+
