@@ -273,17 +273,17 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-md transition-all duration-300 font-sans">
-      <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-h-[calc(100vh-80px)] md:max-h-[92vh] mb-14 md:mb-0 flex flex-col overflow-hidden relative">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm transition-all duration-300 font-sans">
+      <div className="w-full max-w-4xl bg-[#111622] border border-[#1E273D] rounded-2xl shadow-2xl max-h-[calc(100vh-80px)] md:max-h-[92vh] mb-14 md:mb-0 flex flex-col overflow-hidden relative">
         
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 bg-slate-900 border-b border-slate-800 flex justify-between items-center shrink-0">
+        <div className="p-3.5 sm:p-4 bg-[#111622] border-b border-[#1E273D] flex justify-between items-center shrink-0">
           <div>
-            <span className="text-[10px] text-cyan-400 tracking-wider font-semibold uppercase flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-cyan-400" />
-              <span>OEM-Справочник механика</span>
+            <span className="text-[10px] text-[#06B6D4] font-semibold uppercase flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <span>Технические данные и схемы</span>
             </span>
-            <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2 mt-0.5">
+            <h2 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5 mt-0.5">
               <span>Спецификации:</span>
               <span className="text-cyan-300">{carName}</span>
             </h2>
@@ -291,47 +291,47 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-xl transition-colors cursor-pointer"
-            title="Закрыть справочник"
+            className="p-1.5 text-slate-400 hover:text-white bg-[#151C2C] rounded-lg transition-colors cursor-pointer"
+            title="Закрыть"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Search & Active Car passport HUD */}
-        <div className="p-3.5 sm:p-4 bg-slate-950 border-b border-slate-800 space-y-3 shrink-0">
-          <div className="flex flex-col sm:flex-row gap-2.5">
+        <div className="p-3 bg-[#0B0E14] border-b border-[#1E273D] space-y-2.5 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2">
             {/* Live Filter Search input */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Поиск по параметрам (свечи, затяжка, предохранитель, масло)..."
+                placeholder="Поиск параметров (свечи, масло, затяжка)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-cyan-400 placeholder:text-slate-500"
+                className="w-full pl-8 pr-7 py-2 bg-[#111622] border border-[#1E273D] rounded-xl text-slate-100 text-xs focus:outline-none focus:border-cyan-400 placeholder:text-slate-500"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
             {/* Quick Car Info Tag */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 flex items-center justify-between sm:justify-start gap-3 shrink-0 text-xs">
-              <span className="text-slate-400">Автомобиль:</span>
-              <span className="text-cyan-300 font-semibold">
-                {activeCar ? `${activeCar.make} ${activeCar.model} (${activeCar.year})` : 'Не выбран'}
+            <div className="bg-[#111622] border border-[#1E273D] rounded-xl px-3 py-1.5 flex items-center justify-between sm:justify-start gap-2 shrink-0 text-xs">
+              <span className="text-slate-400">Авто:</span>
+              <span className="text-cyan-300 font-medium">
+                {activeCar ? `${activeCar.make} ${activeCar.model}` : 'Не выбран'}
               </span>
             </div>
           </div>
 
           {/* Categories Navigation Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
             {CATEGORIES.map((cat) => {
               const IconComp = cat.icon;
               const isActive = selectedCategory === cat.id;
@@ -343,15 +343,15 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-all border cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1.5 text-xs font-medium rounded-xl whitespace-nowrap transition-all border cursor-pointer flex items-center gap-1.5 ${
                     isActive 
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400' 
-                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
+                      ? 'bg-[#151C2C] text-[#06B6D4] border-cyan-500/40' 
+                      : 'bg-[#111622] text-slate-400 border-[#1E273D] hover:border-slate-700 hover:text-slate-200'
                   }`}
                 >
                   <IconComp className="w-3.5 h-3.5 shrink-0" />
                   <span>{cat.title}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${isActive ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}`}>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${isActive ? 'bg-[#06B6D4] text-slate-950 font-bold' : 'bg-[#0B0E14] text-slate-400'}`}>
                     {count}
                   </span>
                 </button>
@@ -361,49 +361,49 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
         </div>
 
         {/* Content Area with Cards or Diagrams */}
-        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+        <div className="p-4 overflow-y-auto space-y-3.5 flex-1">
           {selectedCategory === 'diagrams' ? (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {/* Diagrams Search Control Header */}
-              <div className="bg-slate-950 p-4 border border-slate-800 rounded-2xl space-y-3">
+              <div className="bg-[#0B0E14] p-3.5 border border-[#1E273D] rounded-xl space-y-2.5">
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
                       placeholder={`Запрос для схемы (${activeCar ? `${activeCar.make} ${activeCar.model}` : 'автомобиля'})...`}
                       value={diagramSearchInput}
                       onChange={(e) => setDiagramSearchInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearchDiagrams()}
-                      className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-cyan-400 placeholder:text-slate-500"
+                      className="w-full pl-8 pr-3 py-2 bg-[#111622] border border-[#1E273D] rounded-xl text-slate-100 text-xs focus:outline-none focus:border-cyan-400 placeholder:text-slate-500"
                     />
                   </div>
 
                   <button
                     onClick={() => handleSearchDiagrams()}
                     disabled={isLoadingDiagrams}
-                    className="btn-primary min-h-[40px] px-4 text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="btn-primary min-h-[38px] px-3.5 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     {isLoadingDiagrams ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-950" />
                     ) : (
-                      <Zap className="w-4 h-4" />
+                      <Zap className="w-3.5 h-3.5" />
                     )}
-                    <span>Найти схемы электропроводки</span>
+                    <span>Найти схемы</span>
                   </button>
                 </div>
 
                 {/* Query Quick Presets & Upload */}
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-xs text-slate-400">Быстрые запросы:</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[11px] text-slate-400">Быстрые:</span>
                     <button
                       onClick={() => {
                         const q = `${activeCar?.make || ''} ${activeCar?.model || ''} схема предохранителей и реле распиновка`;
                         setDiagramSearchInput(q);
                         handleSearchDiagrams(q);
                       }}
-                      className="px-2.5 py-1 bg-slate-900 border border-slate-800 hover:border-cyan-400 text-slate-300 text-xs rounded-lg cursor-pointer"
+                      className="px-2 py-0.5 bg-[#111622] border border-[#1E273D] hover:border-cyan-500/50 text-slate-300 text-[11px] rounded-lg cursor-pointer"
                     >
                       ⚡ Предохранители
                     </button>
@@ -413,7 +413,7 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
                         setDiagramSearchInput(q);
                         handleSearchDiagrams(q);
                       }}
-                      className="px-2.5 py-1 bg-slate-900 border border-slate-800 hover:border-cyan-400 text-slate-300 text-xs rounded-lg cursor-pointer"
+                      className="px-2 py-0.5 bg-[#111622] border border-[#1E273D] hover:border-cyan-500/50 text-slate-300 text-[11px] rounded-lg cursor-pointer"
                     >
                       🔌 Распиновка ЭБУ
                     </button>
@@ -423,9 +423,9 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
                         setDiagramSearchInput(q);
                         handleSearchDiagrams(q);
                       }}
-                      className="px-2.5 py-1 bg-slate-900 border border-slate-800 hover:border-cyan-400 text-slate-300 text-xs rounded-lg cursor-pointer"
+                      className="px-2 py-0.5 bg-[#111622] border border-[#1E273D] hover:border-cyan-500/50 text-slate-300 text-[11px] rounded-lg cursor-pointer"
                     >
-                      🔋 Генератор и стартер
+                      🔋 Генератор/стартер
                     </button>
                   </div>
 
@@ -439,9 +439,9 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
                     />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="btn-secondary min-h-[34px] px-3 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer"
+                      className="btn-secondary py-1 px-2.5 text-[11px] font-medium rounded-lg flex items-center gap-1 cursor-pointer"
                     >
-                      <Upload className="w-3.5 h-3.5 text-cyan-400" />
+                      <Upload className="w-3 h-3 text-[#06B6D4]" />
                       <span>Загрузить свою схему</span>
                     </button>
                   </div>
@@ -451,51 +451,51 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
               {/* Diagrams Grid */}
               <div className="space-y-3">
                 {isLoadingDiagrams ? (
-                  <div className="p-12 text-center bg-slate-950 border border-slate-800 rounded-2xl">
-                    <Loader2 className="w-8 h-8 animate-spin text-cyan-400 mx-auto mb-2" />
+                  <div className="p-10 text-center bg-[#0B0E14] border border-[#1E273D] rounded-xl">
+                    <Loader2 className="w-6 h-6 animate-spin text-[#06B6D4] mx-auto mb-2" />
                     <p className="text-xs text-slate-400">
-                      Идет поиск схем электропроводки и документации...
+                      Идет поиск схем электропроводки...
                     </p>
                   </div>
                 ) : diagrams.length === 0 ? (
-                  <div className="p-8 text-center bg-slate-950 border border-slate-800 rounded-2xl">
-                    <Image className="w-10 h-10 text-slate-700 mx-auto mb-2" />
+                  <div className="p-8 text-center bg-[#0B0E14] border border-[#1E273D] rounded-xl">
+                    <Image className="w-8 h-8 text-slate-600 mx-auto mb-2" />
                     <p className="text-xs text-slate-400">
                       Схемы не найдены. Попробуйте уточнить поисковый запрос выше.
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {diagrams.map((diag) => {
                       const isSaved = savedOfflineDiagrams.some(d => d.id === diag.id);
                       return (
                         <div
                           key={diag.id}
-                          className="border border-slate-800 bg-slate-950 rounded-2xl overflow-hidden hover:border-cyan-400 transition-all flex flex-col justify-between group"
+                          className="border border-[#1E273D] bg-[#0B0E14] rounded-xl overflow-hidden hover:border-cyan-500/40 transition-all flex flex-col justify-between group"
                         >
                           <div 
                             onClick={() => setSelectedLightboxDiagram(diag)}
-                            className="relative h-44 bg-slate-900 cursor-pointer overflow-hidden group/img border-b border-slate-800 flex items-center justify-center p-2"
+                            className="relative h-36 bg-[#111622] cursor-pointer overflow-hidden group/img border-b border-[#1E273D] flex items-center justify-center p-2"
                           >
                             <DiagramImage
                               diagram={diag}
                               carName={carName}
                               className="max-h-full max-w-full object-contain group-hover/img:scale-105 transition-transform duration-300"
                             />
-                            <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                              <span className="px-3 py-1.5 bg-cyan-400 text-slate-950 font-bold text-xs rounded-lg flex items-center gap-1">
-                                <ZoomIn className="w-4 h-4" />
-                                Масштаб
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <span className="px-2.5 py-1 bg-[#06B6D4] text-slate-950 font-bold text-[11px] rounded-lg flex items-center gap-1">
+                                <ZoomIn className="w-3.5 h-3.5" />
+                                Открыть
                               </span>
                             </div>
-                            <span className="absolute top-2 left-2 text-[10px] font-semibold text-cyan-300 bg-slate-950/90 px-2 py-0.5 rounded border border-slate-800">
+                            <span className="absolute top-2 left-2 text-[10px] font-medium text-cyan-300 bg-[#0B0E14]/90 px-2 py-0.5 rounded border border-[#1E273D]">
                               {diag.category}
                             </span>
                           </div>
 
-                          <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+                          <div className="p-3 space-y-2 flex-1 flex flex-col justify-between">
                             <div>
-                              <h4 className="text-xs font-bold text-slate-100 leading-tight group-hover:text-cyan-300 transition-colors">
+                              <h4 className="text-xs font-semibold text-slate-100 leading-tight group-hover:text-cyan-300 transition-colors">
                                 {diag.title}
                               </h4>
                               <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
@@ -503,23 +503,23 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
                               </p>
                             </div>
 
-                            <div className="pt-2 flex items-center gap-2 border-t border-slate-800">
+                            <div className="pt-2 flex items-center gap-2 border-t border-[#1E273D]">
                               <button
                                 onClick={() => setSelectedLightboxDiagram(diag)}
-                                className="flex-1 py-1.5 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
+                                className="flex-1 py-1 px-2 bg-[#111622] hover:bg-[#151C2C] border border-[#1E273D] rounded-lg text-slate-300 text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
                               >
-                                <ZoomIn className="w-3.5 h-3.5 text-cyan-400" />
+                                <ZoomIn className="w-3.5 h-3.5 text-[#06B6D4]" />
                                 <span>Открыть</span>
                               </button>
 
                               <button
                                 onClick={() => handleToggleSaveOffline(diag)}
-                                className={`py-1.5 px-3 rounded-lg border text-xs transition-all flex items-center gap-1 cursor-pointer ${
+                                className={`py-1 px-2.5 rounded-lg border text-xs transition-all flex items-center gap-1 cursor-pointer ${
                                   isSaved
                                     ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300'
-                                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-cyan-400'
+                                    : 'bg-[#111622] border-[#1E273D] text-slate-300 hover:border-cyan-500/40'
                                 }`}
-                                title={isSaved ? 'Сохранено оффлайн' : 'Сохранить для работы без интернета'}
+                                title={isSaved ? 'Сохранено' : 'Сохранить'}
                               >
                                 {isSaved ? (
                                   <>
@@ -528,7 +528,7 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
                                   </>
                                 ) : (
                                   <>
-                                    <Bookmark className="w-3.5 h-3.5 text-cyan-400" />
+                                    <Bookmark className="w-3.5 h-3.5 text-[#06B6D4]" />
                                     <span>Сохранить</span>
                                   </>
                                 )}
@@ -544,25 +544,25 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
 
               {/* Offline Saved Diagrams Section */}
               {savedOfflineDiagrams.length > 0 && (
-                <div className="pt-4 border-t border-slate-800">
-                  <h3 className="text-xs font-bold text-emerald-400 uppercase mb-3 flex items-center gap-2">
-                    <BookmarkCheck className="w-4 h-4 text-emerald-400" />
-                    <span>Сохраненные оффлайн-схемы в гараже ({savedOfflineDiagrams.length})</span>
+                <div className="pt-3 border-t border-[#1E273D]">
+                  <h3 className="text-xs font-semibold text-emerald-400 uppercase mb-2 flex items-center gap-1.5">
+                    <BookmarkCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Сохраненные схемы в гараже ({savedOfflineDiagrams.length})</span>
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                     {savedOfflineDiagrams.map((savedDiag) => (
                       <div
                         key={`saved-${savedDiag.id}`}
-                        className="bg-slate-950 border border-emerald-800/40 p-2.5 rounded-xl flex flex-col justify-between hover:border-emerald-400 transition-all"
+                        className="bg-[#0B0E14] border border-emerald-800/40 p-2.5 rounded-xl flex flex-col justify-between hover:border-emerald-400 transition-all"
                       >
                         <div className="flex items-center gap-2 mb-2">
                           <DiagramImage
                             diagram={savedDiag}
                             carName={carName}
-                            className="w-12 h-12 object-contain bg-slate-900 border border-emerald-800/40 rounded-lg shrink-0"
+                            className="w-10 h-10 object-contain bg-[#111622] border border-emerald-800/40 rounded-lg shrink-0"
                           />
                           <div className="min-w-0 flex-1">
-                            <h5 className="text-xs font-bold text-white truncate">
+                            <h5 className="text-xs font-medium text-white truncate">
                               {savedDiag.title}
                             </h5>
                             <span className="text-[10px] text-emerald-400/80 block">
@@ -572,7 +572,7 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
                         </div>
                         <button
                           onClick={() => setSelectedLightboxDiagram(savedDiag)}
-                          className="w-full py-1.5 bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-600/60 text-emerald-300 text-xs rounded-lg flex items-center justify-center gap-1 cursor-pointer font-semibold"
+                          className="w-full py-1 bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-600/60 text-emerald-300 text-xs rounded-lg flex items-center justify-center gap-1 cursor-pointer font-medium"
                         >
                           <ZoomIn className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Открыть оффлайн</span>
@@ -584,39 +584,39 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
               )}
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="p-8 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-950/50 space-y-2">
-              <Filter className="w-8 h-8 text-slate-600 mx-auto" />
+            <div className="p-8 text-center border border-dashed border-[#1E273D] rounded-xl bg-[#0B0E14] space-y-2">
+              <Filter className="w-6 h-6 text-slate-600 mx-auto" />
               <p className="text-xs text-slate-400">
-                По вашему запросу "{searchQuery}" ничего не найдено.
+                По вашему запросу «{searchQuery}» ничего не найдено.
               </p>
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCategory('all');
                 }}
-                className="btn-secondary px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer"
+                className="btn-secondary px-3 py-1.5 text-xs font-medium rounded-lg cursor-pointer"
               >
                 Сбросить фильтры
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filteredItems.map((spec) => {
                 const IconComp = spec.icon;
                 return (
                   <div 
                     key={spec.id}
-                    className="bento-card p-4 rounded-2xl flex flex-col justify-between group hover:border-cyan-400 transition-all"
+                    className="bg-[#0B0E14] border border-[#1E273D] p-3.5 rounded-xl flex flex-col justify-between group hover:border-cyan-500/40 transition-all shadow-sm"
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-semibold text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 rounded-lg border border-cyan-500/30">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-medium text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/25">
                           {spec.badge}
                         </span>
-                        <IconComp className="w-4 h-4 text-cyan-400" />
+                        <IconComp className="w-3.5 h-3.5 text-[#06B6D4]" />
                       </div>
 
-                      <h3 className="text-sm font-bold text-slate-100 mb-1.5 group-hover:text-cyan-300 transition-colors">
+                      <h3 className="text-xs sm:text-sm font-semibold text-slate-100 mb-1 group-hover:text-cyan-300 transition-colors">
                         {spec.title}
                       </h3>
 
@@ -627,10 +627,10 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
 
                     <button
                       onClick={() => handleSelectPreset(spec)}
-                      className="btn-primary w-full py-2.5 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+                      className="btn-primary w-full py-2 px-3 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <Bot className="w-4 h-4 shrink-0" />
-                      <span>Выгрузить OEM-спецификацию</span>
+                      <Bot className="w-3.5 h-3.5 shrink-0" />
+                      <span>Выгрузить спецификацию</span>
                     </button>
                   </div>
                 );
@@ -639,49 +639,46 @@ export function TechSpecsModal({ activeCar, onClose, onAskVasilich }: TechSpecsM
           )}
 
           {/* Quick static specs passport */}
-          <div className="mt-6 border border-slate-800 bg-slate-950 p-4 rounded-2xl">
+          <div className="mt-4 border border-[#1E273D] bg-[#0B0E14] p-3.5 rounded-xl">
             {activeCar ? (
               <>
-                <h4 className="text-xs font-bold text-cyan-400 uppercase mb-3 flex items-center gap-2 border-b border-slate-800 pb-2">
-                  <Check className="w-4 h-4 text-emerald-400" />
-                  <span>Активный автомобиль: {activeCar.make} {activeCar.model}</span>
+                <h4 className="text-xs font-semibold text-[#06B6D4] uppercase mb-2.5 flex items-center gap-1.5 border-b border-[#1E273D] pb-2">
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Автомобиль: {activeCar.make} {activeCar.model}</span>
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-xs text-slate-300">
-                  <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px] uppercase font-medium">Марка и модель</span>
-                    <span className="font-semibold text-slate-100">{activeCar.make} {activeCar.model} ({activeCar.year})</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-300">
+                  <div className="bg-[#111622] p-2 rounded-lg border border-[#1E273D]">
+                    <span className="text-slate-500 block text-[10px] uppercase">Марка и модель</span>
+                    <span className="font-medium text-slate-100">{activeCar.make} {activeCar.model} ({activeCar.year})</span>
                   </div>
-                  <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px] uppercase font-medium">Двигатель</span>
-                    <span className="font-semibold text-slate-100">{activeCar.engine || 'Не указан'}</span>
+                  <div className="bg-[#111622] p-2 rounded-lg border border-[#1E273D]">
+                    <span className="text-slate-500 block text-[10px] uppercase">Двигатель</span>
+                    <span className="font-medium text-slate-100">{activeCar.engine || 'Не указан'}</span>
                   </div>
-                  <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px] uppercase font-medium">VIN / Кузов</span>
+                  <div className="bg-[#111622] p-2 rounded-lg border border-[#1E273D]">
+                    <span className="text-slate-500 block text-[10px] uppercase">VIN</span>
                     <span className="font-mono text-slate-100">{activeCar.vin || 'Не указан'}</span>
                   </div>
-                  <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px] uppercase font-medium">Госномер</span>
+                  <div className="bg-[#111622] p-2 rounded-lg border border-[#1E273D]">
+                    <span className="text-slate-500 block text-[10px] uppercase">Госномер</span>
                     <span className="font-mono text-slate-100">{activeCar.licensePlate || 'Не указан'}</span>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="text-xs text-slate-400 flex items-center gap-2 p-2">
+              <div className="text-xs text-slate-400 flex items-center gap-2 p-1">
                 <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Автомобиль не выбран. Перейдите в раздел <strong>Гараж</strong>, чтобы выбрать авто.</span>
+                <span>Автомобиль не выбран. Выберите машину в разделе Гараж.</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Modal Footer */}
-        <div className="p-3.5 bg-slate-950 border-t border-slate-800 flex justify-between items-center shrink-0">
-          <span className="text-xs text-slate-500 hidden sm:inline">
-            Василич сгенерирует таблицу OEM-параметров и предоставит схемы ремонта.
-          </span>
+        <div className="p-3 bg-[#111622] border-t border-[#1E273D] flex justify-end items-center shrink-0">
           <button
             onClick={onClose}
-            className="btn-secondary min-h-[38px] px-4 text-xs font-semibold rounded-xl cursor-pointer ml-auto"
+            className="btn-secondary py-1.5 px-4 text-xs font-medium rounded-xl cursor-pointer"
           >
             Закрыть
           </button>

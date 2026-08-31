@@ -42,11 +42,11 @@ export function GarageHub({
   const [subTab, setSubTab] = useState<'cars' | 'parts' | 'settings'>(initialSubTab);
 
   return (
-    <div className="space-y-4 font-sans">
+    <div className="space-y-3.5 font-sans pb-20">
       
       {/* Top Segmented Switch: [ АВТОПАРК ] [ СКЛАД ЗАПЧАСТЕЙ ] [ НАСТРОЙКИ ] */}
-      <div className="bg-[#10151E] border border-[#1E2638] p-1.5 rounded-2xl shadow-sm">
-        <div className="grid grid-cols-3 gap-1.5 w-full">
+      <div className="bg-[#111622] border border-[#1E273D] p-1 rounded-xl shadow-sm">
+        <div className="grid grid-cols-3 gap-1 w-full">
           {/* АВТОПАРК */}
           <button
             type="button"
@@ -54,15 +54,15 @@ export function GarageHub({
               if (navigator.vibrate) navigator.vibrate(10);
               setSubTab('cars');
             }}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
+            className={`py-2 px-2 sm:px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
               subTab === 'cars'
-                ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151B25]'
+                ? 'bg-[#151C2C] text-[#06B6D4] border border-[#06B6D4]/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151C2C]/50 border border-transparent'
             }`}
             id="subtab-garage-cars"
           >
-            <CarIcon className="w-4 h-4 shrink-0" />
-            <span className="truncate">Автопарк ({cars.length})</span>
+            <CarIcon className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Гараж ({cars.length})</span>
           </button>
 
           {/* СКЛАД */}
@@ -72,14 +72,14 @@ export function GarageHub({
               if (navigator.vibrate) navigator.vibrate(10);
               setSubTab('parts');
             }}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
+            className={`py-2 px-2 sm:px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
               subTab === 'parts'
-                ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151B25]'
+                ? 'bg-[#151C2C] text-[#06B6D4] border border-[#06B6D4]/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151C2C]/50 border border-transparent'
             }`}
             id="subtab-garage-parts"
           >
-            <Package className="w-4 h-4 shrink-0" />
+            <Package className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">Склад ({parts.length})</span>
           </button>
 
@@ -90,14 +90,14 @@ export function GarageHub({
               if (navigator.vibrate) navigator.vibrate(10);
               setSubTab('settings');
             }}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
+            className={`py-2 px-2 sm:px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
               subTab === 'settings'
-                ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151B25]'
+                ? 'bg-[#151C2C] text-[#06B6D4] border border-[#06B6D4]/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151C2C]/50 border border-transparent'
             }`}
             id="subtab-garage-settings"
           >
-            <Settings className="w-4 h-4 shrink-0" />
+            <Settings className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">Настройки</span>
           </button>
         </div>

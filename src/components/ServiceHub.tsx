@@ -52,11 +52,11 @@ export function ServiceHub({
   const activeCarRecords = records.filter(r => r.carId === activeCar?.id);
 
   return (
-    <div className="space-y-4 font-sans">
+    <div className="space-y-3.5 font-sans pb-20">
       
       {/* Top Segmented Switch: [ ПЛАН ] [ ИСТОРИЯ ] */}
-      <div className="flex items-center justify-between bg-[#10151E] border border-[#1E2638] p-1.5 rounded-2xl shadow-sm">
-        <div className="flex items-center gap-1.5 w-full">
+      <div className="flex items-center justify-between bg-[#111622] border border-[#1E273D] p-1 rounded-xl shadow-sm">
+        <div className="flex items-center gap-1 w-full">
           {/* ПЛАН */}
           <button
             type="button"
@@ -64,19 +64,17 @@ export function ServiceHub({
               if (navigator.vibrate) navigator.vibrate(10);
               setSubTab('plan');
             }}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               subTab === 'plan'
-                ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151B25]'
+                ? 'bg-[#151C2C] text-[#06B6D4] border border-[#06B6D4]/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151C2C]/50 border border-transparent'
             }`}
             id="subtab-service-plan"
           >
-            <CheckSquare className="w-4 h-4" />
-            <span>План обслуживания</span>
+            <CheckSquare className="w-3.5 h-3.5" />
+            <span>План ТО</span>
             {activeCarTasks.length > 0 && (
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold ${
-                subTab === 'plan' ? 'bg-slate-950 text-cyan-300' : 'bg-[#151B25] text-cyan-400 border border-[#1E2638]'
-              }`}>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-medium bg-[#0B0E14] text-[#06B6D4] border border-[#1E273D]">
                 {activeCarTasks.length}
               </span>
             )}
@@ -89,18 +87,16 @@ export function ServiceHub({
               if (navigator.vibrate) navigator.vibrate(10);
               setSubTab('history');
             }}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               subTab === 'history'
-                ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151B25]'
+                ? 'bg-[#151C2C] text-[#06B6D4] border border-[#06B6D4]/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-[#151C2C]/50 border border-transparent'
             }`}
             id="subtab-service-history"
           >
-            <History className="w-4 h-4" />
+            <History className="w-3.5 h-3.5" />
             <span>История ТО</span>
-            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold ${
-              subTab === 'history' ? 'bg-slate-950 text-cyan-300' : 'bg-[#151B25] text-slate-300 border border-[#1E2638]'
-            }`}>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-medium bg-[#0B0E14] text-slate-300 border border-[#1E273D]">
               {activeCarRecords.length}
             </span>
           </button>
@@ -120,8 +116,8 @@ export function ServiceHub({
             onMarkTaskCompleted={onMarkTaskCompleted}
           />
         ) : (
-          <div className="bento-card p-6 text-center text-slate-400 text-xs">
-            Выберите автомобиль для просмотра задач ТО.
+          <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-6 text-center text-slate-400 text-xs">
+            Выберите автомобиль для просмотра плана ТО.
           </div>
         )
       ) : (

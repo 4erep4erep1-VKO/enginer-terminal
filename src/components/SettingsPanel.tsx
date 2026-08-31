@@ -148,41 +148,38 @@ export function SettingsPanel() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto font-sans">
+    <div className="space-y-4 max-w-4xl mx-auto font-sans">
       {/* Header */}
-      <div className="bento-card p-6 relative overflow-hidden">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-2xl shrink-0">
-            <Settings className="w-6 h-6 animate-spin-slow" />
+      <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-4 sm:p-5 relative shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/25 text-[#06B6D4] rounded-xl shrink-0">
+            <Settings className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] text-cyan-400 font-semibold tracking-wider uppercase block">
-              Конфигуратор приложения
-            </span>
-            <h2 className="text-xl font-bold text-slate-100 tracking-tight mt-0.5">
-              Системные параметры и ассистент
+            <h2 className="text-base font-bold text-white tracking-tight">
+              Настройки приложения
             </h2>
-            <p className="text-xs text-slate-400 mt-1 max-w-xl">
-              Настройте региональные стандарты, валюту финансового учета, единицы измерения и характер искусственного интеллекта «Василич».
+            <p className="text-xs text-slate-400 mt-0.5 max-w-xl">
+              Валюта, единицы измерения, характер Василича и резервное копирование данных.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Unit Settings & Financial Accounting */}
-        <div className="bento-card p-6 relative space-y-6">
-          <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
-            <Gauge className="w-4 h-4 text-cyan-400" />
+        <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-4 sm:p-5 relative space-y-4 shadow-sm">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-100 flex items-center gap-2">
+            <Gauge className="w-4 h-4 text-[#06B6D4]" />
             <span>Единицы измерения и валюта</span>
           </h3>
 
           {/* Currency */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5 text-cyan-400" /> Валюта учета
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-300 flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-[#06B6D4]" /> Валюта учета
             </label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               {(['KZT', 'RUB', 'USD', 'EUR'] as Currency[]).map((curr) => {
                 const labels: Record<Currency, string> = {
                   KZT: '₸ KZT',
@@ -195,10 +192,10 @@ export function SettingsPanel() {
                   <button
                     key={curr}
                     onClick={() => handleCurrencyChange(curr)}
-                    className={`py-2 px-1 text-xs rounded-xl border transition-all cursor-pointer text-center font-semibold ${
+                    className={`py-2 px-1 text-xs rounded-xl border transition-all cursor-pointer text-center font-medium ${
                       active
-                        ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
-                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#151C2C] border-cyan-500/50 text-[#06B6D4]'
+                        : 'border-[#1E273D] bg-[#0B0E14] text-slate-400 hover:text-slate-200'
                     }`}
                     id={`btn-curr-${curr.toLowerCase()}`}
                   >
@@ -210,11 +207,11 @@ export function SettingsPanel() {
           </div>
 
           {/* Distance */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <Gauge className="w-3.5 h-3.5 text-cyan-400" /> Пробег
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-300 flex items-center gap-1.5">
+              <Gauge className="w-3.5 h-3.5 text-[#06B6D4]" /> Пробег
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {(['km', 'mi'] as DistanceUnit[]).map((unit) => {
                 const labels: Record<DistanceUnit, string> = {
                   km: 'Километры (км)',
@@ -225,10 +222,10 @@ export function SettingsPanel() {
                   <button
                     key={unit}
                     onClick={() => handleDistanceChange(unit)}
-                    className={`py-2.5 px-3 text-xs rounded-xl border transition-all cursor-pointer text-center font-semibold ${
+                    className={`py-2 px-2 text-xs rounded-xl border transition-all cursor-pointer text-center font-medium ${
                       active
-                        ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
-                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#151C2C] border-cyan-500/50 text-[#06B6D4]'
+                        : 'border-[#1E273D] bg-[#0B0E14] text-slate-400 hover:text-slate-200'
                     }`}
                     id={`btn-dist-${unit}`}
                   >
@@ -240,11 +237,11 @@ export function SettingsPanel() {
           </div>
 
           {/* Volume */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <Droplet className="w-3.5 h-3.5 text-cyan-400" /> Объем топлива и жидкостей
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-300 flex items-center gap-1.5">
+              <Droplet className="w-3.5 h-3.5 text-[#06B6D4]" /> Объем топлива и жидкостей
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {(['L', 'gal'] as VolumeUnit[]).map((unit) => {
                 const labels: Record<VolumeUnit, string> = {
                   L: 'Литры (л)',
@@ -255,10 +252,10 @@ export function SettingsPanel() {
                   <button
                     key={unit}
                     onClick={() => handleVolumeChange(unit)}
-                    className={`py-2.5 px-3 text-xs rounded-xl border transition-all cursor-pointer text-center font-semibold ${
+                    className={`py-2 px-2 text-xs rounded-xl border transition-all cursor-pointer text-center font-medium ${
                       active
-                        ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
-                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#151C2C] border-cyan-500/50 text-[#06B6D4]'
+                        : 'border-[#1E273D] bg-[#0B0E14] text-slate-400 hover:text-slate-200'
                     }`}
                     id={`btn-vol-${unit.toLowerCase()}`}
                   >
@@ -270,11 +267,11 @@ export function SettingsPanel() {
           </div>
 
           {/* Pressure */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-cyan-400" /> Давление (OBD2 / шины)
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-300 flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-[#06B6D4]" /> Давление
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               {(['bar', 'kPa', 'PSI'] as PressureUnit[]).map((unit) => {
                 const labels: Record<PressureUnit, string> = {
                   bar: 'Бар (bar)',
@@ -286,10 +283,10 @@ export function SettingsPanel() {
                   <button
                     key={unit}
                     onClick={() => handlePressureChange(unit)}
-                    className={`py-2 px-2 text-xs rounded-xl border transition-all cursor-pointer text-center font-semibold ${
+                    className={`py-2 px-2 text-xs rounded-xl border transition-all cursor-pointer text-center font-medium ${
                       active
-                        ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
-                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#151C2C] border-cyan-500/50 text-[#06B6D4]'
+                        : 'border-[#1E273D] bg-[#0B0E14] text-slate-400 hover:text-slate-200'
                     }`}
                     id={`btn-press-${unit.toLowerCase()}`}
                   >
@@ -301,99 +298,93 @@ export function SettingsPanel() {
           </div>
 
           {/* Garage Mode Toggle */}
-          <div className="pt-3 border-t border-slate-800 space-y-2">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <Wrench className="w-3.5 h-3.5 text-cyan-400" /> Гаражный режим (крупный интерфейс)
+          <div className="pt-2.5 border-t border-[#1E273D] space-y-1.5">
+            <label className="block text-xs font-medium text-slate-300 flex items-center gap-1.5">
+              <Wrench className="w-3.5 h-3.5 text-[#06B6D4]" /> Крупный гаражный режим
             </label>
             <button
               type="button"
               onClick={handleGarageModeToggle}
-              className={`w-full py-3 px-4 rounded-xl border text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+              className={`w-full py-2.5 px-3.5 rounded-xl border text-xs font-medium transition-all flex items-center justify-between cursor-pointer ${
                 settings.garageMode
-                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 shadow-md shadow-cyan-500/10'
-                  : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:border-slate-700'
+                  ? 'bg-[#151C2C] text-[#06B6D4] border-cyan-500/50'
+                  : 'bg-[#0B0E14] text-slate-400 border-[#1E273D] hover:border-slate-700'
               }`}
               id="btn-toggle-garage-mode"
             >
-              <span>{settings.garageMode ? 'Гаражный режим активен' : 'Обычный режим'}</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-lg font-bold ${settings.garageMode ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>
+              <span>{settings.garageMode ? 'Гаражный режим включен' : 'Обычный режим'}</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-lg font-semibold ${settings.garageMode ? 'bg-[#06B6D4] text-slate-950' : 'bg-[#151C2C] text-slate-400'}`}>
                 {settings.garageMode ? 'ВКЛ' : 'ВЫКЛ'}
               </span>
             </button>
             <p className="text-[11px] text-slate-500">
-              Увеличивает размер элементов интерфейса и кнопок для удобной работы в гараже или перчатках.
+              Увеличивает размер элементов интерфейса для удобного нажатия в гараже.
             </p>
           </div>
         </div>
 
         {/* AI Assistant Tone Settings */}
-        <div className="bento-card p-6 relative space-y-6">
-          <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-cyan-400" />
-            <span>Стиль общения «Василича»</span>
+        <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-4 sm:p-5 relative space-y-3.5 shadow-sm">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-100 flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-[#06B6D4]" />
+            <span>Стиль общения Василича</span>
           </h3>
 
-          <div className="space-y-4">
-            <label className="block text-xs font-semibold text-slate-300">
-              Выберите тональность автоассистента:
+          <div className="space-y-2.5">
+            <label className="block text-xs font-medium text-slate-300">
+              Выберите манеру ответов:
             </label>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {/* Tone Option 1: Vasilich */}
               <button
                 type="button"
                 onClick={() => handleToneChange('vasilich')}
-                className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer flex flex-col gap-1.5 relative ${
+                className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col gap-1 relative ${
                   settings.assistantTone === 'vasilich'
-                    ? 'bg-cyan-500/10 border-cyan-400 text-slate-100 shadow-md shadow-cyan-500/10'
-                    : 'border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200 bg-slate-900/40'
+                    ? 'bg-[#151C2C] border-cyan-500/50 text-slate-100 shadow-sm'
+                    : 'border-[#1E273D] text-slate-400 hover:text-slate-200 bg-[#0B0E14]'
                 }`}
                 id="btn-tone-vasilich"
               >
                 <div className="flex justify-between items-center w-full">
-                  <span className="text-xs font-bold text-cyan-300">
-                    Опытный гаражный механик
+                  <span className="text-xs font-semibold text-cyan-300">
+                    Опытный механик (по умолчанию)
                   </span>
                   {settings.assistantTone === 'vasilich' && (
-                    <span className="text-[9px] bg-cyan-400 text-slate-950 font-bold px-2 py-0.5 rounded-md">
-                      Активен
+                    <span className="text-[9px] bg-[#06B6D4] text-slate-950 font-bold px-1.5 py-0.5 rounded">
+                      Выбран
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Простой, с легким гаражным юмором. Говорит как бывалый мастер, знающий каждую гайку.
-                </p>
-                <p className="text-[11px] text-slate-500 italic mt-0.5">
-                  Пример: «Здоро́во, хозяин! Глянул твою ходовку... Надо бы сайлентблоки махнуть, пока стойки не убил.»
+                <p className="text-xs text-slate-300 leading-snug">
+                  Простой и понятный язык с легким гаражным колоритом.
                 </p>
               </button>
 
-              {/* Tone Option 2: Strict Engineer Diagnostic */}
+              {/* Tone Option 2: Strict */}
               <button
                 type="button"
                 onClick={() => handleToneChange('strict')}
-                className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer flex flex-col gap-1.5 relative ${
+                className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col gap-1 relative ${
                   settings.assistantTone === 'strict'
-                    ? 'bg-cyan-500/10 border-cyan-400 text-slate-100 shadow-md shadow-cyan-500/10'
-                    : 'border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200 bg-slate-900/40'
+                    ? 'bg-[#151C2C] border-cyan-500/50 text-slate-100 shadow-sm'
+                    : 'border-[#1E273D] text-slate-400 hover:text-slate-200 bg-[#0B0E14]'
                 }`}
                 id="btn-tone-strict"
               >
                 <div className="flex justify-between items-center w-full">
-                  <span className="text-xs font-bold text-cyan-300">
+                  <span className="text-xs font-semibold text-cyan-300">
                     Строгий инженер-диагност
                   </span>
                   {settings.assistantTone === 'strict' && (
-                    <span className="text-[9px] bg-cyan-400 text-slate-950 font-bold px-2 py-0.5 rounded-md">
-                      Активен
+                    <span className="text-[9px] bg-[#06B6D4] text-slate-950 font-bold px-1.5 py-0.5 rounded">
+                      Выбран
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Сухой технический язык, точные допуски, терминология OEM и заводские моменты затяжки.
-                </p>
-                <p className="text-[11px] text-slate-500 italic mt-0.5">
-                  Пример: «Диагностика системы завершена. Допуск моментной затяжки свечей зажигания составляет 25 Нм.»
+                <p className="text-xs text-slate-300 leading-snug">
+                  Точный технический язык, регламенты OEM и моменты затяжки.
                 </p>
               </button>
 
@@ -401,28 +392,25 @@ export function SettingsPanel() {
               <button
                 type="button"
                 onClick={() => handleToneChange('brief')}
-                className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer flex flex-col gap-1.5 relative ${
+                className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col gap-1 relative ${
                   settings.assistantTone === 'brief'
-                    ? 'bg-cyan-500/10 border-cyan-400 text-slate-100 shadow-md shadow-cyan-500/10'
-                    : 'border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200 bg-slate-900/40'
+                    ? 'bg-[#151C2C] border-cyan-500/50 text-slate-100 shadow-sm'
+                    : 'border-[#1E273D] text-slate-400 hover:text-slate-200 bg-[#0B0E14]'
                 }`}
                 id="btn-tone-brief"
               >
                 <div className="flex justify-between items-center w-full">
-                  <span className="text-xs font-bold text-cyan-300">
-                    Коротко и по делу
+                  <span className="text-xs font-semibold text-cyan-300">
+                    Кратко и по делу
                   </span>
                   {settings.assistantTone === 'brief' && (
-                    <span className="text-[9px] bg-cyan-400 text-slate-950 font-bold px-2 py-0.5 rounded-md">
-                      Активен
+                    <span className="text-[9px] bg-[#06B6D4] text-slate-950 font-bold px-1.5 py-0.5 rounded">
+                      Выбран
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Минимум текста, только конкретные цифры, схемы, таблицы и пошаговые списки.
-                </p>
-                <p className="text-[11px] text-slate-500 italic mt-0.5">
-                  Пример: «Замена масла: 4.5 л 5W-40. Свечи: NGK BPR6ES-11. Задачи: 2 активны.»
+                <p className="text-xs text-slate-300 leading-snug">
+                  Минимум слов, только конкретные цифры и списки.
                 </p>
               </button>
             </div>
@@ -431,36 +419,36 @@ export function SettingsPanel() {
       </div>
 
       {/* Backup and Export Section */}
-      <div className="bento-card p-6 relative space-y-4">
-        <div className="flex items-center gap-3">
-          <Database className="w-5 h-5 text-cyan-400" />
-          <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
-            Резервное копирование и перенос данных (JSON)
+      <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-4 sm:p-5 relative space-y-3 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <Database className="w-4 h-4 text-[#06B6D4]" />
+          <h3 className="text-xs sm:text-sm font-bold text-slate-100">
+            Резервное копирование и экспорт (JSON)
           </h3>
         </div>
         <p className="text-xs text-slate-400 leading-relaxed">
-          Сохраните полную копию вашего гаража, журнала сервисных работ, запчастей и задач в файл JSON или восстановите данные из ранее сохраненной копии.
+          Сохраните резервную копию вашего гаража, журнала ТО, запчастей и задач в файл или восстановите данные.
         </p>
 
         {importStatus && (
-          <div className="p-3.5 bg-emerald-950/40 border border-emerald-500/50 text-emerald-300 text-xs rounded-xl flex items-center gap-2">
+          <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs rounded-xl flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{importStatus}</span>
           </div>
         )}
 
         {importError && (
-          <div className="p-3.5 bg-rose-950/40 border border-rose-500/50 text-rose-300 text-xs rounded-xl flex items-center gap-2">
+          <div className="p-3 bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs rounded-xl flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
             <span>{importError}</span>
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
           <button
             type="button"
             onClick={handleExportJSON}
-            className="btn-primary flex-1 min-h-[44px] px-4 text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+            className="btn-primary flex-1 py-2 px-4 text-xs font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer"
             id="btn-export-json"
           >
             <Download className="w-4 h-4" />
@@ -478,20 +466,20 @@ export function SettingsPanel() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="btn-secondary flex-1 min-h-[44px] px-4 text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+            className="btn-secondary flex-1 py-2 px-4 text-xs font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer"
             id="btn-import-json"
           >
-            <Upload className="w-4 h-4 text-cyan-400" />
+            <Upload className="w-4 h-4 text-[#06B6D4]" />
             <span>Импортировать JSON</span>
           </button>
         </div>
       </div>
 
       {/* Security note / footer status */}
-      <div className="border border-slate-800 bg-slate-900/60 rounded-2xl p-4 flex items-center gap-3">
-        <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0" />
+      <div className="border border-[#1E273D] bg-[#111622] rounded-2xl p-3.5 flex items-center gap-2.5">
+        <ShieldCheck className="w-4 h-4 text-[#06B6D4] shrink-0" />
         <span className="text-xs text-slate-400 leading-relaxed">
-          Все пользовательские настройки автоматически сохраняются в локальном защищенном хранилище и синхронизируются мгновенно.
+          Все данные и настройки сохраняются локально в вашем браузере.
         </span>
       </div>
     </div>

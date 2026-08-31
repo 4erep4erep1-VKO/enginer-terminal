@@ -1,20 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
-  --font-tech: "Chakra Petch", "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  
+
   --color-blueprint-bg: #090C12;
   --color-blueprint-bg-card: #10151E;
-  --color-blueprint-surface: #151B25;
-  --color-blueprint-surface-active: #1B2431;
-  --color-blueprint-border: #1E2638;
-  --color-blueprint-border-subtle: #273248;
-  --color-blueprint-grid: rgba(6, 182, 212, 0.015);
-  --color-blueprint-line: rgba(255, 255, 255, 0.04);
+  --color-blueprint-surface: #10151E;
+  --color-blueprint-surface-active: #151C2C;
+  --color-blueprint-border: rgba(6, 182, 212, 0.15);
+  --color-blueprint-border-subtle: rgba(6, 182, 212, 0.25);
   --color-blueprint-cyan: #06B6D4;
   --color-blueprint-cyan-dark: #0891B2;
   --color-blueprint-blue: #3B82F6;
@@ -25,111 +22,119 @@
   --color-blueprint-muted: #94A3B8;
 }
 
-/* Premium Automotive Dark UI System */
+/* Modern Calm Graphite Dark UI System */
 @layer base {
   * {
-    border-color: #1E2638;
+    border-color: rgba(6, 182, 212, 0.15);
   }
-  
+
   body {
     background-color: #090C12;
-    background-image: 
-      radial-gradient(circle at 20% 10%, rgba(6, 182, 212, 0.025) 0%, transparent 45%),
-      radial-gradient(circle at 80% 85%, rgba(59, 130, 246, 0.02) 0%, transparent 50%);
-    background-attachment: fixed;
     font-family: var(--font-sans);
     color: #F1F5F9;
     letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased;
   }
 
+  #root {
+    background-color: #090C12;
+    min-height: 100vh;
+  }
+
   /* Custom scrollbar for clean dark UI */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
+
   ::-webkit-scrollbar-track {
     background: #090C12;
   }
+
   ::-webkit-scrollbar-thumb {
-    background: #1E2638;
-    border-radius: 3px;
+    background: rgba(6, 182, 212, 0.15);
+    border-radius: 4px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
-    background: #273248;
+    background: rgba(6, 182, 212, 0.3);
   }
 }
 
-/* Premium Card Style - Clean, Elevated, Low Visual Noise */
+/* Modern Card Style - Glassmorphism & Bento */
 .bento-card {
   position: relative;
-  background-color: #10151E;
-  border: 1px solid #1E2638;
-  border-radius: 1rem; /* 16px */
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  background-color: rgba(16, 21, 30, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 
 .bento-card:hover {
-  border-color: #273248;
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
 }
 
-/* Active Highlight for Technical Selected Cards */
+/* Active Highlight Card */
 .bento-card-active {
-  border: 1px solid rgba(6, 182, 212, 0.6) !important;
-  background-color: #151B25 !important;
-  box-shadow: 0 4px 20px -2px rgba(6, 182, 212, 0.12) !important;
+  border: 1px solid rgba(6, 182, 212, 0.45);
+  background-color: rgba(21, 28, 44, 0.9);
 }
 
-/* Technical Glass/Elevated Panel Helper */
+/* Clean Surface Panel */
 .glass-panel {
-  background-color: #151B25;
-  border: 1px solid #1E2638;
-  border-radius: 0.875rem; /* 14px */
+  background-color: rgba(16, 21, 30, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: 0.875rem;
 }
 
-/* High-Contrast Technical CTA Button */
+/* Primary Cyan Action Button - Sleek & Modern */
 .btn-primary {
-  min-height: 42px;
-  padding: 0.5rem 1.125rem;
-  border-radius: 0.75rem; /* 12px */
+  min-height: 40px;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  /* 12px */
   background: #06B6D4;
-  color: #090C12;
-  font-weight: 700;
-  font-size: 0.8125rem; /* 13px */
+  color: #080B11;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  /* 13px */
   font-family: var(--font-sans);
-  transition: all 0.15s ease-in-out;
+  transition: background-color 0.15s ease, transform 0.1s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
   cursor: pointer;
-  border: 1px solid rgba(34, 211, 238, 0.4);
+  border: 1px solid transparent;
   user-select: none;
 }
 
 .btn-primary:hover {
   background: #22D3EE;
-  transform: translateY(-1px);
 }
 
 .btn-primary:active {
-  transform: translateY(0);
   background: #0891B2;
 }
 
 /* Secondary Button */
 .btn-secondary {
-  min-height: 42px;
-  padding: 0.5rem 1.125rem;
+  min-height: 40px;
+  padding: 0.5rem 1rem;
   border-radius: 0.75rem;
-  background-color: #151B25;
-  border: 1px solid #1E2638;
+  background-color: #151C2C;
+  border: 1px solid #1E273D;
   color: #F1F5F9;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.8125rem;
   font-family: var(--font-sans);
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -139,27 +144,27 @@
 }
 
 .btn-secondary:hover {
-  background-color: #1B2431;
-  border-color: #273248;
+  background-color: #1C253B;
+  border-color: #26324D;
   color: #FFFFFF;
 }
 
 .btn-secondary:active {
-  background-color: #10151E;
+  background-color: #111622;
 }
 
 /* Ghost Button */
 .btn-ghost {
-  min-height: 38px;
-  padding: 0.375rem 0.875rem;
+  min-height: 36px;
+  padding: 0.375rem 0.75rem;
   border-radius: 0.75rem;
   background-color: transparent;
   border: 1px solid transparent;
   color: #94A3B8;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.8125rem;
   font-family: var(--font-sans);
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -168,15 +173,14 @@
 }
 
 .btn-ghost:hover {
-  background-color: #151B25;
+  background-color: #151C2C;
   color: #F1F5F9;
-  border-color: #1E2638;
 }
 
 /* Form Input Field Component Class */
 .input-tech {
-  background-color: #151B25;
-  border: 1px solid #1E2638;
+  background-color: #151C2C;
+  border: 1px solid #1E273D;
   border-radius: 0.75rem;
   padding: 0.55rem 0.875rem;
   color: #F1F5F9;
@@ -190,7 +194,6 @@
 .input-tech:focus {
   outline: none;
   border-color: #06B6D4;
-  box-shadow: 0 0 0 1px #06B6D4;
 }
 
 .input-tech:disabled {
@@ -201,58 +204,64 @@
 /* Monospace Technical Data Value */
 .tech-val {
   font-family: var(--font-mono);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-/* High-contrast Technical Badge */
+/* Compact Badges */
 .badge-tech {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.25rem 0.625rem;
-  border-radius: 0.5rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.375rem;
   font-family: var(--font-mono);
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
-  text-transform: uppercase;
 }
 
 .badge-tech-cyan {
   background-color: rgba(6, 182, 212, 0.1);
-  border: 1px solid rgba(6, 182, 212, 0.25);
+  border: 1px solid rgba(6, 182, 212, 0.2);
   color: #22D3EE;
 }
 
 .badge-tech-emerald {
   background-color: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.2);
   color: #34D399;
 }
 
 .badge-tech-amber {
   background-color: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.2);
   color: #FBBF24;
 }
 
 .badge-tech-rose {
   background-color: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   color: #F87171;
 }
 
 .badge-tech-slate {
-  background-color: #151B25;
-  border: 1px solid #1E2638;
+  background-color: #151C2C;
+  border: 1px solid #1E273D;
   color: #94A3B8;
 }
 
 /* Lightbox Animation */
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .modal-animate-in {

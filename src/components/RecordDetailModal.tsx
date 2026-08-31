@@ -54,54 +54,51 @@ export function RecordDetailModal({ record, isOpen, onClose, onEdit, onDelete }:
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-3xl bg-slate-900/95 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col relative blueprint-corner">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
+      <div className="w-full max-w-2xl bg-[#111622] border border-[#1E273D] rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col relative">
         
         {/* Modal Header */}
-        <div className="p-4 sm:p-6 border-b border-cyan-800/40 bg-cyan-950/40 relative">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pr-10">
+        <div className="p-4 sm:p-5 border-b border-[#1E273D] bg-[#111622] relative">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5 pr-10">
             <div className="flex items-center gap-2">
-              <span className="bg-blueprint-cyan/15 border border-blueprint-cyan/40 text-blueprint-cyan text-[10px] font-mono px-2.5 py-0.5 tracking-wider uppercase font-bold">
+              <span className="bg-cyan-500/10 border border-cyan-500/25 text-[#06B6D4] text-[10px] font-semibold px-2 py-0.5 rounded-md uppercase">
                 {CATEGORY_NAMES[record.category] || record.category}
               </span>
-              <span className="text-[10px] text-cyan-400/60 font-mono">
-                {getSystemTag(record.category)}
-              </span>
             </div>
-            <div className="text-[10px] text-blueprint-cyan/60 font-mono tracking-wider">
-              ID: {record.id.toUpperCase()}
+            <div className="text-[11px] text-slate-500 font-mono">
+              {record.id}
             </div>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-bold text-white font-mono tracking-tight leading-snug">
+          <h2 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
             {record.description}
           </h2>
 
-          <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-cyan-300/80 font-mono">
-            <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 border border-cyan-800/40 rounded">
-              <Calendar className="w-3.5 h-3.5 text-blueprint-cyan" />
+          <div className="flex flex-wrap items-center gap-2.5 mt-2.5 text-xs text-slate-400 font-mono">
+            <div className="flex items-center gap-1.5 bg-[#0B0E14] px-2.5 py-1 border border-[#1E273D] rounded-lg">
+              <Calendar className="w-3.5 h-3.5 text-[#06B6D4]" />
               <span>{record.date}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 border border-cyan-800/40 rounded">
-              <Gauge className="w-3.5 h-3.5 text-blueprint-cyan" />
+            <div className="flex items-center gap-1.5 bg-[#0B0E14] px-2.5 py-1 border border-[#1E273D] rounded-lg">
+              <Gauge className="w-3.5 h-3.5 text-[#06B6D4]" />
               <span>{formatMileage(record.mileage)}</span>
             </div>
           </div>
 
-          {/* Quick Header Actions: Edit & Delete buttons with clear labels */}
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-cyan-800/30 sm:border-t-0 sm:pt-0 sm:mt-0 sm:absolute sm:top-4 sm:right-4">
+          {/* Quick Header Actions: Edit & Delete buttons */}
+          <div className="flex items-center gap-1.5 mt-3 pt-2.5 border-t border-[#1E273D] sm:border-t-0 sm:pt-0 sm:mt-0 sm:absolute sm:top-4 sm:right-4">
             <button
               onClick={() => {
                 if (navigator.vibrate) navigator.vibrate(15);
                 onEdit(record);
                 onClose();
               }}
-              className="px-3 py-1.5 text-xs text-cyan-300 hover:text-white bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-800/60 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 font-medium shadow-sm"
+              className="px-2.5 py-1.5 text-xs text-slate-300 hover:text-white bg-[#151C2C] hover:bg-[#1C253B] border border-[#1E273D] rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
               title="Редактировать запись"
               id="btn-modal-quick-edit"
             >
-              <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Редактировать</span>
+              <Edit3 className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <span>Изменить</span>
             </button>
             <button
               onClick={() => {
@@ -109,7 +106,7 @@ export function RecordDetailModal({ record, isOpen, onClose, onEdit, onDelete }:
                 onDelete(record.id);
                 onClose();
               }}
-              className="px-3 py-1.5 text-xs text-rose-400 hover:text-rose-200 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 font-medium shadow-sm"
+              className="px-2.5 py-1.5 text-xs text-rose-400 hover:text-rose-200 bg-rose-950/30 hover:bg-rose-900/50 border border-rose-800/40 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
               title="Удалить запись"
               id="btn-modal-quick-delete"
             >
@@ -118,79 +115,73 @@ export function RecordDetailModal({ record, isOpen, onClose, onEdit, onDelete }:
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer ml-auto sm:ml-0"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-[#151C2C] rounded-lg transition-colors cursor-pointer ml-auto sm:ml-0"
               title="Закрыть"
               id="btn-modal-close"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-6">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-slate-200">
           
           {/* Financial Breakdown Grid */}
-          <div className="space-y-2.5">
-            <div className="text-[10px] text-blueprint-cyan/80 tracking-wider uppercase font-mono flex items-center gap-1.5 font-bold">
-              <DollarSign className="w-3.5 h-3.5 text-blueprint-cyan" />
-              <span>ФИНАНСОВАЯ РАЗБИВКА И СТОИМОСТЬ ОБСЛУЖИВАНИЯ</span>
+          <div className="space-y-2">
+            <div className="text-[11px] text-slate-400 font-semibold uppercase flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <span>Стоимость обслуживания</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
-              <div className="bg-black/50 border border-cyan-800/30 p-3.5 rounded-xl blueprint-corner">
-                <span className="block text-[10px] text-cyan-400/70 uppercase mb-1 font-semibold">Запчасти</span>
-                <span className="text-base font-bold text-cyan-100">{formatCurrency(record.partsPrice)}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 font-sans">
+              <div className="bg-[#0B0E14] border border-[#1E273D] p-3 rounded-xl">
+                <span className="block text-[11px] text-slate-400 uppercase mb-0.5">Запчасти</span>
+                <span className="text-sm font-semibold font-mono text-slate-200">{formatCurrency(record.partsPrice)}</span>
               </div>
-              <div className="bg-black/50 border border-cyan-800/30 p-3.5 rounded-xl blueprint-corner">
-                <span className="block text-[10px] text-cyan-400/70 uppercase mb-1 font-semibold">Работа</span>
-                <span className="text-base font-bold text-cyan-100">{formatCurrency(record.laborPrice)}</span>
+              <div className="bg-[#0B0E14] border border-[#1E273D] p-3 rounded-xl">
+                <span className="block text-[11px] text-slate-400 uppercase mb-0.5">Работа</span>
+                <span className="text-sm font-semibold font-mono text-slate-200">{formatCurrency(record.laborPrice)}</span>
               </div>
-              <div className="bg-cyan-950/40 border border-blueprint-cyan/50 p-3.5 rounded-xl blueprint-corner shadow-[0_0_20px_rgba(6,182,212,0.18)]">
-                <span className="block text-[10px] text-cyan-300 font-extrabold uppercase mb-1">ИТОГО К ОПЛАТЕ</span>
-                <span className="text-lg font-extrabold text-blueprint-cyan">{formatCurrency(totalCost)}</span>
+              <div className="bg-[#151C2C] border border-cyan-500/30 p-3 rounded-xl">
+                <span className="block text-[11px] text-[#06B6D4] font-semibold uppercase mb-0.5">Итого</span>
+                <span className="text-base font-bold font-mono text-[#06B6D4]">{formatCurrency(totalCost)}</span>
               </div>
-            </div>
-            
-            {/* Equation summary line */}
-            <div className="text-xs font-mono text-cyan-400/70 bg-cyan-950/20 border border-cyan-900/30 px-3 py-1.5 rounded-lg flex items-center justify-between">
-              <span>Расчет:</span>
-              <span>[Запчасти: {formatCurrency(record.partsPrice)}] + [Работа: {formatCurrency(record.laborPrice)}] = <strong className="text-cyan-300 font-bold">[ИТОГО: {formatCurrency(totalCost)}]</strong></span>
             </div>
           </div>
 
           {/* Replaced Parts List */}
           <div className="space-y-2">
-            <div className="text-[10px] text-blueprint-cyan/70 tracking-wider uppercase font-mono flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-blueprint-cyan" />
-              <span>ИСПОЛЬЗОВАННЫЕ ДЕТАЛИ И РАСХОДНЫЕ МАТЕРИАЛЫ</span>
+            <div className="text-[11px] text-slate-400 font-semibold uppercase flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <span>Использованные детали и расходники</span>
             </div>
 
             {record.partsUsed && record.partsUsed.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {record.partsUsed.map((partName, idx) => (
-                  <div key={idx} className="flex items-center gap-2 bg-slate-950/60 border border-cyan-800/30 p-2.5 rounded-lg text-xs font-mono text-cyan-100">
-                    <CheckCircle2 className="w-4 h-4 text-blueprint-cyan shrink-0" />
+                  <div key={idx} className="flex items-center gap-2 bg-[#0B0E14] border border-[#1E273D] p-2.5 rounded-xl text-xs text-slate-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
                     <span className="truncate">{partName}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-xs font-mono text-cyan-400/40 italic p-3 border border-dashed border-cyan-800/30 rounded-lg">
-                Конкретный перечень запчастей не указан
+              <div className="text-xs text-slate-500 italic p-3 border border-dashed border-[#1E273D] rounded-xl bg-[#0B0E14]/40">
+                Перечень запчастей не указан
               </div>
             )}
           </div>
 
           {/* Voice Transcript (if available) */}
           {record.voiceTranscript && (
-            <div className="space-y-2">
-              <div className="text-[10px] text-blueprint-cyan/70 tracking-wider uppercase font-mono flex items-center gap-1.5">
-                <Mic className="w-3.5 h-3.5 text-blueprint-cyan" />
-                <span>ГОЛОСОВАЯ ЗАМЕТКА / ТРАНСКРИПЦИЯ</span>
+            <div className="space-y-1.5">
+              <div className="text-[11px] text-slate-400 font-semibold uppercase flex items-center gap-1.5">
+                <Mic className="w-3.5 h-3.5 text-[#06B6D4]" />
+                <span>Голосовая заметка</span>
               </div>
-              <div className="p-3 bg-cyan-950/20 border border-cyan-800/40 rounded-xl text-xs font-mono text-cyan-200/90 leading-relaxed italic">
-                "{record.voiceTranscript}"
+              <div className="p-3 bg-[#0B0E14] border border-[#1E273D] rounded-xl text-xs text-slate-300 leading-relaxed italic">
+                «{record.voiceTranscript}»
               </div>
             </div>
           )}
@@ -198,26 +189,26 @@ export function RecordDetailModal({ record, isOpen, onClose, onEdit, onDelete }:
           {/* Attached Photos Gallery */}
           {record.photoUrls && record.photoUrls.length > 0 && (
             <div className="space-y-2">
-              <div className="text-[10px] text-blueprint-cyan/70 tracking-wider uppercase font-mono flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-blueprint-cyan" />
-                <span>ФОТООТЧЕТ И СНИМКИ РЕМОНТА ({record.photoUrls.length})</span>
+              <div className="text-[11px] text-slate-400 font-semibold uppercase flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-[#06B6D4]" />
+                <span>Фотографии ({record.photoUrls.length})</span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {record.photoUrls.map((url, i) => (
                   <div 
                     key={i} 
                     onClick={() => setLightboxImg(url)}
-                    className="group relative h-28 border border-cyan-800/40 bg-black/60 rounded-xl overflow-hidden cursor-pointer hover:border-blueprint-cyan transition-all shadow-md"
+                    className="group relative h-24 border border-[#1E273D] bg-[#0B0E14] rounded-xl overflow-hidden cursor-pointer hover:border-cyan-500/50 transition-all shadow-sm"
                   >
                     <img 
                       src={url} 
                       alt={`record-photo-${i}`} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-80 group-hover:opacity-100" 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90 group-hover:opacity-100" 
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-cyan-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <ZoomIn className="w-6 h-6 text-blueprint-cyan" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <ZoomIn className="w-5 h-5 text-[#06B6D4]" />
                     </div>
                   </div>
                 ))}
@@ -227,34 +218,28 @@ export function RecordDetailModal({ record, isOpen, onClose, onEdit, onDelete }:
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-cyan-800/40 bg-slate-950/90 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="text-[11px] font-mono text-cyan-300/50 hidden sm:block">
-            Нажмите на любую фотографию для полноэкранного просмотра
-          </div>
-          
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                if (navigator.vibrate) navigator.vibrate(15);
-                onEdit(record);
-                onClose();
-              }}
-              className="flex-1 sm:flex-none btn-primary px-5 py-2.5 text-xs font-bold font-mono rounded-xl flex items-center justify-center gap-2 cursor-pointer"
-              id="btn-modal-edit-full"
-            >
-              <Edit3 className="w-4 h-4" />
-              <span>Редактировать</span>
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 sm:flex-none btn-secondary px-5 py-2.5 text-xs font-bold font-mono rounded-xl cursor-pointer"
-              id="btn-modal-close-full"
-            >
-              Закрыть
-            </button>
-          </div>
+        <div className="p-3 sm:p-4 border-t border-[#1E273D] bg-[#111622] flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (navigator.vibrate) navigator.vibrate(15);
+              onEdit(record);
+              onClose();
+            }}
+            className="btn-primary py-2 px-4 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
+            id="btn-modal-edit-full"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>Редактировать</span>
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary py-2 px-4 text-xs font-semibold rounded-xl cursor-pointer"
+            id="btn-modal-close-full"
+          >
+            Закрыть
+          </button>
         </div>
       </div>
 

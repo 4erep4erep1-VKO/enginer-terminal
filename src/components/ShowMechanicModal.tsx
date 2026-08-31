@@ -102,12 +102,12 @@ export function ShowMechanicModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
-      <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-[#111622] border border-[#1E273D] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#1E293B] bg-[#080B11]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#1E273D] bg-[#111622]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#06B6D4]/15 border border-[#06B6D4]/30 flex items-center justify-center text-[#06B6D4]">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-[#06B6D4]">
               <FileText className="w-4 h-4" />
             </div>
             <div>
@@ -123,32 +123,32 @@ export function ShowMechanicModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#1E293B] transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#151C2C] transition-colors cursor-pointer"
             title="Закрыть"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content Body - Clean phone card style */}
-        <div className="p-4 overflow-y-auto space-y-3.5 text-slate-200">
+        <div className="p-4 overflow-y-auto space-y-3 text-slate-200">
           
           {/* Card: Vehicle identity */}
-          <div className="p-3 rounded-lg bg-[#080B11] border border-[#1E293B]">
+          <div className="p-3 rounded-xl bg-[#0B0E14] border border-[#1E273D]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CarIcon className="w-4 h-4 text-[#06B6D4]" />
-                <span className="text-sm font-bold text-white">
+                <span className="text-xs sm:text-sm font-bold text-white">
                   {car.make} {car.model} {car.year && `(${car.year})`}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-xs font-mono font-bold text-[#06B6D4] bg-[#06B6D4]/10 px-2 py-0.5 rounded border border-[#06B6D4]/30">
+              <div className="flex items-center gap-1 text-xs font-mono font-medium text-[#06B6D4] bg-cyan-500/10 px-2 py-0.5 rounded-lg border border-cyan-500/20">
                 <Gauge className="w-3.5 h-3.5" />
                 <span>{car.mileage?.toLocaleString('ru-RU') || 0} {distanceLabel}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 mt-2 text-xs text-slate-400 font-mono flex-wrap">
+            <div className="flex items-center gap-2.5 mt-2 text-xs text-slate-400 font-mono flex-wrap">
               {car.engine && <span>Двигатель: <strong className="text-slate-200">{car.engine}</strong></span>}
               {car.licensePlate && <span>Госномер: <strong className="text-slate-200">{car.licensePlate}</strong></span>}
               {car.vin && <span className="text-[11px] text-slate-500">VIN: {car.vin}</span>}
@@ -157,8 +157,8 @@ export function ShowMechanicModal({
 
           {/* Card: Last Service */}
           {lastRecord ? (
-            <div className="p-3 rounded-lg bg-[#080B11] border border-[#1E293B]">
-              <span className="text-[11px] font-mono text-slate-400 uppercase block mb-1">
+            <div className="p-3 rounded-xl bg-[#0B0E14] border border-[#1E273D]">
+              <span className="text-[11px] text-slate-400 uppercase block mb-1">
                 Последнее обслуживание:
               </span>
               <div className="flex items-start justify-between gap-2">
@@ -179,20 +179,20 @@ export function ShowMechanicModal({
               </div>
             </div>
           ) : (
-            <div className="p-3 rounded-lg bg-[#080B11] border border-[#1E293B] text-xs text-slate-400">
+            <div className="p-3 rounded-xl bg-[#0B0E14] border border-[#1E273D] text-xs text-slate-400">
               В сервисной истории пока нет сохранённых записей ТО.
             </div>
           )}
 
           {/* Card: Recent Works */}
           {recentRecords.length > 1 && (
-            <div className="p-3 rounded-lg bg-[#080B11] border border-[#1E293B]">
-              <span className="text-[11px] font-mono text-slate-400 uppercase block mb-1.5">
+            <div className="p-3 rounded-xl bg-[#0B0E14] border border-[#1E273D]">
+              <span className="text-[11px] text-slate-400 uppercase block mb-1">
                 Что делали недавно ({recentRecords.length} замен):
               </span>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {recentRecords.map(r => (
-                  <div key={r.id} className="flex items-center justify-between text-xs py-1 border-b border-[#1E293B]/60 last:border-0">
+                  <div key={r.id} className="flex items-center justify-between text-xs py-1 border-b border-[#1E273D]/60 last:border-0">
                     <span className="text-slate-200 truncate pr-2">• {r.description}</span>
                     <span className="text-slate-400 font-mono text-[11px] shrink-0">{r.date}</span>
                   </div>
@@ -202,18 +202,18 @@ export function ShowMechanicModal({
           )}
 
           {/* Card: What needs attention */}
-          <div className="p-3 rounded-lg bg-[#080B11] border border-[#1E293B]">
+          <div className="p-3 rounded-xl bg-[#0B0E14] border border-[#1E273D]">
             <div className="flex items-center gap-1.5 mb-1.5">
               <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[11px] font-mono text-slate-300 uppercase">
-                Что требует внимания / запланировано:
+              <span className="text-[11px] text-slate-300 uppercase">
+                Что требует внимания / в плане ТО:
               </span>
             </div>
 
             {pendingTasks.length > 0 ? (
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {pendingTasks.slice(0, 4).map(t => (
-                  <div key={t.id} className="p-1.5 rounded bg-[#0F172A] border border-[#1E293B] flex items-center justify-between text-xs">
+                  <div key={t.id} className="p-1.5 rounded-lg bg-[#151C2C] border border-[#1E273D] flex items-center justify-between text-xs">
                     <span className="text-slate-200 font-medium">{t.title}</span>
                     {t.targetMileage && (
                       <span className="text-amber-400 font-mono text-[11px]">
@@ -231,10 +231,10 @@ export function ShowMechanicModal({
           </div>
 
           {/* Card: Vasilich Note */}
-          <div className="p-3 rounded-lg bg-[#06B6D4]/10 border border-[#06B6D4]/30 flex items-start gap-2.5">
+          <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-start gap-2.5">
             <Bot className="w-4 h-4 text-[#06B6D4] shrink-0 mt-0.5" />
             <div className="text-xs">
-              <span className="font-bold text-white block">Рекомендация Василича:</span>
+              <span className="font-semibold text-white block">Рекомендация Василича:</span>
               <p className="text-slate-300 mt-0.5 leading-relaxed">
                 Попросите мастера осмотреть подвеску на подъемнике, проверить состояние тормозных колодок и уровень технических жидкостей.
               </p>
@@ -244,21 +244,21 @@ export function ShowMechanicModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-3 sm:p-4 border-t border-[#1E293B] bg-[#080B11] flex flex-col sm:flex-row items-center justify-between gap-2.5">
+        <div className="p-3 sm:p-4 border-t border-[#1E273D] bg-[#111622] flex flex-col sm:flex-row items-center justify-between gap-2">
           <button
             type="button"
             onClick={handleCopy}
-            className="w-full sm:w-auto px-4 min-h-[42px] rounded-lg bg-[#1E293B] hover:bg-slate-700 text-white text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#151C2C] hover:bg-[#1C253B] border border-[#1E273D] text-white text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span className="text-emerald-400">Скопировано в буфер</span>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-400">Скопировано</span>
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4 text-slate-300" />
-                <span>Скопировать для мастера</span>
+                <Copy className="w-3.5 h-3.5 text-slate-300" />
+                <span>Скопировать текст</span>
               </>
             )}
           </button>
@@ -266,7 +266,7 @@ export function ShowMechanicModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-5 min-h-[42px] rounded-lg bg-[#06B6D4] hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-colors cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[#06B6D4] hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition-colors cursor-pointer"
           >
             Понятно
           </button>

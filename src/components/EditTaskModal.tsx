@@ -110,21 +110,21 @@ export function EditTaskModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-950/80 backdrop-blur-md transition-all duration-300 ease-out font-sans">
+    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-sm transition-all duration-300 ease-out font-sans">
       <div 
-        className="w-full md:max-w-2xl bg-[#10151E] border-t md:border border-[#1E2638] rounded-t-2xl md:rounded-2xl shadow-2xl p-4 sm:p-6 pb-28 md:pb-6 relative space-y-5 max-h-[calc(100vh-60px)] md:max-h-[90vh] overflow-y-auto"
+        className="w-full md:max-w-2xl bg-[#111622] border-t md:border border-[#1E273D] rounded-t-2xl md:rounded-2xl shadow-2xl p-4 sm:p-5 pb-28 md:pb-5 relative space-y-4 max-h-[calc(100vh-60px)] md:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#1E2638] pb-3">
+        <div className="flex items-center justify-between border-b border-[#1E273D] pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400">
-              <Edit3 className="w-5 h-5" />
+            <div className="p-2 bg-cyan-500/10 border border-cyan-500/25 rounded-xl text-[#06B6D4]">
+              <Edit3 className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[10px] text-cyan-400 font-semibold tracking-wider uppercase block">Редактирование</span>
-              <h3 className="text-base font-bold text-white">
-                Карточка задачи и фотоотчет
+              <span className="text-[10px] text-[#06B6D4] font-semibold uppercase block">Редактирование</span>
+              <h3 className="text-sm sm:text-base font-bold text-white">
+                Карточка задачи
               </h3>
             </div>
           </div>
@@ -132,20 +132,20 @@ export function EditTaskModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white bg-[#151B25] rounded-xl transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white bg-[#151C2C] rounded-lg transition-colors cursor-pointer"
             title="Закрыть"
             id="btn-close-edit-task-modal"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Status selector toggle */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Статус выполнения задачи
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              Статус выполнения
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -154,13 +154,13 @@ export function EditTaskModal({
                   setStatus('pending');
                   if (navigator.vibrate) navigator.vibrate(10);
                 }}
-                className={`py-2.5 px-3 text-xs rounded-xl border flex items-center justify-center gap-2 transition-all cursor-pointer font-semibold ${
+                className={`py-2 px-3 text-xs rounded-xl border flex items-center justify-center gap-1.5 transition-all cursor-pointer font-medium ${
                   status === 'pending'
-                    ? 'bg-amber-500/15 border-amber-400 text-amber-300'
-                    : 'border-[#1E2638] bg-[#151B25] text-slate-400 hover:text-slate-200'
+                    ? 'bg-[#151C2C] border-amber-500/50 text-amber-300'
+                    : 'border-[#1E273D] bg-[#0B0E14] text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Clock className="w-4 h-4" />
+                <Clock className="w-3.5 h-3.5" />
                 <span>В работе / Активна</span>
               </button>
               <button
@@ -169,13 +169,13 @@ export function EditTaskModal({
                   setStatus('completed');
                   if (navigator.vibrate) navigator.vibrate(10);
                 }}
-                className={`py-2.5 px-3 text-xs rounded-xl border flex items-center justify-center gap-2 transition-all cursor-pointer font-semibold ${
+                className={`py-2 px-3 text-xs rounded-xl border flex items-center justify-center gap-1.5 transition-all cursor-pointer font-medium ${
                   status === 'completed'
-                    ? 'bg-emerald-500/15 border-emerald-400 text-emerald-300'
-                    : 'border-[#1E2638] bg-[#151B25] text-slate-400 hover:text-slate-200'
+                    ? 'bg-[#151C2C] border-emerald-500/50 text-emerald-300'
+                    : 'border-[#1E273D] bg-[#0B0E14] text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <CheckSquare className="w-4 h-4" />
+                <CheckSquare className="w-3.5 h-3.5" />
                 <span>Выполнена</span>
               </button>
             </div>
@@ -183,7 +183,7 @@ export function EditTaskModal({
 
           {/* Title input */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-medium text-slate-300 mb-1">
               Название работы / Содержание ТО *
             </label>
             <textarea
@@ -192,27 +192,27 @@ export function EditTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Опишите планируемую работу или ТО..."
-              className="w-full border border-[#1E2638] bg-[#151B25] p-3 text-xs text-slate-100 rounded-xl focus:outline-none focus:border-cyan-400 resize-none"
+              className="w-full border border-[#1E273D] bg-[#0B0E14] p-2.5 text-xs sm:text-sm text-slate-100 rounded-xl focus:outline-none focus:border-cyan-400 resize-none"
             />
           </div>
 
           {/* Type selector */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
                 Тип контроля
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-1.5">
                 <button
                   type="button"
                   onClick={() => {
                     setType('simple');
                     if (navigator.vibrate) navigator.vibrate(10);
                   }}
-                  className={`py-2.5 px-2 text-xs rounded-xl border transition-all cursor-pointer font-semibold ${
+                  className={`py-2 px-2 text-xs rounded-xl border transition-all cursor-pointer font-medium ${
                     type === 'simple'
-                      ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
-                      : 'border-[#1E2638] bg-[#151B25] text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#151C2C] border-cyan-500/40 text-[#06B6D4]'
+                      : 'border-[#1E273D] bg-[#0B0E14] text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   Обычная
@@ -223,10 +223,10 @@ export function EditTaskModal({
                     setType('mileage');
                     if (navigator.vibrate) navigator.vibrate(10);
                   }}
-                  className={`py-2.5 px-2 text-xs rounded-xl border transition-all cursor-pointer font-semibold ${
+                  className={`py-2 px-2 text-xs rounded-xl border transition-all cursor-pointer font-medium ${
                     type === 'mileage'
-                      ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
-                      : 'border-[#1E2638] bg-[#151B25] text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#151C2C] border-cyan-500/40 text-[#06B6D4]'
+                      : 'border-[#1E273D] bg-[#0B0E14] text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   По пробегу (ТО)
@@ -236,20 +236,20 @@ export function EditTaskModal({
 
             {type === 'simple' ? (
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1">
-                  <Calendar className="w-4 h-4 text-cyan-400" /> Срок выполнения
+                <label className="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-[#06B6D4]" /> Срок выполнения
                 </label>
                 <input
                   type="date"
                   value={targetDate}
                   onChange={(e) => setTargetDate(e.target.value)}
-                  className="w-full border border-[#1E2638] bg-[#151B25] p-2.5 text-xs text-slate-100 rounded-xl focus:outline-none focus:border-cyan-400"
+                  className="w-full border border-[#1E273D] bg-[#0B0E14] p-2 text-xs text-slate-100 rounded-xl focus:outline-none focus:border-cyan-400"
                 />
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1">
-                  <Gauge className="w-4 h-4 text-cyan-400" /> Целевой пробег (км)
+                <label className="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1">
+                  <Gauge className="w-3.5 h-3.5 text-[#06B6D4]" /> Целевой пробег (км)
                 </label>
                 <input
                   type="number"
@@ -257,27 +257,27 @@ export function EditTaskModal({
                   value={targetMileage}
                   onChange={(e) => setTargetMileage(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder={`Текущий: ${activeCarMileage} км`}
-                  className="w-full border border-[#1E2638] bg-[#151B25] p-2.5 text-xs font-mono text-slate-100 rounded-xl focus:outline-none focus:border-cyan-400"
+                  className="w-full border border-[#1E273D] bg-[#0B0E14] p-2 text-xs font-mono text-slate-100 rounded-xl focus:outline-none focus:border-cyan-400"
                 />
               </div>
             )}
           </div>
 
           {/* Section: Photo Report / Repair Gallery */}
-          <div className="pt-3 border-t border-[#1E2638] space-y-3">
+          <div className="pt-2.5 border-t border-[#1E273D] space-y-2.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
-                <Camera className="w-4 h-4 text-cyan-400" />
-                <span>Фотоотчет / Галерея ремонта ({photos.length})</span>
+              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-200">
+                <Camera className="w-3.5 h-3.5 text-[#06B6D4]" />
+                <span>Фотографии ({photos.length})</span>
               </div>
 
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="btn-secondary min-h-[36px] px-3 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer"
+                className="btn-secondary py-1 px-2.5 text-[11px] font-medium rounded-lg flex items-center gap-1 cursor-pointer"
                 id="btn-upload-task-photos"
               >
-                <Plus className="w-3.5 h-3.5 text-cyan-400" />
+                <Plus className="w-3 h-3 text-[#06B6D4]" />
                 <span>Прикрепить фото</span>
               </button>
 
@@ -293,11 +293,11 @@ export function EditTaskModal({
 
             {/* Photos preview grid */}
             {photos.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto p-2 bg-[#151B25] border border-[#1E2638] rounded-xl">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-2 bg-[#0B0E14] border border-[#1E273D] rounded-xl">
                 {photos.map((url, idx) => (
                   <div 
                     key={idx} 
-                    className="group relative aspect-square bg-[#10151E] border border-[#1E2638] overflow-hidden rounded-lg hover:border-cyan-400 transition-all"
+                    className="group relative aspect-square bg-[#111622] border border-[#1E273D] overflow-hidden rounded-lg hover:border-cyan-400 transition-all"
                   >
                     <img
                       src={url}
@@ -307,59 +307,55 @@ export function EditTaskModal({
                     />
                     
                     {/* Overlay controls */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity p-1">
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 transition-opacity p-1">
                       <button
                         type="button"
                         onClick={() => setActivePhotoIndex(idx)}
-                        className="p-1.5 bg-[#151B25] border border-cyan-400 text-cyan-300 rounded-lg cursor-pointer"
+                        className="p-1 bg-[#151C2C] border border-cyan-400 text-[#06B6D4] rounded-lg cursor-pointer"
                         title="Увеличить фото"
                       >
-                        <ZoomIn className="w-3.5 h-3.5" />
+                        <ZoomIn className="w-3 h-3" />
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDeletePhoto(idx)}
-                        className="p-1.5 bg-rose-950 border border-rose-500 text-rose-400 rounded-lg cursor-pointer"
+                        className="p-1 bg-rose-950 border border-rose-500 text-rose-400 rounded-lg cursor-pointer"
                         title="Удалить фото"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
-
-                    <span className="absolute bottom-1 left-1 text-[9px] bg-black/80 text-cyan-300 px-1.5 py-0.5 rounded font-mono pointer-events-none">
-                      #{idx + 1}
-                    </span>
                   </div>
                 ))}
               </div>
             ) : (
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="border border-dashed border-[#1E2638] p-4 text-center rounded-xl bg-[#151B25]/40 hover:bg-[#151B25] transition-all cursor-pointer group"
+                className="border border-dashed border-[#1E273D] p-3 text-center rounded-xl bg-[#0B0E14] hover:bg-[#151C2C] transition-all cursor-pointer group"
               >
-                <ImageIcon className="w-8 h-8 text-slate-600 group-hover:text-cyan-400 mx-auto mb-1 transition-colors" />
-                <p className="text-xs text-slate-400 group-hover:text-slate-200">
-                  Нет прикрепленных фотографий. Нажмите, чтобы добавить снимки ремонта или запчастей.
+                <ImageIcon className="w-6 h-6 text-slate-600 group-hover:text-[#06B6D4] mx-auto mb-1 transition-colors" />
+                <p className="text-[11px] text-slate-400 group-hover:text-slate-200">
+                  Нажмите, чтобы прикрепить фотографии деталей или ремонта.
                 </p>
               </div>
             )}
           </div>
 
           {/* Buttons Footer */}
-          <div className="pt-3 border-t border-[#1E2638] flex items-center justify-end gap-3">
+          <div className="pt-2 border-t border-[#1E273D] flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="btn-secondary min-h-[42px] px-4 text-xs font-semibold rounded-xl cursor-pointer"
+              className="btn-secondary py-2 px-3 text-xs font-medium rounded-xl cursor-pointer"
             >
               Отмена
             </button>
             <button
               type="submit"
-              className="btn-primary min-h-[42px] px-5 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
+              className="btn-primary py-2 px-4 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer"
             >
-              <Check className="w-4 h-4" />
-              <span>Сохранить изменения</span>
+              <Check className="w-3.5 h-3.5" />
+              <span>Сохранить</span>
             </button>
           </div>
         </form>

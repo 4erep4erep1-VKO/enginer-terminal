@@ -192,17 +192,17 @@ export function SimpleAddRecordModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
-      <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+      <div className="bg-[#111622] border border-[#1E273D] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#1E293B] bg-[#080B11]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#1E273D] bg-[#111622]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 border border-[#10B981]/30 flex items-center justify-center text-[#10B981]">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-[#06B6D4]">
               <PlusCircle className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
-                Записать обслуживание
+              <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide">
+                Быстрая запись ТО
               </h2>
               <span className="text-[11px] text-slate-400 block">
                 {carName}
@@ -213,51 +213,51 @@ export function SimpleAddRecordModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#1E293B] transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#151C2C] transition-colors cursor-pointer"
             title="Закрыть"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content Body */}
         {savedSuccess ? (
-          <div className="p-8 text-center space-y-3 animate-fade-in">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center mx-auto text-emerald-400">
+          <div className="p-8 text-center space-y-2.5 animate-fade-in">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-white">Записано!</h3>
+            <h3 className="text-sm sm:text-base font-bold text-white">Записано!</h3>
             <p className="text-xs text-slate-300">
               Работа сохранена в истории автомобиля на пробеге {Number(mileage || currentCarMileage).toLocaleString('ru-RU')} {distanceLabel}.
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          <form onSubmit={handleSubmit} className="p-4 space-y-3.5">
             
             {/* Quick voice bar */}
-            <div className="p-2.5 rounded-lg bg-[#080B11] border border-[#1E293B] flex items-center justify-between gap-3">
+            <div className="p-2.5 rounded-xl bg-[#0B0E14] border border-[#1E273D] flex items-center justify-between gap-3">
               <div className="text-xs text-slate-300">
-                <span className="font-semibold text-white block">Сказать голосом:</span>
-                <span className="text-[11px] text-slate-400">«Поменял масло за 3500 р»</span>
+                <span className="font-medium text-white block">Сказать голосом:</span>
+                <span className="text-[11px] text-slate-400">«Поменял масло за 3500»</span>
               </div>
 
               <button
                 type="button"
                 onClick={handleToggleVoice}
-                className={`min-h-[38px] px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                className={`py-1.5 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors ${
                   isListening
-                    ? 'bg-rose-600 text-white animate-pulse'
-                    : 'bg-[#131D33] hover:bg-[#1E293B] text-[#F59E0B] border border-[#F59E0B]/30'
+                    ? 'bg-rose-600 text-white'
+                    : 'bg-[#151C2C] hover:bg-[#1C253B] text-[#06B6D4] border border-cyan-500/30'
                 }`}
               >
                 {isListening ? (
                   <>
-                    <MicOff className="w-4 h-4" />
+                    <MicOff className="w-3.5 h-3.5" />
                     <span>Слушаю...</span>
                   </>
                 ) : (
                   <>
-                    <Mic className="w-4 h-4" />
+                    <Mic className="w-3.5 h-3.5" />
                     <span>Голос</span>
                   </>
                 )}
@@ -266,7 +266,7 @@ export function SimpleAddRecordModal({
 
             {/* Step 1: Что сделали */}
             <div>
-              <label className="text-xs font-semibold text-white block mb-1.5">
+              <label className="text-xs font-medium text-white block mb-1">
                 1. Что сделали? <span className="text-rose-400">*</span>
               </label>
               <input
@@ -276,19 +276,19 @@ export function SimpleAddRecordModal({
                   setDescription(e.target.value);
                   if (errorMsg) setErrorMsg('');
                 }}
-                placeholder="Например: Замена моторного масла и фильтра"
-                className="w-full bg-[#080B11] border border-[#1E293B] focus:border-[#06B6D4] text-white text-xs sm:text-sm rounded-lg px-3 py-2.5 outline-none transition-colors"
+                placeholder="Замена моторного масла и фильтра..."
+                className="w-full bg-[#0B0E14] border border-[#1E273D] focus:border-cyan-400 text-white text-xs sm:text-sm rounded-xl px-3 py-2 outline-none transition-colors"
                 autoFocus
               />
 
               {/* Quick suggestion chips */}
-              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+              <div className="flex items-center gap-1 mt-2 flex-wrap">
                 {COMMON_QUICK_WORKS.map(preset => (
                   <button
                     key={preset.label}
                     type="button"
                     onClick={() => handleSelectPreset(preset)}
-                    className="text-[11px] px-2 py-1 rounded bg-[#080B11] hover:bg-[#1E293B] text-slate-300 hover:text-white border border-[#1E293B] cursor-pointer transition-colors"
+                    className="text-[11px] px-2 py-0.5 rounded-md bg-[#0B0E14] hover:bg-[#151C2C] text-slate-300 hover:text-white border border-[#1E273D] cursor-pointer transition-colors"
                   >
                     + {preset.label}
                   </button>
@@ -297,9 +297,9 @@ export function SimpleAddRecordModal({
             </div>
 
             {/* Step 2: Пробег и Стоимость в 2 колонки */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-medium text-slate-300 block mb-1">
                   2. Пробег ({distanceLabel})
                 </label>
                 <div className="relative">
@@ -309,14 +309,14 @@ export function SimpleAddRecordModal({
                     value={mileage}
                     onChange={(e) => setMileage(e.target.value === '' ? '' : Number(e.target.value))}
                     placeholder={String(currentCarMileage)}
-                    className="w-full bg-[#080B11] border border-[#1E293B] focus:border-[#06B6D4] text-white font-mono text-xs sm:text-sm rounded-lg pl-3 pr-8 py-2 outline-none"
+                    className="w-full bg-[#0B0E14] border border-[#1E273D] focus:border-cyan-400 text-white font-mono text-xs rounded-xl pl-2.5 pr-7 py-2 outline-none"
                   />
-                  <Gauge className="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Gauge className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-medium text-slate-300 block mb-1">
                   3. Стоимость ({currencySymbol})
                 </label>
                 <div className="relative">
@@ -326,9 +326,9 @@ export function SimpleAddRecordModal({
                     value={cost}
                     onChange={(e) => setCost(e.target.value === '' ? '' : Number(e.target.value))}
                     placeholder="0"
-                    className="w-full bg-[#080B11] border border-[#1E293B] focus:border-[#06B6D4] text-white font-mono text-xs sm:text-sm rounded-lg pl-3 pr-8 py-2 outline-none"
+                    className="w-full bg-[#0B0E14] border border-[#1E273D] focus:border-cyan-400 text-white font-mono text-xs rounded-xl pl-2.5 pr-7 py-2 outline-none"
                   />
-                  <DollarSign className="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <DollarSign className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -342,18 +342,18 @@ export function SimpleAddRecordModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-1/3 min-h-[42px] rounded-lg bg-[#1E293B] hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer transition-colors"
+                className="w-1/3 py-2 rounded-xl bg-[#151C2C] hover:bg-[#1C253B] border border-[#1E273D] text-slate-300 text-xs font-medium cursor-pointer transition-colors"
               >
                 Отмена
               </button>
 
               <button
                 type="submit"
-                className="w-2/3 min-h-[42px] rounded-lg bg-[#10B981] hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-md"
+                className="w-2/3 py-2 rounded-xl bg-[#06B6D4] hover:bg-cyan-400 text-slate-950 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                 id="btn-simple-save-record"
               >
-                <Check className="w-4 h-4" />
-                <span>СОХРАНИТЬ ЗАПИСЬ</span>
+                <Check className="w-3.5 h-3.5" />
+                <span>Сохранить запись</span>
               </button>
             </div>
 

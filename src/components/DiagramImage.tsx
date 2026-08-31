@@ -76,16 +76,16 @@ export const DiagramImage: React.FC<DiagramImageProps> = ({
 
   if (isFailed) {
     return (
-      <div className={`p-4 bg-slate-950 border border-cyan-800/60 rounded-none text-center flex flex-col items-center justify-center space-y-3 ${containerClassName}`}>
-        <div className="p-2.5 bg-cyan-950/80 border border-amber-500/50 text-amber-400">
-          <AlertTriangle className="w-6 h-6 animate-pulse" />
+      <div className={`p-4 bg-[#0B0E14] border border-[#1E273D] rounded-xl text-center flex flex-col items-center justify-center space-y-3 ${containerClassName}`}>
+        <div className="p-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl">
+          <AlertTriangle className="w-5 h-5" />
         </div>
         <div>
-          <h4 className="text-xs font-mono font-bold text-white uppercase">
-            Сайт-источник блокирует прямой просмотр картинки (Hotlink Protection)
+          <h4 className="text-xs font-semibold text-white">
+            Прямой просмотр изображения заблокирован сайтом-источником
           </h4>
-          <p className="text-[11px] font-mono text-cyan-300/70 mt-1 max-w-md">
-            {diagram.source ? `Источник: ${diagram.source}` : 'Изображение защищено авторским сайтом.'}
+          <p className="text-[11px] text-slate-400 mt-0.5 max-w-md">
+            {diagram.source ? `Источник: ${diagram.source}` : 'Изображение защищено внешним сервером.'}
           </p>
         </div>
 
@@ -95,10 +95,10 @@ export const DiagramImage: React.FC<DiagramImageProps> = ({
               href={targetLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 bg-blueprint-cyan text-blueprint-bg font-mono font-bold text-[11px] uppercase flex items-center gap-1.5 hover:bg-cyan-300 transition-all"
+              className="px-3 py-1.5 bg-[#06B6D4] text-slate-950 font-semibold text-xs rounded-lg flex items-center gap-1.5 hover:bg-cyan-400 transition-all"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>ОТКРЫТЬ НА САЙТЕ-ИСТОЧНИКЕ</span>
+              <span>Открыть на сайте</span>
             </a>
           )}
 
@@ -106,18 +106,18 @@ export const DiagramImage: React.FC<DiagramImageProps> = ({
             href={yandexUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1.5 bg-slate-900 border border-cyan-700 hover:border-blueprint-cyan text-cyan-200 hover:text-white font-mono text-[11px] uppercase flex items-center gap-1.5 transition-all"
+            className="px-3 py-1.5 bg-[#151C2C] border border-[#1E273D] hover:border-cyan-500/50 text-slate-200 hover:text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all"
           >
-            <ImageIcon className="w-3.5 h-3.5 text-blueprint-cyan" />
-            <span>НАЙТИ В ЯНДЕКС.КАРТИНКАХ</span>
+            <ImageIcon className="w-3.5 h-3.5 text-[#06B6D4]" />
+            <span>Найти в картинках</span>
           </a>
 
           <button
             onClick={handleRetry}
-            className="px-2.5 py-1.5 bg-cyan-950 border border-cyan-800 text-cyan-300 hover:text-white font-mono text-[11px] uppercase flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1.5 bg-[#151C2C] border border-[#1E273D] text-slate-300 hover:text-white text-xs font-medium rounded-lg flex items-center gap-1 cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>ПОВТОРИТЬ</span>
+            <span>Повторить</span>
           </button>
         </div>
       </div>
@@ -128,7 +128,7 @@ export const DiagramImage: React.FC<DiagramImageProps> = ({
     <div className={containerClassName}>
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
-          <div className="w-5 h-5 border-2 border-blueprint-cyan border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       <img
@@ -138,6 +138,7 @@ export const DiagramImage: React.FC<DiagramImageProps> = ({
         draggable={draggable}
         onLoad={() => setIsLoading(false)}
         onError={handleError}
+        referrerPolicy="no-referrer"
       />
     </div>
   );

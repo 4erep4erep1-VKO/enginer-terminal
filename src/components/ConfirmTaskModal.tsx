@@ -100,27 +100,24 @@ export function ConfirmTaskModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
       <div 
-        className="bg-slate-900 border border-cyan-500/30 rounded-2xl max-w-lg w-full p-5 shadow-2xl shadow-cyan-950/50 space-y-4 relative overflow-hidden"
+        className="bg-[#111622] border border-[#1E273D] rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-3.5 relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Decorative corner glow */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
-
         {/* Modal Header */}
-        <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+        <div className="flex items-start justify-between border-b border-[#1E273D] pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400">
-              <CheckSquare className="w-5 h-5" />
+            <div className="p-2 bg-cyan-500/10 border border-cyan-500/25 rounded-xl text-[#06B6D4]">
+              <CheckSquare className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                 <span>Подтверждение новой задачи</span>
               </h3>
               {carName && (
-                <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
-                  <Car className="w-3.5 h-3.5 text-cyan-400" />
+                <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                  <Car className="w-3 h-3 text-[#06B6D4]" />
                   <span>Автомобиль: <strong className="text-slate-200">{carName}</strong></span>
                 </p>
               )}
@@ -129,39 +126,36 @@ export function ConfirmTaskModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
-            title="Закрыть без сохранения"
+            className="p-1.5 text-slate-400 hover:text-white bg-[#151C2C] rounded-lg transition-all cursor-pointer"
+            title="Закрыть"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Текст задачи / Содержания работ *
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              Текст задачи / Содержание работ *
             </label>
             <textarea
               value={taskText}
               onChange={(e) => setTaskText(e.target.value)}
               required
               rows={3}
-              placeholder="Опишите планируемую работу или ремонт..."
-              className="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-sans transition-all resize-none shadow-inner"
+              placeholder="Опишите планируемую работу..."
+              className="w-full bg-[#0B0E14] border border-[#1E273D] rounded-xl p-2.5 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-sans transition-all resize-none"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Вы можете отредактировать распознанный текст перед добавлением в список задач.
-            </p>
           </div>
 
           {/* Category selection */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Узел / Категория (автоопределение)</span>
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <span>Категория</span>
             </label>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               {TASK_CATEGORIES.map((cat) => {
                 const isActive = selectedCategory === cat;
                 return (
@@ -169,10 +163,10 @@ export function ConfirmTaskModal({
                     key={cat}
                     type="button"
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-all border ${
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer transition-all border ${
                       isActive
-                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 shadow-sm shadow-cyan-500/20'
-                        : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
+                        ? 'bg-[#151C2C] text-[#06B6D4] border-cyan-500/40'
+                        : 'bg-[#0B0E14] text-slate-400 border-[#1E273D] hover:border-slate-700 hover:text-slate-200'
                     }`}
                   >
                     {isActive ? `✓ ${cat}` : cat}
@@ -183,23 +177,22 @@ export function ConfirmTaskModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-2 border-t border-slate-800 flex items-center justify-end gap-3">
+          <div className="pt-2 border-t border-[#1E273D] flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="btn-secondary min-h-[40px] px-4 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer"
+              className="btn-secondary py-2 px-3 text-xs font-medium rounded-xl cursor-pointer"
               id="btn-cancel-task-modal"
             >
-              <X className="w-4 h-4 text-rose-400" />
-              <span>Отмена</span>
+              Отмена
             </button>
             <button
               type="submit"
               disabled={!taskText.trim()}
-              className="btn-primary min-h-[40px] px-5 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="btn-primary py-2 px-4 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               id="btn-confirm-task-modal"
             >
-              <Check className="w-4 h-4 text-slate-950" />
+              <Check className="w-3.5 h-3.5" />
               <span>Подтвердить и создать</span>
             </button>
           </div>

@@ -138,21 +138,21 @@ export function ServiceHistory({
   };
 
   return (
-    <div className="space-y-4 pb-28 font-sans">
-      {/* 1. Header Card HUD */}
-      <div className="bg-[#10151E] border border-[#1E2638] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3.5 shadow-sm">
+    <div className="space-y-3.5 pb-20 font-sans">
+      {/* 1. Header Card */}
+      <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm">
         <div>
-          <span className="text-[10px] text-cyan-400 font-mono tracking-wider uppercase block mb-0.5">
-            ИСТОРИЯ РЕМОНТА И ТО
-          </span>
-          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-            <span>Журнал технического обслуживания</span>
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <span>Журнал обслуживания</span>
             {activeCar && (
               <span className="text-xs font-mono text-slate-400 font-normal">
-                ({carRecords.length} записей)
+                ({carRecords.length})
               </span>
             )}
           </h2>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">
+            История ремонтов, замен расходников и ТО
+          </span>
         </div>
 
         {activeCar && !showAddForm && !editingRecord && (
@@ -172,7 +172,7 @@ export function ServiceHistory({
 
       {/* 2. Financial Summary Widget */}
       {activeCar && carRecords.length > 0 && (
-        <div className="bg-[#10151E] border border-[#1E2638] rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm">
+        <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-3.5 sm:p-4 space-y-2.5 shadow-sm">
           <div
             className="flex items-center justify-between cursor-pointer select-none"
             onClick={() => {
@@ -180,20 +180,17 @@ export function ServiceHistory({
               setIsFinanceWidgetOpen((prev) => !prev);
             }}
           >
-            <div className="flex items-center gap-2.5">
-              <TrendingUp className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs sm:text-sm font-semibold text-slate-200">
-                Финансовый учет •{' '}
-                <span className="font-mono text-cyan-300 font-bold">
-                  {formatCurrency(totalSpend)}
-                </span>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-[#06B6D4]" />
+              <span className="text-xs font-semibold text-slate-200">
+                Всего расходов на ТО: <span className="font-mono text-cyan-300 font-bold">{formatCurrency(totalSpend)}</span>
               </span>
             </div>
             <button
               type="button"
-              className="text-xs font-semibold text-cyan-400 hover:text-cyan-200 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-medium text-[#06B6D4] hover:underline flex items-center gap-1 cursor-pointer"
             >
-              <span>{isFinanceWidgetOpen ? 'Свернуть' : 'Подробнее'}</span>
+              <span>{isFinanceWidgetOpen ? 'Свернуть' : 'Детали'}</span>
               <ChevronDown
                 className={`w-3.5 h-3.5 transition-transform ${isFinanceWidgetOpen ? 'rotate-180' : ''}`}
               />
@@ -201,28 +198,22 @@ export function ServiceHistory({
           </div>
 
           {isFinanceWidgetOpen && (
-            <div className="pt-3 border-t border-[#1E2638] grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs">
-              <div className="bg-[#151B25] p-3.5 rounded-xl border border-[#1E2638]">
-                <span className="block text-[11px] text-slate-400 mb-1">Выполнено работ</span>
-                <span className="text-sm font-bold text-slate-100 font-mono">
-                  {carRecords.length} шт
-                </span>
-              </div>
-              <div className="bg-[#151B25] p-3.5 rounded-xl border border-[#1E2638]">
-                <span className="block text-[11px] text-slate-400 mb-1">Запчасти & Расходники</span>
-                <span className="text-sm font-bold text-cyan-200 font-mono">
+            <div className="pt-2.5 border-t border-[#1E273D] grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <div className="bg-[#151C2C] p-2.5 rounded-xl border border-[#1E273D]">
+                <span className="block text-[11px] text-slate-400 mb-0.5">Запчасти и расходники</span>
+                <span className="text-xs sm:text-sm font-semibold text-cyan-200 font-mono">
                   {formatCurrency(totalPartsSpend)}
                 </span>
               </div>
-              <div className="bg-[#151B25] p-3.5 rounded-xl border border-[#1E2638]">
-                <span className="block text-[11px] text-slate-400 mb-1">Стоимость работ</span>
-                <span className="text-sm font-bold text-slate-200 font-mono">
+              <div className="bg-[#151C2C] p-2.5 rounded-xl border border-[#1E273D]">
+                <span className="block text-[11px] text-slate-400 mb-0.5">Стоимость работ СТО</span>
+                <span className="text-xs sm:text-sm font-semibold text-slate-200 font-mono">
                   {formatCurrency(totalLaborSpend)}
                 </span>
               </div>
-              <div className="bg-[#151B25] p-3.5 rounded-xl border border-cyan-500/30">
-                <span className="block text-[11px] text-cyan-400 mb-1">Общие расходы (ИТОГО)</span>
-                <span className="text-sm font-bold text-cyan-300 font-mono">
+              <div className="bg-[#151C2C] p-2.5 rounded-xl border border-[#1E273D]">
+                <span className="block text-[11px] text-[#06B6D4] mb-0.5">Общая сумма</span>
+                <span className="text-xs sm:text-sm font-bold text-cyan-300 font-mono">
                   {formatCurrency(totalSpend)}
                 </span>
               </div>
@@ -233,15 +224,15 @@ export function ServiceHistory({
 
       {/* 3. Search and Category Filter Bar */}
       {carRecords.length > 0 && (
-        <div className="bg-[#10151E] border border-[#1E2638] rounded-2xl p-3.5 flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center shadow-sm">
+        <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-2.5 sm:p-3 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center shadow-sm">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Поиск по работам, запчастям, пробегу или дате..."
-              className="w-full bg-[#151B25] border border-[#1E2638] focus:border-cyan-400 rounded-xl pl-9 pr-8 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none transition-colors"
+              placeholder="Поиск по работам, запчастям или дате..."
+              className="w-full bg-[#151C2C] border border-[#1E273D] focus:border-cyan-400 rounded-xl pl-8 pr-7 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none transition-colors"
             />
             {searchQuery && (
               <button
@@ -249,18 +240,18 @@ export function ServiceHistory({
                 onClick={() => setSearchQuery('')}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-2 overflow-x-auto">
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-[#151B25] border border-[#1E2638] text-slate-200 text-xs rounded-xl px-3 py-2 focus:border-cyan-400 focus:outline-none cursor-pointer"
+              className="bg-[#151C2C] border border-[#1E273D] text-slate-200 text-xs rounded-xl px-2.5 py-1.5 focus:border-cyan-400 focus:outline-none cursor-pointer"
             >
-              <option value="ALL">Все категории узлов</option>
+              <option value="ALL">Все категории</option>
               {Object.entries(CATEGORY_NAMES).map(([catKey, catName]) => (
                 <option key={catKey} value={catKey}>
                   {catName}
@@ -319,7 +310,7 @@ export function ServiceHistory({
       )}
 
       {/* 6. List of Service Record Cards */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {filteredRecords.length > 0 ? (
           filteredRecords.map((record) => (
             <ServiceRecordCard
@@ -334,17 +325,17 @@ export function ServiceHistory({
             />
           ))
         ) : carRecords.length > 0 ? (
-          <div className="bg-[#10151E] border border-dashed border-[#1E2638] rounded-2xl p-8 text-center text-slate-400 text-xs">
+          <div className="bg-[#111622] border border-dashed border-[#1E273D] rounded-2xl p-6 text-center text-slate-400 text-xs">
             Записи по фильтру "{searchQuery || selectedCategory}" не найдены.
           </div>
         ) : (
-          <div className="bg-[#10151E] border border-dashed border-[#1E2638] rounded-2xl p-10 text-center">
-            <Wrench className="w-10 h-10 text-cyan-400/40 mx-auto mb-3" />
-            <h4 className="text-sm font-bold text-slate-200 mb-1">
+          <div className="bg-[#111622] border border-dashed border-[#1E273D] rounded-2xl p-8 text-center">
+            <Wrench className="w-8 h-8 text-cyan-400/30 mx-auto mb-2.5" />
+            <h4 className="text-xs sm:text-sm font-semibold text-slate-200 mb-1">
               Журнал записей пуст
             </h4>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4">
-              Для выбранного автомобиля пока нет зарегистрированных записей о ремонте и замене расходников.
+            <p className="text-xs text-slate-400 max-w-xs mx-auto mb-3">
+              Для этого автомобиля пока нет сохраненных записей об обслуживании.
             </p>
             {activeCar && !showAddForm && (
               <button
@@ -355,7 +346,7 @@ export function ServiceHistory({
                 className="btn-primary text-xs rounded-xl"
                 id="btn-empty-add"
               >
-                <Plus className="w-4 h-4 mr-1" />
+                <Plus className="w-3.5 h-3.5 mr-1" />
                 Добавить первую запись
               </button>
             )}

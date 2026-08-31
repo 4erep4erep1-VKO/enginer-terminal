@@ -264,37 +264,37 @@ export function VehicleDashboard({
   // Empty State Onboarding
   if (!activeCar) {
     return (
-      <div className="bg-[#10151E] border border-[#1E2638] p-6 sm:p-8 max-w-xl mx-auto font-sans my-6 shadow-xl rounded-2xl">
+      <div className="bg-[#111622] border border-[#1E273D] p-6 sm:p-8 max-w-lg mx-auto font-sans my-8 rounded-2xl shadow-md">
         <div className="text-center space-y-3 mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-[#06B6D4]/10 border border-[#06B6D4]/25 flex items-center justify-center mx-auto text-[#06B6D4] shadow-sm">
-            <CarIcon className="w-7 h-7" />
+          <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto text-[#06B6D4]">
+            <CarIcon className="w-6 h-6" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            Ваш гараж пока пуст
+          <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+            Гараж пока пуст
           </h2>
-          <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-            Добавьте автомобиль, чтобы контролировать замены масла, вести историю и советоваться с мастером Василичем простыми словами.
+          <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+            Добавьте ваш автомобиль, чтобы вести учет ТО, контролировать регламент и советоваться с Василичем.
           </p>
         </div>
 
-        <div className="space-y-2.5 mb-6">
-          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#151B25] border border-[#1E2638]">
-            <span className="w-6 h-6 rounded-lg bg-[#06B6D4]/15 text-[#06B6D4] font-mono text-xs font-bold flex items-center justify-center shrink-0 border border-[#06B6D4]/30">
+        <div className="space-y-2 mb-6">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-[#151C2C] border border-[#1E273D]">
+            <span className="w-5 h-5 rounded-md bg-cyan-500/15 text-[#06B6D4] font-mono text-xs font-semibold flex items-center justify-center shrink-0">
               1
             </span>
             <div>
-              <span className="text-xs font-bold text-white block">Добавьте свой автомобиль</span>
-              <span className="text-[11px] text-slate-400">Укажите марку, модель и примерный пробег.</span>
+              <span className="text-xs font-semibold text-white block">Добавьте автомобиль</span>
+              <span className="text-[11px] text-slate-400">Укажите марку, модель и текущий пробег.</span>
             </div>
           </div>
 
-          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#151B25] border border-[#1E2638]">
-            <span className="w-6 h-6 rounded-lg bg-[#06B6D4]/15 text-[#06B6D4] font-mono text-xs font-bold flex items-center justify-center shrink-0 border border-[#06B6D4]/30">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-[#151C2C] border border-[#1E273D]">
+            <span className="w-5 h-5 rounded-md bg-cyan-500/15 text-[#06B6D4] font-mono text-xs font-semibold flex items-center justify-center shrink-0">
               2
             </span>
             <div>
-              <span className="text-xs font-bold text-white block">Спросите Василича</span>
-              <span className="text-[11px] text-slate-400">Напишите: «Что делать с машиной?» или «Когда менять масло?».</span>
+              <span className="text-xs font-semibold text-white block">Спросите Василича</span>
+              <span className="text-[11px] text-slate-400">Напишите вопрос о машине обычными словами.</span>
             </div>
           </div>
         </div>
@@ -304,11 +304,11 @@ export function VehicleDashboard({
             if ('vibrate' in navigator) navigator.vibrate(20);
             onOpenGarageManager();
           }}
-          className="btn-primary w-full min-h-[46px] text-xs font-bold flex items-center justify-center gap-2 rounded-xl"
+          className="btn-primary w-full text-xs font-semibold flex items-center justify-center gap-2 rounded-xl"
           id="btn-empty-add-car"
         >
           <Plus className="w-4 h-4" />
-          <span>ДОБАВИТЬ АВТОМОБИЛЬ</span>
+          <span>Добавить автомобиль</span>
         </button>
       </div>
     );
@@ -329,494 +329,461 @@ export function VehicleDashboard({
     }
   };
 
+  const [vasilichQuery, setVasilichQuery] = useState('');
+
+  const handleVasilichSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (vasilichQuery.trim()) {
+      onNavigateToRagWithQuestion(vasilichQuery.trim());
+      setVasilichQuery('');
+    }
+  };
+
   return (
-    <div className="space-y-4 font-sans pb-24">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-24 font-sans select-text">
       
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          1. МОЯ МАШИНА (ЧИСТЫЙ ВЕРХНИЙ БЛОК БЕЗ МУСОРА)
+          1. МОЙ АВТОМОБИЛЬ (HERO STATUS - col-span-2)
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section className="bg-[#10151E] border border-[#1E2638] p-4 sm:p-5 rounded-2xl relative overflow-hidden shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
-          
-          {/* Car Info Left */}
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-[#06B6D4]/10 border border-[#06B6D4]/25 flex items-center justify-center text-[#06B6D4] shrink-0">
-              <CarIcon className="w-5 h-5" />
-            </div>
-
-            <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block leading-tight">
-                МОЯ МАШИНА
-              </span>
-              <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                  {activeCar.make} {activeCar.model}
-                </h1>
-                {activeCar.year && (
-                  <span className="text-xs text-slate-400 font-mono">
-                    ({activeCar.year})
-                  </span>
-                )}
+      <div className="md:col-span-2">
+        <section className="bento-card p-4 sm:p-5 h-full flex flex-col justify-between min-h-[145px]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-[#06B6D4] shrink-0">
+                <CarIcon className="w-5 h-5" />
               </div>
-            </div>
-          </div>
 
-          {/* Odometer & Quick Step Buttons Right */}
-          <div className="flex items-center justify-between sm:justify-end gap-2.5 bg-[#151B25] border border-[#1E2638] p-2 sm:px-3 sm:py-2 rounded-xl">
-            <div className="flex items-center gap-2.5">
-              <Gauge className="w-4 h-4 text-[#06B6D4] shrink-0" />
-              <div>
-                <span className="text-[9px] font-mono text-slate-400 uppercase block leading-none">
-                  ПРОБЕГ
-                </span>
-                
-                {isEditingMileage ? (
-                  <form onSubmit={handleSaveManualMileage} className="flex items-center gap-1.5 mt-1">
-                    <input
-                      type="number"
-                      min="0"
-                      value={tempMileage}
-                      onChange={(e) => setTempMileage(e.target.value === '' ? '' : Number(e.target.value))}
-                      placeholder={String(activeCar.mileage || 0)}
-                      className="bg-[#10151E] border border-[#06B6D4] text-white py-0.5 px-2 text-xs font-mono w-24 rounded-lg outline-none"
-                      autoFocus
-                    />
-                    <button
-                      type="submit"
-                      className="p-1 bg-[#06B6D4] text-slate-950 rounded-md hover:bg-cyan-400 cursor-pointer"
-                      title="Сохранить"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingMileage(false)}
-                      className="p-1 bg-[#1E2638] text-slate-400 rounded-md hover:bg-slate-700 cursor-pointer"
-                      title="Отмена"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </form>
-                ) : (
-                  <span className="text-sm sm:text-base font-mono font-bold text-white tracking-wider">
-                    {activeCar.mileage?.toLocaleString('ru-RU') || 0} {distanceLabel}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Step Buttons */}
-            {!isEditingMileage && (
-              <div className="flex items-center gap-1.5 pl-2.5 border-l border-[#1E2638]">
-                <button
-                  type="button"
-                  onClick={() => handleAddMileage(100)}
-                  className="h-7 px-2.5 bg-[#10151E] hover:bg-[#1B2431] border border-[#1E2638] hover:border-[#06B6D4]/40 text-[#06B6D4] text-xs font-mono font-semibold rounded-lg transition-colors cursor-pointer"
-                  title="Добавить 100 км"
-                >
-                  +100
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAddMileage(500)}
-                  className="h-7 px-2.5 bg-[#10151E] hover:bg-[#1B2431] border border-[#1E2638] hover:border-[#06B6D4]/40 text-[#06B6D4] text-xs font-mono font-semibold rounded-lg transition-colors cursor-pointer"
-                  title="Добавить 500 км"
-                >
-                  +500
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTempMileage(activeCar.mileage || 0);
-                    setIsEditingMileage(true);
-                  }}
-                  className="h-7 w-7 p-1 bg-[#10151E] hover:bg-[#1B2431] border border-[#1E2638] text-slate-300 rounded-lg transition-colors cursor-pointer flex items-center justify-center"
-                  title="Изменить точный пробег"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          2. БЛОК «ЧТО СЕЙЧАС ВАЖНО» (ГЛАВНЫЙ ФОКУС)
-         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section className="bg-[#10151E] border border-[#1E2638] p-4 sm:p-5 rounded-2xl relative overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#1E2638] pb-2.5 mb-3.5">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-            <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide uppercase font-mono">
-              Что сейчас важно
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onNavigateTab('service')}
-            className="text-[11px] text-[#06B6D4] hover:underline font-mono font-semibold flex items-center gap-1 cursor-pointer"
-          >
-            <span>ПЛАН ТО</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {importantItems.length > 0 ? (
-          <div className="space-y-2.5">
-            {importantItems.map(item => {
-              const isOverdue = item.type === 'overdue';
-              const isUrgent = item.type === 'urgent';
-
-              return (
-                <div 
-                  key={item.id}
-                  className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                    isOverdue 
-                      ? 'bg-rose-950/20 border-rose-500/30 text-rose-100'
-                      : isUrgent
-                      ? 'bg-amber-950/20 border-amber-500/30 text-amber-100'
-                      : 'bg-[#151B25] border-[#1E2638] text-slate-200'
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${
-                        isOverdue ? 'bg-rose-400 animate-pulse' : isUrgent ? 'bg-amber-400' : 'bg-[#06B6D4]'
-                      }`} />
-                      <span className="text-xs sm:text-sm font-bold text-white truncate">
-                        {item.title}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300 mt-1 leading-relaxed pl-4">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0 pl-4 sm:pl-0">
-                    <button
-                      type="button"
-                      onClick={item.onAction}
-                      className={`min-h-[38px] px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
-                        isOverdue
-                          ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-sm'
-                          : isUrgent
-                          ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
-                          : 'bg-[#151B25] hover:bg-[#1B2431] text-white border border-[#1E2638]'
-                      }`}
-                    >
-                      <span>{item.actionLabel}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-base font-bold text-white tracking-tight">
+                    {activeCar.make} {activeCar.model}
+                  </h1>
+                  {activeCar.year && (
+                    <span className="text-xs text-slate-400 font-mono">
+                      {activeCar.year} г.в.
+                    </span>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          /* Когда всё спокойно */
-          <div className="p-4 rounded-xl bg-emerald-950/15 border border-emerald-500/25 flex items-center justify-between gap-3 text-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-xs sm:text-sm font-bold text-white block">
-                  Сейчас всё спокойно
-                </span>
-                <span className="text-xs text-slate-400">
-                  Машина в порядке, ближайшее обслуживание пока не требуется.
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  Активный автомобиль в гараже
                 </span>
               </div>
             </div>
 
             <button
               type="button"
+              onClick={onOpenGarageManager}
+              className="text-[11px] text-[#06B6D4] hover:underline font-medium shrink-0 cursor-pointer"
+            >
+              Гараж
+            </button>
+          </div>
+
+          {/* Monospace Odometer Widget */}
+          <div className="mt-4 pt-3.5 border-t border-cyan-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-mono font-extrabold text-cyan-400 tracking-tight leading-none">
+                {activeCar.mileage?.toLocaleString('ru-RU') || 0}
+              </span>
+              <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">
+                {distanceLabel}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isEditingMileage ? (
+                <form onSubmit={handleSaveManualMileage} className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min="0"
+                    value={tempMileage}
+                    onChange={(e) => setTempMileage(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder={String(activeCar.mileage || 0)}
+                    className="bg-[#090C12] border border-cyan-500 text-white py-0.5 px-2 text-xs font-mono w-24 rounded-lg outline-none"
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    className="p-1 bg-[#06B6D4] text-slate-950 rounded-md hover:bg-cyan-400 cursor-pointer"
+                    title="Сохранить"
+                  >
+                    <Check className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingMileage(false)}
+                    className="p-1 bg-[#10151E] text-slate-400 rounded-md hover:bg-slate-800 cursor-pointer"
+                    title="Отмена"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleAddMileage(100)}
+                    className="h-7 px-2 bg-[#10151E]/90 hover:bg-cyan-500/10 border border-cyan-500/15 text-[#06B6D4] text-[11px] font-mono font-semibold rounded-lg transition-colors cursor-pointer"
+                    title="Добавить 100 км"
+                  >
+                    +100
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddMileage(500)}
+                    className="h-7 px-2 bg-[#10151E]/90 hover:bg-cyan-500/10 border border-cyan-500/15 text-[#06B6D4] text-[11px] font-mono font-semibold rounded-lg transition-colors cursor-pointer"
+                    title="Добавить 500 км"
+                  >
+                    +500
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTempMileage(activeCar.mileage || 0);
+                      setIsEditingMileage(true);
+                    }}
+                    className="h-7 w-7 bg-[#10151E]/90 hover:bg-cyan-500/10 border border-cyan-500/15 text-slate-400 hover:text-slate-200 rounded-lg transition-colors cursor-pointer flex items-center justify-center"
+                    title="Изменить пробег"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          2. БЛОК «ЧТО СЕЙЧАС ВАЖНО» (col-span-1)
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="md:col-span-1">
+        <section className="bento-card p-4 sm:p-5 h-full flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-cyan-500/10 pb-2 mb-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B]" />
+              <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Важное
+              </h2>
+            </div>
+            <button
+              type="button"
               onClick={() => onNavigateTab('service')}
-              className="text-xs font-mono text-[#06B6D4] hover:underline shrink-0 font-semibold cursor-pointer"
+              className="text-[10px] text-[#06B6D4] hover:underline font-semibold cursor-pointer"
             >
               План ТО
             </button>
           </div>
-        )}
-      </section>
+
+          <div className="flex-1 flex flex-col justify-center py-1">
+            {importantItems.length > 0 ? (
+              <div className="space-y-1.5">
+                {importantItems.slice(0, 1).map(item => {
+                  const isOverdue = item.type === 'overdue';
+                  const isUrgent = item.type === 'urgent';
+                  return (
+                    <div key={item.id} className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isOverdue ? 'bg-rose-400' : isUrgent ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                        <span className="font-semibold text-slate-100 line-clamp-1">{item.title}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">{item.description}</p>
+                      <button
+                        type="button"
+                        onClick={item.onAction}
+                        className="mt-2 text-[10px] text-cyan-400 font-semibold flex items-center gap-0.5 hover:underline cursor-pointer"
+                      >
+                        <span>{item.actionLabel}</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-xs flex items-center gap-2.5 py-1">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div>
+                  <span className="font-semibold text-white block text-[11px]">Все спокойно</span>
+                  <p className="text-[10px] text-slate-400">Срочных работ не требуется</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          3. ГЛАВНОЕ ДЕЙСТВИЕ — СПРОСИТЬ ВАСИЛИЧА
+          3. ИНТЕРАКТИВНЫЙ БЛОК ВАСИЛИЧА (col-span-3)
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section className="bg-[#10151E] border border-[#06B6D4]/25 p-4 sm:p-5 rounded-2xl shadow-sm relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-          <div className="flex items-start gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-[#06B6D4]/15 border border-[#06B6D4]/30 flex items-center justify-center text-[#06B6D4] shrink-0">
-              <Bot className="w-6 h-6" />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white tracking-wide">
+      <div className="md:col-span-3">
+        <section className="bento-card p-4 sm:p-5">
+          <form onSubmit={handleVasilichSubmit} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-[#06B6D4]">
+                <Bot className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                   Спросить Василича
                 </h3>
-                <span className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-[#151B25] text-[#06B6D4] border border-[#1E2638] font-semibold">
-                  ПАМЯТЬ МАШИНЫ
-                </span>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Умный чат-наставник по обслуживанию автомобиля
+                </p>
               </div>
-              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Расскажи, что происходит с машиной — разберёмся простыми словами.
-              </p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                if ('vibrate' in navigator) navigator.vibrate(15);
-                onNavigateToRagWithQuestion('Я вообще не знаю, что с машиной делать. Посмотри историю и подскажи, с чего начать.');
-              }}
-              className="min-h-[42px] px-3.5 bg-[#151B25] hover:bg-[#1B2431] border border-[#1E2638] text-slate-300 text-xs font-semibold rounded-xl cursor-pointer transition-colors"
-            >
-              С чего начать?
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                if ('vibrate' in navigator) navigator.vibrate(15);
-                onNavigateTab('rag');
-              }}
-              className="btn-primary min-h-[42px] px-4 text-xs font-bold flex items-center justify-center gap-2 rounded-xl"
-              id="btn-ask-vasilich-main"
-            >
-              <Bot className="w-4 h-4" />
-              <span>СПРОСИТЬ ВАСИЛИЧА</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      </section>
+            {/* Input Row with Gradient borders and clean styling */}
+            <div className="relative flex items-center flex-1 w-full bg-[#090C12]/60 border border-cyan-500/15 focus-within:border-cyan-500/50 rounded-xl px-2 py-1 transition-all">
+              <input
+                type="text"
+                value={vasilichQuery}
+                onChange={(e) => setVasilichQuery(e.target.value)}
+                placeholder="Спроси Василича о машине (например: когда менять масло?)..."
+                className="flex-1 bg-transparent px-2.5 py-1.5 text-xs sm:text-[13px] text-slate-100 placeholder-slate-500 focus:outline-none min-w-0"
+              />
+              
+              <button
+                type="submit"
+                disabled={!vasilichQuery.trim()}
+                className="w-8 h-8 rounded-lg bg-cyan-500 hover:bg-cyan-400 disabled:opacity-30 text-slate-950 flex items-center justify-center font-bold cursor-pointer shrink-0 transition-colors ml-1"
+                title="Отправить"
+              >
+                <ArrowRight className="w-4 h-4 text-slate-950" />
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          4. БЫСТРЫЕ ДЕЙСТВИЯ ДЛЯ ВОДИТЕЛЯ (1-ТАП)
+          4. БЫСТРЫЕ ДЕЙСТВИЯ (col-span-3 Bento Grid)
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        
-        {/* Действие 1: Показать мастеру на СТО */}
-        <button
-          type="button"
-          onClick={() => {
-            if ('vibrate' in navigator) navigator.vibrate(15);
-            setIsShowMechanicOpen(true);
-          }}
-          className="p-3.5 rounded-2xl bg-[#10151E] hover:bg-[#151B25] border border-[#1E2638] hover:border-[#06B6D4]/40 text-left transition-all cursor-pointer flex items-center gap-3 active:scale-98 shadow-sm"
-          id="btn-show-mechanic"
-        >
-          <div className="w-9 h-9 rounded-xl bg-[#06B6D4]/10 border border-[#06B6D4]/25 text-[#06B6D4] flex items-center justify-center shrink-0">
-            <FileText className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <span className="block text-xs font-bold text-white truncate">
-              Показать мастеру
-            </span>
-            <span className="block text-[10px] text-slate-400 truncate mt-0.5">
-              Сводка для СТО
-            </span>
-          </div>
-        </button>
+      <div className="md:col-span-3">
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          
+          {/* Действие 1: Показать мастеру на СТО */}
+          <button
+            type="button"
+            onClick={() => {
+              if ('vibrate' in navigator) navigator.vibrate(15);
+              setIsShowMechanicOpen(true);
+            }}
+            className="p-3.5 rounded-xl bg-[#10151E]/80 backdrop-blur-md border border-cyan-500/15 hover:border-cyan-500/40 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] text-left transition-all duration-300 flex items-center gap-3 cursor-pointer active:scale-98"
+            id="btn-show-mechanic"
+          >
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[#06B6D4] flex items-center justify-center shrink-0">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-xs font-bold text-white truncate">
+                Для СТО
+              </span>
+              <span className="block text-[10px] text-slate-400 truncate">
+                Сводка мастеру
+              </span>
+            </div>
+          </button>
 
-        {/* Действие 2: Записать обслуживание (Простое) */}
-        <button
-          type="button"
-          onClick={() => {
-            if ('vibrate' in navigator) navigator.vibrate(15);
-            setIsSimpleAddOpen(true);
-          }}
-          className="p-3.5 rounded-2xl bg-[#10151E] hover:bg-[#151B25] border border-[#1E2638] hover:border-[#10B981]/40 text-left transition-all cursor-pointer flex items-center gap-3 active:scale-98 shadow-sm"
-          id="btn-simple-add-record"
-        >
-          <div className="w-9 h-9 rounded-xl bg-[#10B981]/10 border border-[#10B981]/25 text-[#10B981] flex items-center justify-center shrink-0">
-            <PlusCircle className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <span className="block text-xs font-bold text-white truncate">
-              Записать ТО
-            </span>
-            <span className="block text-[10px] text-slate-400 truncate mt-0.5">
-              В 2 клика
-            </span>
-          </div>
-        </button>
+          {/* Действие 2: Записать ТО */}
+          <button
+            type="button"
+            onClick={() => {
+              if ('vibrate' in navigator) navigator.vibrate(15);
+              setIsSimpleAddOpen(true);
+            }}
+            className="p-3.5 rounded-xl bg-[#10151E]/80 backdrop-blur-md border border-cyan-500/15 hover:border-cyan-500/40 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] text-left transition-all duration-300 flex items-center gap-3 cursor-pointer active:scale-98"
+            id="btn-simple-add-record"
+          >
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <PlusCircle className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-xs font-bold text-white truncate">
+                Записать ТО
+              </span>
+              <span className="block text-[10px] text-slate-400 truncate">
+                В 2 клика
+              </span>
+            </div>
+          </button>
 
-        {/* Действие 3: Сказать голосом */}
-        <button
-          type="button"
-          onClick={() => {
-            if ('vibrate' in navigator) navigator.vibrate(15);
-            setIsSimpleAddOpen(true);
-          }}
-          className="p-3.5 rounded-2xl bg-[#10151E] hover:bg-[#151B25] border border-[#1E2638] hover:border-[#F59E0B]/40 text-left transition-all cursor-pointer flex items-center gap-3 active:scale-98 shadow-sm"
-          id="btn-voice-add-record"
-        >
-          <div className="w-9 h-9 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/25 text-[#F59E0B] flex items-center justify-center shrink-0">
-            <Mic className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <span className="block text-xs font-bold text-white truncate">
-              Сказать голосом
-            </span>
-            <span className="block text-[10px] text-slate-400 truncate mt-0.5">
-              «Поменял масло»
-            </span>
-          </div>
-        </button>
+          {/* Действие 3: Сказать голосом */}
+          <button
+            type="button"
+            onClick={() => {
+              if ('vibrate' in navigator) navigator.vibrate(15);
+              if (onOpenAddRecordWithVoice) {
+                onOpenAddRecordWithVoice();
+              } else {
+                setIsSimpleAddOpen(true);
+              }
+            }}
+            className="p-3.5 rounded-xl bg-[#10151E]/80 backdrop-blur-md border border-cyan-500/15 hover:border-cyan-500/40 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] text-left transition-all duration-300 flex items-center gap-3 cursor-pointer active:scale-98"
+            id="btn-voice-add-record"
+          >
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <Mic className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-xs font-bold text-white truncate">
+                Голосом
+              </span>
+              <span className="block text-[10px] text-slate-400 truncate">
+                Диктовка ТО
+              </span>
+            </div>
+          </button>
 
-        {/* Действие 4: Склад запчастей */}
-        <button
-          type="button"
-          onClick={() => {
-            if ('vibrate' in navigator) navigator.vibrate(15);
-            onNavigateTab('garage');
-          }}
-          className="p-3.5 rounded-2xl bg-[#10151E] hover:bg-[#151B25] border border-[#1E2638] hover:border-[#8B5CF6]/40 text-left transition-all cursor-pointer flex items-center gap-3 active:scale-98 shadow-sm"
-          id="btn-garage-parts"
-        >
-          <div className="w-9 h-9 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/25 text-[#8B5CF6] flex items-center justify-center shrink-0">
-            <PackageCheck className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <span className="block text-xs font-bold text-white truncate">
-              Мой гараж
-            </span>
-            <span className="block text-[10px] text-slate-400 truncate mt-0.5">
-              {parts.length} деталей
-            </span>
-          </div>
-        </button>
+          {/* Действие 4: Склад запчастей */}
+          <button
+            type="button"
+            onClick={() => {
+              if ('vibrate' in navigator) navigator.vibrate(15);
+              onNavigateTab('garage');
+            }}
+            className="p-3.5 rounded-xl bg-[#10151E]/80 backdrop-blur-md border border-cyan-500/15 hover:border-cyan-500/40 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] text-left transition-all duration-300 flex items-center gap-3 cursor-pointer active:scale-98"
+            id="btn-garage-parts"
+          >
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+              <PackageCheck className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-xs font-bold text-white truncate">
+                Гараж
+              </span>
+              <span className="block text-[10px] text-slate-400 truncate">
+                {parts.length} деталей
+              </span>
+            </div>
+          </button>
 
-      </section>
+        </section>
+      </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          5. ЧТО ДЕЛАЛИ НЕДАВНО (ПОСЛЕДНИЕ 2 РАБОТЫ)
+          5. ЧТО ДЕЛАЛИ НЕДАВНО (col-span-2)
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {recentRecords.length > 0 && (
-        <section className="bg-[#10151E] border border-[#1E2638] p-4 sm:p-5 rounded-2xl relative overflow-hidden font-sans shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#1E2638] pb-2.5 mb-3">
+        <div className="md:col-span-2">
+          <section className="bento-card p-4 sm:p-5 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between border-b border-cyan-500/10 pb-2.5 mb-3">
+              <div className="flex items-center gap-2">
+                <History className="w-3.5 h-3.5 text-[#06B6D4]" />
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Последние работы
+                </h3>
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => onNavigateTab('service')}
+                className="text-[11px] text-[#06B6D4] hover:underline font-semibold cursor-pointer"
+              >
+                Все записи ({activeCarRecords.length})
+              </button>
+            </div>
+
+            <div className="space-y-2 flex-1 flex flex-col justify-center">
+              {recentRecords.map((record) => (
+                <div 
+                  key={record.id}
+                  onClick={() => onViewRecord(record)}
+                  className="p-3 rounded-xl bg-[#090C12]/50 border border-cyan-500/10 hover:border-cyan-500/30 hover:bg-[#10151E]/60 cursor-pointer flex items-center justify-between gap-3 transition-all duration-200"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-white truncate">
+                        {record.description}
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#10151E] text-slate-400 font-mono border border-cyan-500/10">
+                        {record.date}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400 font-mono">
+                      {record.mileage && (
+                        <span>{record.mileage.toLocaleString('ru-RU')} {distanceLabel}</span>
+                      )}
+                      {record.category && (
+                        <span>• {record.category}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="text-xs font-bold font-mono text-white">
+                      {formatCurrency((record.partsPrice || 0) + (record.laborPrice || 0))}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          6. РАСХОДЫ НА МАШИНУ (col-span-1)
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="md:col-span-1">
+        <section className="bento-card p-4 sm:p-5 h-full flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-cyan-500/10 pb-2.5 mb-3">
             <div className="flex items-center gap-2">
-              <History className="w-4 h-4 text-[#06B6D4]" />
-              <h3 className="text-xs font-bold text-slate-200 tracking-wider uppercase font-mono">
-                Что делали недавно
+              <TrendingUp className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Расходы
               </h3>
             </div>
             
             <button
               type="button"
               onClick={() => onNavigateTab('service')}
-              className="text-[11px] text-[#06B6D4] hover:underline font-mono font-semibold flex items-center gap-1 cursor-pointer"
+              className="text-[10px] text-[#06B6D4] hover:underline font-semibold cursor-pointer"
             >
-              <span>ВСЯ ИСТОРИЯ ({activeCarRecords.length})</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              Детали
             </button>
           </div>
 
-          <div className="space-y-2">
-            {recentRecords.map((record) => (
-              <div 
-                key={record.id}
-                onClick={() => onViewRecord(record)}
-                className="p-3 rounded-xl bg-[#151B25] border border-[#1E2638] hover:border-[#273248] hover:bg-[#1B2431] cursor-pointer flex items-center justify-between gap-3 transition-colors"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs sm:text-sm font-bold text-white truncate">
-                      {record.description}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#10151E] text-slate-300 font-mono border border-[#1E2638]">
-                      {record.date}
-                    </span>
-                  </div>
+          <div className="grid grid-cols-2 gap-2 flex-1 py-1">
+            <div className="p-2 rounded-xl bg-[#090C12]/50 border border-cyan-500/10">
+              <span className="text-[9px] text-slate-400 block leading-tight">
+                Месяц
+              </span>
+              <span className="text-xs font-bold font-mono text-white mt-1 block truncate">
+                {formatCurrency(currentMonthSpend)}
+              </span>
+            </div>
 
-                  <div className="flex items-center gap-2 mt-1 text-xs text-slate-400 font-mono">
-                    {record.mileage && (
-                      <span>{record.mileage.toLocaleString('ru-RU')} {distanceLabel}</span>
-                    )}
-                    {record.category && (
-                      <span>• {record.category}</span>
-                    )}
-                  </div>
-                </div>
+            <div className="p-2 rounded-xl bg-[#090C12]/50 border border-cyan-500/10">
+              <span className="text-[9px] text-slate-400 block leading-tight">
+                Год
+              </span>
+              <span className="text-xs font-bold font-mono text-[#06B6D4] mt-1 block truncate">
+                {formatCurrency(currentYearSpend)}
+              </span>
+            </div>
 
-                <div className="text-right shrink-0">
-                  <span className="text-xs sm:text-sm font-bold font-mono text-white">
-                    {formatCurrency((record.partsPrice || 0) + (record.laborPrice || 0))}
-                  </span>
-                </div>
-              </div>
-            ))}
+            <div className="p-2 rounded-xl bg-[#090C12]/50 border border-cyan-500/10">
+              <span className="text-[9px] text-slate-400 block leading-tight">
+                Средний чек
+              </span>
+              <span className="text-xs font-bold font-mono text-slate-200 mt-1 block truncate">
+                {formatCurrency(averageRecordCost)}
+              </span>
+            </div>
+
+            <div className="p-2 rounded-xl bg-[#090C12]/50 border border-cyan-500/10">
+              <span className="text-[9px] text-slate-400 block leading-tight">
+                1 {distanceLabel}
+              </span>
+              <span className="text-[10px] font-bold font-mono text-emerald-400 mt-1 block truncate">
+                {costPerKmFormatted}
+              </span>
+            </div>
           </div>
         </section>
-      )}
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          6. РАСХОДЫ НА МАШИНУ (КРАТКИЙ ПУЛЬС)
-         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section className="bg-[#10151E] border border-[#1E2638] p-4 sm:p-5 rounded-2xl relative overflow-hidden font-sans shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#1E2638] pb-2.5 mb-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#06B6D4]" />
-            <h3 className="text-xs font-bold text-slate-200 tracking-wider uppercase font-mono">
-              Расходы на машину
-            </h3>
-          </div>
-          
-          <button
-            type="button"
-            onClick={() => onNavigateTab('service')}
-            className="text-[11px] text-[#06B6D4] hover:underline font-mono font-semibold flex items-center gap-1 cursor-pointer"
-          >
-            <span>АНАЛИТИКА</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <div className="p-3 rounded-xl bg-[#151B25] border border-[#1E2638]">
-            <span className="text-[10px] font-mono text-slate-400 uppercase block">
-              ТЕКУЩИЙ МЕСЯЦ
-            </span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-white mt-1 block">
-              {formatCurrency(currentMonthSpend)}
-            </span>
-          </div>
-
-          <div className="p-3 rounded-xl bg-[#151B25] border border-[#1E2638]">
-            <span className="text-[10px] font-mono text-slate-400 uppercase block">
-              ТЕКУЩИЙ ГОД
-            </span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-[#06B6D4] mt-1 block">
-              {formatCurrency(currentYearSpend)}
-            </span>
-          </div>
-
-          <div className="p-3 rounded-xl bg-[#151B25] border border-[#1E2638]">
-            <span className="text-[10px] font-mono text-slate-400 uppercase block">
-              СРЕДНИЙ ЧЕК
-            </span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-slate-200 mt-1 block">
-              {formatCurrency(averageRecordCost)}
-            </span>
-          </div>
-
-          <div className="p-3 rounded-xl bg-[#151B25] border border-[#1E2638]">
-            <span className="text-[10px] font-mono text-slate-400 uppercase block">
-              СТОИМОСТЬ 1 КМ
-            </span>
-            <span className="text-[11px] sm:text-xs font-bold font-mono text-emerald-400 mt-1 block truncate">
-              {costPerKmFormatted}
-            </span>
-          </div>
-        </div>
-      </section>
+      </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           MODALS: ПОКАЗАТЬ МАСТЕРУ & БЫСТРОЕ ТО
@@ -837,7 +804,6 @@ export function VehicleDashboard({
         currentCarMileage={activeCar.mileage || 0}
         onRecordAdded={(rec) => {
           onOpenAddRecord();
-          // We can also trigger onQuickUpdateMileage if mileage is greater
           if (rec.mileage && activeCar.mileage && rec.mileage > activeCar.mileage) {
             onQuickUpdateMileage(rec.mileage);
           }

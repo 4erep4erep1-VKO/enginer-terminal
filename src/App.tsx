@@ -828,8 +828,8 @@ export default function App() {
       {/* CAR SELECTOR MODAL OVERLAY */}
       {isCarSelectorOpen && (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#121824] border border-cyan-500/30 p-5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] space-y-4 font-sans">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="w-full max-w-md bg-[#10151E]/95 backdrop-blur-md border border-cyan-500/20 p-5 rounded-2xl shadow-2xl space-y-4 font-sans">
+            <div className="flex items-center justify-between border-b border-cyan-500/10 pb-3">
               <div className="text-cyan-300 font-bold text-sm flex items-center gap-2 truncate pr-2">
                 <CarIcon className="w-4 h-4 text-cyan-400 shrink-0" />
                 <span className="truncate">Выбор автомобиля ({cars.length})</span>
@@ -842,7 +842,7 @@ export default function App() {
                     setActiveTab('garage');
                     setGarageSubTab('cars');
                   }}
-                  className="text-xs font-semibold text-cyan-300 hover:text-cyan-100 flex items-center gap-1 cursor-pointer py-1 px-2.5 rounded-lg border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/60 transition-all"
+                  className="text-xs font-semibold text-cyan-300 hover:text-cyan-100 flex items-center gap-1 cursor-pointer py-1 px-2.5 rounded-lg border border-cyan-500/20 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all"
                   title="Добавить новый автомобиль"
                   id="btn-add-car-modal-header"
                 >
@@ -877,8 +877,8 @@ export default function App() {
                       }}
                       className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between border cursor-pointer ${
                         isSelected 
-                          ? 'bg-cyan-500/10 border-cyan-400/60 text-cyan-200 font-semibold shadow-[0_0_14px_rgba(0,229,255,0.15)]'
-                          : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-850'
+                          ? 'bg-cyan-500/10 border-cyan-500/35 text-cyan-200 font-semibold shadow-[0_0_14px_rgba(6,182,212,0.15)]'
+                          : 'bg-[#090C12]/60 border-cyan-500/10 text-slate-300 hover:border-cyan-500/30 hover:bg-[#10151E]'
                       }`}
                     >
                       <div className="truncate pr-2 min-w-0 flex-1">
@@ -908,7 +908,7 @@ export default function App() {
               )}
             </div>
 
-            <div className="pt-2 border-t border-slate-800 flex gap-2.5">
+            <div className="pt-2 border-t border-cyan-500/10 flex gap-2.5">
               <button
                 type="button"
                 onClick={() => {
@@ -916,7 +916,7 @@ export default function App() {
                   setActiveTab('garage');
                   setGarageSubTab('cars');
                 }}
-                className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl text-slate-200 text-xs font-semibold text-center cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 px-3 bg-[#10151E] hover:bg-[#151C2C] border border-cyan-500/15 rounded-xl text-slate-200 text-xs font-semibold text-center cursor-pointer transition-all flex items-center justify-center gap-1.5"
                 id="btn-open-garage-settings"
               >
                 <Warehouse className="w-4 h-4 text-cyan-400" />
@@ -929,7 +929,7 @@ export default function App() {
                   setIsCarSelectorOpen(false);
                   setShowTechSpecs(true);
                 }}
-                className="py-2.5 px-3.5 bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-900/60 text-cyan-300 rounded-xl text-xs font-semibold text-center cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                className="py-2.5 px-3.5 bg-cyan-500/10 border border-cyan-500/25 hover:bg-cyan-500/20 text-cyan-300 rounded-xl text-xs font-semibold text-center cursor-pointer transition-all flex items-center justify-center gap-1.5"
                 title="Справочник механика"
               >
                 <BookOpen className="w-4 h-4" />
@@ -1195,13 +1195,13 @@ export default function App() {
       {/* FOOTER HUD - Only shown when NOT on Vasilich screen */}
       {activeTab !== 'rag' && (
         <footer className="max-w-7xl mx-auto px-4 mt-8 pb-20 md:pb-8 text-center text-xs text-slate-500 space-y-1 font-sans">
-          <p className="font-medium text-slate-400">Инженерный Терминал • Автономный центр управления автомобилем • PWA Standalone</p>
+          <p className="font-medium text-slate-400">Инженерный Терминал • Автономный центр управления автомобилем</p>
           <p className="text-[11px] font-mono text-slate-600">Все данные хранятся локально в памяти устройства (localStorage)</p>
         </footer>
       )}
 
-      {/* MOBILE FIXED BOTTOM NAVIGATION BAR (4 CORE SECTIONS) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-16 pb-[env(safe-area-inset-bottom)] bg-[#080b11]/95 border-t border-cyan-500/20 backdrop-blur-xl px-1 flex items-center justify-around font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.8)]">
+      {/* MOBILE FIXED FLOATING BOTTOM NAVIGATION BAR (4 CORE SECTIONS) */}
+      <nav className="md:hidden fixed bottom-4 left-4 right-4 bg-[#10151E]/90 backdrop-blur-lg border border-white/10 rounded-full py-2 px-3 shadow-2xl z-50 flex items-center justify-around font-sans">
         
         {/* 1. ГЛАВНАЯ */}
         <button
@@ -1211,15 +1211,15 @@ export default function App() {
             setActiveTab('dashboard');
             setShowAddForm(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer rounded-xl ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 rounded-full transition-all cursor-pointer ${
             activeTab === 'dashboard'
-              ? 'text-cyan-300 font-bold bg-cyan-500/10 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+              ? 'text-cyan-400 bg-cyan-500/20 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
           id="mob-tab-dashboard"
         >
-          <CarIcon className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-medium tracking-tight">Главная</span>
+          <CarIcon className="w-4 h-4 mb-0.5" />
+          <span className="text-[9px] font-medium tracking-tight">Главная</span>
         </button>
 
         {/* 2. ТО */}
@@ -1230,15 +1230,15 @@ export default function App() {
             setActiveTab('service');
             setShowAddForm(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer rounded-xl ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 rounded-full transition-all cursor-pointer ${
             activeTab === 'service'
-              ? 'text-cyan-300 font-bold bg-cyan-500/10 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+              ? 'text-cyan-400 bg-cyan-500/20 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
           id="mob-tab-service"
         >
-          <ClipboardList className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-medium tracking-tight">ТО</span>
+          <ClipboardList className="w-4 h-4 mb-0.5" />
+          <span className="text-[9px] font-medium tracking-tight">ТО</span>
         </button>
 
         {/* 3. ВАСИЛИЧ */}
@@ -1248,15 +1248,15 @@ export default function App() {
             if (navigator.vibrate) navigator.vibrate(15);
             setActiveTab('rag');
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer rounded-xl ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 rounded-full transition-all cursor-pointer ${
             activeTab === 'rag'
-              ? 'text-cyan-300 font-bold bg-cyan-500/10 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+              ? 'text-cyan-400 bg-cyan-500/20 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
           id="mob-tab-rag"
         >
-          <Bot className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-medium tracking-tight">Василич</span>
+          <Bot className="w-4 h-4 mb-0.5" />
+          <span className="text-[9px] font-medium tracking-tight">Василич</span>
         </button>
 
         {/* 4. ГАРАЖ */}
@@ -1266,15 +1266,15 @@ export default function App() {
             if (navigator.vibrate) navigator.vibrate(15);
             setActiveTab('garage');
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer rounded-xl ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 rounded-full transition-all cursor-pointer ${
             activeTab === 'garage'
-              ? 'text-cyan-300 font-bold bg-cyan-500/10 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+              ? 'text-cyan-400 bg-cyan-500/20 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
           id="mob-tab-garage"
         >
-          <Warehouse className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-medium tracking-tight">Гараж</span>
+          <Warehouse className="w-4 h-4 mb-0.5" />
+          <span className="text-[9px] font-medium tracking-tight">Гараж</span>
         </button>
 
       </nav>

@@ -302,10 +302,10 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-950/80 backdrop-blur-md transition-all duration-300 ease-out">
-      <div className="w-full md:max-w-2xl bg-slate-900/95 border-t md:border border-slate-800 rounded-t-2xl md:rounded-2xl shadow-2xl overflow-y-auto max-h-[calc(100vh-60px)] md:max-h-[90vh] p-4 sm:p-6 relative">
+    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-sm transition-all duration-300 ease-out">
+      <div className="w-full md:max-w-2xl bg-[#111622] border-t md:border border-[#1E273D] rounded-t-2xl md:rounded-2xl shadow-2xl overflow-y-auto max-h-[calc(100vh-60px)] md:max-h-[90vh] p-4 sm:p-5 relative">
         {/* Drag handle for iOS style bottom sheet */}
-        <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto mb-4 md:hidden" />
+        <div className="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-3 md:hidden" />
         
         {onCancel && (
           <button
@@ -313,94 +313,84 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
               if (navigator.vibrate) navigator.vibrate(15);
               onCancel();
             }}
-            className="absolute top-3 right-3 md:top-4 md:right-4 text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-colors cursor-pointer z-20"
+            className="absolute top-3 right-3 md:top-4 md:right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-[#151C2C] transition-colors cursor-pointer z-20"
             title="Закрыть"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         )}
 
         {/* Modal Header */}
-        <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-6">
+        <div className="flex justify-between items-center border-b border-[#1E273D] pb-3 mb-4">
           <div>
-            <span className="text-[10px] text-cyan-400 tracking-widest font-sans font-semibold uppercase block">
-              {isEditMode ? 'Редактирование ТО' : 'Добавление ремонта'}
+            <span className="text-[10px] text-[#06B6D4] font-semibold uppercase block">
+              {isEditMode ? 'Редактирование ТО' : 'Новая запись'}
             </span>
-            <h3 className="text-lg font-bold text-white font-sans">
-              {isEditMode ? 'Редактирование записи ТО' : 'Регистрация технических работ'}
+            <h3 className="text-sm sm:text-base font-bold text-white">
+              {isEditMode ? 'Редактирование записи ТО' : 'Добавить сервисную запись'}
             </h3>
           </div>
-          <div className="flex items-center text-xs text-slate-400 font-sans mr-8 md:mr-0">
-            <Cpu className="w-4 h-4 mr-1.5 text-cyan-400 animate-pulse" />
-            Помощь ИИ включена
+          <div className="flex items-center text-xs text-slate-400 mr-8 md:mr-0">
+            <Cpu className="w-3.5 h-3.5 mr-1 text-[#06B6D4]" />
+            Помощник ИИ
           </div>
         </div>
 
-      {/* 1. Voice Input & Speech Simulator Section (HANDS-FREE MODE) */}
-      <div className="mb-6 bg-slate-950/80 border border-slate-800 p-4 rounded-2xl relative shadow-lg">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-xs font-semibold text-cyan-400 font-sans uppercase flex items-center gap-1.5">
-            <Mic className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <span>Режим "грязных рук" (Голосовой ввод)</span>
+      {/* 1. Voice Input & Speech Simulator Section */}
+      <div className="mb-4 bg-[#0B0E14] border border-[#1E273D] p-3.5 rounded-xl relative shadow-sm">
+        <div className="flex justify-between items-center mb-2.5">
+          <span className="text-xs font-semibold text-[#06B6D4] uppercase flex items-center gap-1.5">
+            <Mic className="w-3.5 h-3.5 text-[#06B6D4]" />
+            <span>Голосовой ввод</span>
           </span>
-          <span className="text-[10px] text-slate-400 font-sans hidden sm:inline">Автозаполнение через ИИ</span>
+          <span className="text-[11px] text-slate-400 hidden sm:inline">Автозаполнение</span>
         </div>
 
-        {/* Large Prominent Microphone Button */}
-        <div className="mb-4">
+        {/* Microphone Button */}
+        <div className="mb-3">
           <button
             type="button"
             onClick={handleToggleListening}
             disabled={isAiParsing}
-            className={`w-full py-4 px-6 flex items-center justify-center font-sans font-bold text-sm rounded-xl border transition-all cursor-pointer select-none disabled:opacity-50 min-h-[56px] ${
+            className={`w-full py-3 px-4 flex items-center justify-center font-medium text-xs rounded-xl border transition-all cursor-pointer select-none disabled:opacity-50 ${
               isAiParsing
-                ? 'bg-slate-900 border-cyan-500/50 text-cyan-300 animate-pulse'
+                ? 'bg-[#151C2C] border-cyan-500/50 text-[#06B6D4]'
                 : isListening 
-                  ? 'bg-rose-600 border-rose-400 text-white shadow-lg shadow-rose-500/30 animate-pulse' 
+                  ? 'bg-rose-600 border-rose-400 text-white' 
                   : 'btn-primary'
             }`}
             id="btn-voice-rec-handsfree"
           >
             {isAiParsing ? (
               <div className="flex items-center gap-2">
-                <Cpu className="w-6 h-6 animate-spin text-cyan-300" />
-                <span className="uppercase">ИИ распределяет данные...</span>
+                <Cpu className="w-4 h-4 animate-spin text-cyan-300" />
+                <span>ИИ обрабатывает запись...</span>
               </div>
             ) : isListening ? (
               <div className="flex items-center gap-2">
-                <MicOff className="w-6 h-6 animate-bounce text-white" />
-                <span className="uppercase">Идет запись... Нажмите для завершения</span>
+                <MicOff className="w-4 h-4 text-white" />
+                <span>Идет запись... Нажмите для завершения</span>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-950/40 rounded-lg">
-                  <Mic className="w-6 h-6 text-slate-950" />
-                </div>
-                <div className="text-left">
-                  <span className="block text-base font-bold uppercase leading-none">Голосовой ввод (Hands-free)</span>
-                  <span className="block text-xs opacity-90 font-normal font-sans mt-1">
-                    Скажите: "Замена масла в двигателе 4500 рублей пробег 120000 км"
-                  </span>
-                </div>
+              <div className="flex items-center gap-2">
+                <Mic className="w-4 h-4" />
+                <span>Сказать голосом («Замена масла 4500 руб, пробег 120000»)</span>
               </div>
             )}
           </button>
           {recognitionError && (
-            <div className="text-xs text-rose-400 font-sans mt-2 text-center bg-rose-950/40 p-2 rounded-lg border border-rose-500/30">
+            <div className="text-xs text-rose-400 mt-2 text-center bg-rose-950/40 p-2 rounded-lg border border-rose-500/30">
               {recognitionError}
             </div>
           )}
         </div>
 
         {/* Real-time transcript display */}
-        <div className="relative border border-slate-800 bg-slate-900/90 p-3 min-h-[55px] flex items-center justify-between rounded-xl">
-          <span className="absolute -top-2.5 left-3 bg-slate-950 px-2 text-[10px] text-cyan-400 font-sans font-semibold">
-            Распознанный поток речи:
-          </span>
-          <p className="text-xs text-slate-200 font-sans leading-relaxed pr-4">
+        <div className="border border-[#1E273D] bg-[#111622] p-2.5 min-h-[44px] flex items-center justify-between rounded-xl">
+          <p className="text-xs text-slate-200 leading-relaxed pr-3">
             {speechTranscript || (
-              <span className="text-slate-500 italic">
-                Нажмите большую кнопку выше и назовите выполненную работу, категорию, стоимость и пробег...
+              <span className="text-slate-500 italic text-[11px]">
+                Назовите работу, стоимость и пробег...
               </span>
             )}
           </p>
@@ -409,27 +399,27 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
               type="button"
               onClick={() => handleAiParse(speechTranscript)}
               disabled={isAiParsing}
-              className="btn-primary px-3 py-1.5 text-xs font-bold rounded-lg shrink-0 disabled:opacity-50 cursor-pointer"
+              className="btn-primary px-2.5 py-1 text-xs font-semibold rounded-lg shrink-0 disabled:opacity-50 cursor-pointer"
               id="btn-parse-speech"
             >
-              {isAiParsing ? 'Анализ...' : 'В ИИ'}
+              {isAiParsing ? '...' : 'В ИИ'}
             </button>
           )}
         </div>
 
         {/* Error Displays */}
         {parseError && (
-          <div className="mt-3 p-3 border border-rose-500/40 bg-rose-950/30 text-rose-300 text-xs font-sans rounded-xl flex items-center">
-            <span className="font-bold mr-1.5 animate-pulse">Внимание:</span> {parseError}
+          <div className="mt-2.5 p-2.5 border border-rose-500/40 bg-rose-950/30 text-rose-300 text-xs rounded-xl flex items-center">
+            <span className="font-semibold mr-1.5">Внимание:</span> {parseError}
           </div>
         )}
 
         {/* Speech simulator presets */}
-        <div className="mt-3 pt-3 border-t border-slate-800">
-          <div className="text-xs text-slate-400 mb-2 font-sans">
-            Готовые фразы для быстрой проверки:
+        <div className="mt-2.5 pt-2.5 border-t border-[#1E273D]">
+          <div className="text-[11px] text-slate-400 mb-1.5">
+            Быстрые шаблоны:
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {SPEECH_PRESETS.map((p, idx) => (
               <button
                 key={idx}
@@ -439,9 +429,9 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
                   handleAiParse(p.text);
                 }}
                 disabled={isAiParsing}
-                className="text-xs border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg font-sans transition-all flex items-center cursor-pointer disabled:opacity-40 min-h-[36px]"
+                className="text-[11px] border border-[#1E273D] bg-[#111622] hover:bg-[#151C2C] text-slate-300 hover:text-white px-2.5 py-1 rounded-lg transition-all flex items-center cursor-pointer disabled:opacity-40"
               >
-                <Play className="w-3.5 h-3.5 mr-1 text-cyan-400 shrink-0" />
+                <Play className="w-3 h-3 mr-1 text-[#06B6D4] shrink-0" />
                 {p.label}
               </button>
             ))}
@@ -450,35 +440,35 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
       </div>
 
       {/* 2. Main Manual Input Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3.5">
         {/* Row 1: Description */}
         <div className="flex flex-col">
-          <label className="text-xs text-slate-300 font-sans font-semibold mb-1.5">
-            Описание выполненной работы *
+          <label className="text-xs text-slate-300 font-medium mb-1">
+            Описание работы *
           </label>
           <input
             type="text"
             required
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Например, Замена комплекта сцепления Sachs"
+            placeholder="Замена комплекта сцепления..."
             disabled={isAiParsing}
-            className="border border-slate-800 bg-slate-950/80 p-3 rounded-xl text-sm text-slate-100 font-sans focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 disabled:opacity-50"
+            className="border border-[#1E273D] bg-[#0B0E14] p-2.5 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-cyan-400 disabled:opacity-50"
             id="input-desc"
           />
         </div>
 
         {/* Row 2: Category & Date */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="flex flex-col">
-            <label className="text-xs text-slate-300 font-sans font-semibold mb-1.5">
-              Система автомобиля (Категория) *
+            <label className="text-xs text-slate-300 font-medium mb-1">
+              Категория системы *
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as RecordCategory)}
               disabled={isAiParsing}
-              className="border border-slate-800 bg-slate-950/80 p-3 rounded-xl text-sm text-slate-100 font-sans focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 disabled:opacity-50"
+              className="border border-[#1E273D] bg-[#0B0E14] p-2.5 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-cyan-400 disabled:opacity-50"
               id="select-category"
             >
               {CATEGORIES.map((cat) => (
@@ -488,8 +478,8 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
           </div>
 
           <div className="flex flex-col">
-            <label className="text-xs text-slate-300 font-sans font-semibold mb-1.5">
-              Дата проведения работ *
+            <label className="text-xs text-slate-300 font-medium mb-1">
+              Дата *
             </label>
             <input
               type="date"
@@ -497,17 +487,17 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
               value={date}
               onChange={(e) => setDate(e.target.value)}
               disabled={isAiParsing}
-              className="border border-slate-800 bg-slate-950/80 p-3 rounded-xl text-sm text-slate-100 font-sans focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 disabled:opacity-50"
+              className="border border-[#1E273D] bg-[#0B0E14] p-2.5 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-cyan-400 disabled:opacity-50"
               id="input-date"
             />
           </div>
         </div>
 
         {/* Row 3: Mileage, Parts Cost, Labor Cost */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="flex flex-col">
-            <label className="text-xs text-slate-300 font-sans font-semibold mb-1.5 flex items-center">
-              <Gauge className="w-4 h-4 mr-1 text-cyan-400" /> Пробег ({distanceLabel}) *
+            <label className="text-xs text-slate-300 font-medium mb-1 flex items-center">
+              <Gauge className="w-3.5 h-3.5 mr-1 text-[#06B6D4]" /> Пробег ({distanceLabel}) *
             </label>
             <input
               ref={mileageRef}
@@ -517,14 +507,14 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
               value={mileage}
               onChange={(e) => setMileage(Number(e.target.value))}
               disabled={isAiParsing}
-              className="border border-slate-800 bg-slate-950/80 p-3 rounded-xl text-sm text-slate-100 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 disabled:opacity-50"
+              className="border border-[#1E273D] bg-[#0B0E14] p-2.5 rounded-xl text-xs sm:text-sm text-slate-100 font-mono focus:outline-none focus:border-cyan-400 disabled:opacity-50"
               id="input-mileage"
             />
           </div>
 
           <div className="flex flex-col">
-            <label className="text-xs text-slate-300 font-sans font-semibold mb-1.5 flex items-center">
-              <DollarSign className="w-4 h-4 mr-0.5 text-cyan-400" /> Запчасти ({currencySymbol})
+            <label className="text-xs text-slate-300 font-medium mb-1 flex items-center">
+              <DollarSign className="w-3.5 h-3.5 mr-0.5 text-[#06B6D4]" /> Запчасти ({currencySymbol})
             </label>
             <input
               type="number"
@@ -533,14 +523,14 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
               value={partsPrice}
               onChange={(e) => setPartsPrice(Number(e.target.value))}
               disabled={isAiParsing}
-              className="border border-slate-800 bg-slate-950/80 p-3 rounded-xl text-sm text-slate-100 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 disabled:opacity-50"
+              className="border border-[#1E273D] bg-[#0B0E14] p-2.5 rounded-xl text-xs sm:text-sm text-slate-100 font-mono focus:outline-none focus:border-cyan-400 disabled:opacity-50"
               id="input-parts-price"
             />
           </div>
 
           <div className="flex flex-col">
-            <label className="text-xs text-slate-300 font-sans font-semibold mb-1.5 flex items-center">
-              <DollarSign className="w-4 h-4 mr-0.5 text-cyan-400" /> Работа ({currencySymbol})
+            <label className="text-xs text-slate-300 font-medium mb-1 flex items-center">
+              <DollarSign className="w-3.5 h-3.5 mr-0.5 text-[#06B6D4]" /> Работа ({currencySymbol})
             </label>
             <input
               type="number"
@@ -549,7 +539,7 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
               value={laborPrice}
               onChange={(e) => setLaborPrice(Number(e.target.value))}
               disabled={isAiParsing}
-              className="border border-slate-800 bg-slate-950/80 p-3 rounded-xl text-sm text-slate-100 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 disabled:opacity-50"
+              className="border border-[#1E273D] bg-[#0B0E14] p-2.5 rounded-xl text-xs sm:text-sm text-slate-100 font-mono focus:outline-none focus:border-cyan-400 disabled:opacity-50"
               id="input-labor-price"
             />
           </div>
@@ -557,8 +547,8 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
 
         {/* Row 4: Parts Allocation list */}
         <div className="flex flex-col">
-          <label className="text-xs text-slate-300 font-sans font-semibold mb-1.5 flex items-center">
-            <Layers className="w-4 h-4 mr-1.5 text-cyan-400" /> Использованные запчасти
+          <label className="text-xs text-slate-300 font-medium mb-1 flex items-center">
+            <Layers className="w-3.5 h-3.5 mr-1 text-[#06B6D4]" /> Использованные запчасти
           </label>
           <div className="flex gap-2">
             <input
@@ -572,15 +562,15 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
                   handleAddPartTag();
                 }
               }}
-              placeholder="Добавить деталь, например: Масляный фильтр MANN HU816X"
-              className="flex-1 border border-slate-800 bg-slate-950/80 p-3 rounded-xl text-sm text-slate-100 font-sans focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 disabled:opacity-50"
+              placeholder="Масляный фильтр MANN..."
+              className="flex-1 border border-[#1E273D] bg-[#0B0E14] p-2 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-cyan-400 disabled:opacity-50"
               id="input-part-tag"
             />
             <button
               type="button"
               onClick={handleAddPartTag}
               disabled={isAiParsing}
-              className="btn-secondary min-h-[48px] px-4 text-xs font-semibold rounded-xl shrink-0 disabled:opacity-50"
+              className="btn-secondary px-3 py-2 text-xs font-semibold rounded-xl shrink-0 disabled:opacity-50"
               id="btn-add-part-tag"
             >
               Добавить
@@ -589,12 +579,12 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
 
           {/* List of active parts tags */}
           {partsUsed.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2.5 p-3 border border-slate-800 bg-slate-950/60 rounded-xl">
+            <div className="flex flex-wrap gap-1.5 mt-2 p-2.5 border border-[#1E273D] bg-[#0B0E14] rounded-xl">
               {partsUsed.map((p, idx) => (
-                <span key={idx} className="inline-flex items-center text-xs font-sans bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 px-2.5 py-1 rounded-lg">
+                <span key={idx} className="inline-flex items-center text-xs bg-cyan-500/10 border border-cyan-500/25 text-[#06B6D4] px-2 py-0.5 rounded-lg">
                   {p}
-                  <button type="button" disabled={isAiParsing} onClick={() => removePartTag(idx)} className="ml-2 hover:text-rose-400 disabled:opacity-50">
-                    <X className="w-3.5 h-3.5" />
+                  <button type="button" disabled={isAiParsing} onClick={() => removePartTag(idx)} className="ml-1.5 hover:text-rose-400 disabled:opacity-50">
+                    <X className="w-3 h-3" />
                   </button>
                 </span>
               ))}
@@ -602,12 +592,12 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
           )}
         </div>
 
-        {/* Row 5: Drag & Drop Schematic Photos */}
+        {/* Row 5: Photo Upload */}
         <div className="flex flex-col">
-          <label className="text-xs text-slate-300 font-sans font-semibold mb-1.5">
-            Загрузить фотографии деталей / Фотоотчет
+          <label className="text-xs text-slate-300 font-medium mb-1">
+            Фотографии ремонта
           </label>
-          <div className="border border-dashed border-slate-700 hover:border-cyan-400 bg-slate-950/60 p-5 rounded-2xl transition-all flex flex-col items-center justify-center relative cursor-pointer group">
+          <div className="border border-dashed border-[#1E273D] hover:border-cyan-500/50 bg-[#0B0E14] p-4 rounded-xl transition-all flex flex-col items-center justify-center relative cursor-pointer group">
             <input
               type="file"
               multiple
@@ -617,25 +607,22 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
               className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
               id="input-photo-file"
             />
-            <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-cyan-400 transition-colors mb-2" />
-            <span className="text-xs text-slate-300 font-sans font-medium">
-              Перетащите файлы сюда или кликните для выбора
-            </span>
-            <span className="text-[10px] text-slate-500 font-sans mt-1">
-              PNG, JPG, HEIC до 5МБ
+            <UploadCloud className="w-6 h-6 text-slate-400 group-hover:text-[#06B6D4] transition-colors mb-1.5" />
+            <span className="text-xs text-slate-300 font-medium">
+              Нажмите или перетащите фото сюда
             </span>
           </div>
 
-          {/* Thumbnails of uploaded images */}
+          {/* Thumbnails */}
           {photos.length > 0 && (
-            <div className="flex gap-2 flex-wrap mt-3">
+            <div className="flex gap-2 flex-wrap mt-2.5">
               {photos.map((url, idx) => (
-                <div key={idx} className="w-16 h-12 border border-slate-700 bg-slate-950 relative rounded-lg overflow-hidden group">
+                <div key={idx} className="w-14 h-12 border border-[#1E273D] bg-[#0B0E14] relative rounded-lg overflow-hidden group">
                   <img src={url} alt={`preview-${idx}`} className="w-full h-full object-cover opacity-90" />
                   <button
                     type="button"
                     onClick={() => removePhoto(idx)}
-                    className="absolute top-1 right-1 bg-rose-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] text-white hover:bg-rose-500"
+                    className="absolute top-0.5 right-0.5 bg-rose-600 rounded-full w-3.5 h-3.5 flex items-center justify-center text-[10px] text-white hover:bg-rose-500"
                   >
                     ×
                   </button>
@@ -647,24 +634,24 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
 
         {/* AI Autocomplete Visual HUD */}
         {isAiParsing && (
-          <div className="mt-4 p-4 border border-cyan-500/40 bg-slate-950/80 text-cyan-300 rounded-xl flex items-center gap-3 animate-pulse">
-            <Cpu className="w-5 h-5 animate-spin text-cyan-400" />
-            <div className="text-xs font-sans">
-              <span className="font-semibold block uppercase">Анализ ИИ в процессе:</span>
-              Анализируем текст, определяем пробег, стоимость запчастей и распределяем по категориям...
+          <div className="mt-3 p-3 border border-cyan-500/30 bg-[#151C2C] text-cyan-300 rounded-xl flex items-center gap-2.5 animate-pulse">
+            <Cpu className="w-4 h-4 animate-spin text-[#06B6D4]" />
+            <div className="text-xs">
+              <span className="font-semibold block">Анализ ИИ...</span>
+              Обрабатываем данные и распределяем по категориям
             </div>
           </div>
         )}
 
         {aiError && (
-          <div className="mt-4 p-4 border border-rose-500/40 bg-rose-950/40 text-rose-300 text-xs font-sans rounded-xl">
-            <span className="font-semibold block uppercase">Ошибка анализа ИИ:</span>
+          <div className="mt-3 p-3 border border-rose-500/40 bg-rose-950/30 text-rose-300 text-xs rounded-xl">
+            <span className="font-semibold block">Ошибка анализа ИИ:</span>
             {aiError}
           </div>
         )}
 
-        {/* Form Actions - Placed cleanly at the bottom of the form in a single row */}
-        <div className="sticky bottom-0 bg-slate-900/95 backdrop-blur-md pt-3 pb-4 -mx-4 sm:-mx-6 px-4 sm:px-6 border-t border-slate-800 flex flex-row items-center gap-3 z-20 mt-6">
+        {/* Form Actions */}
+        <div className="pt-2 flex flex-row items-center gap-2.5">
           {onCancel && (
             <button
               type="button"
@@ -673,7 +660,7 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
                 onCancel();
               }}
               disabled={isAiParsing}
-              className="btn-secondary flex-1 min-h-[48px] px-4 text-xs font-bold rounded-xl disabled:opacity-50 cursor-pointer"
+              className="btn-secondary flex-1 py-2 px-3 text-xs font-semibold rounded-xl disabled:opacity-50 cursor-pointer"
               id="btn-cancel"
             >
               Отмена
@@ -686,10 +673,10 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
               if (navigator.vibrate) navigator.vibrate(15);
             }}
             disabled={isAiParsing}
-            className="btn-primary flex-[2] min-h-[48px] px-6 text-xs font-bold rounded-xl disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+            className="btn-primary flex-[2] py-2 px-4 text-xs font-semibold rounded-xl disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
             id="btn-save-record"
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-3.5 h-3.5" />
             {isEditMode ? 'Сохранить изменения' : 'Сохранить запись'}
           </button>
         </div>

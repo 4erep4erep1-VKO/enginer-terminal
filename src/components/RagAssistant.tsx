@@ -533,22 +533,22 @@ export function RagAssistant({
   ];
 
   return (
-    <div className="w-full h-full flex flex-col font-sans select-text overflow-hidden p-0 sm:p-3 max-w-4xl mx-auto">
+    <div className="w-full h-full flex flex-col font-sans select-text overflow-hidden p-0 sm:p-2 max-w-4xl mx-auto">
       
       {/* Main Chat Container */}
-      <div className="flex-1 flex flex-col h-full bg-[#080B11] sm:border sm:border-[#1E293B] sm:rounded-2xl min-w-0 relative overflow-hidden shadow-xl">
+      <div className="flex-1 flex flex-col h-full bg-[#0B0E14] sm:border sm:border-[#1E273D] sm:rounded-2xl min-w-0 relative overflow-hidden shadow-md">
         
-        {/* 1. Header: Friendly, Human, Non-technical */}
-        <div className="h-14 px-4 py-2.5 bg-[#0F172A] border-b border-[#1E293B] flex items-center justify-between shrink-0 z-20">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
-              <Bot className="w-5 h-5" />
+        {/* 1. Header */}
+        <div className="h-12 px-4 py-2 bg-[#111622] border-b border-[#1E273D] flex items-center justify-between shrink-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-[#06B6D4] shrink-0">
+              <Bot className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-bold text-sm text-white tracking-wide leading-tight">
+              <h1 className="font-bold text-xs sm:text-sm text-white tracking-wide leading-tight">
                 ВАСИЛИЧ
               </h1>
-              <p className="text-xs text-slate-400 truncate mt-0.5">
+              <p className="text-[11px] text-slate-400 truncate">
                 {activeCar ? `${activeCar.make} ${activeCar.model} · ${(activeCar.mileage || 0).toLocaleString('ru-RU')} км` : 'Автомобиль не выбран'}
               </p>
             </div>
@@ -560,19 +560,19 @@ export function RagAssistant({
               <button
                 type="button"
                 onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
-                className="w-8 h-8 rounded-lg bg-[#080B11] hover:bg-[#1E293B] border border-[#1E293B] text-slate-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                className="w-7 h-7 rounded-lg bg-[#0B0E14] hover:bg-[#151C2C] border border-[#1E273D] text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
                 title="Меню"
                 id="btn-vasilich-menu"
               >
-                <MoreVertical className="w-4 h-4" />
+                <MoreVertical className="w-3.5 h-3.5" />
               </button>
 
               {isHeaderMenuOpen && (
-                <div className="absolute right-0 top-10 w-48 bg-[#0F172A] border border-[#1E293B] rounded-xl shadow-2xl p-1.5 z-50 text-xs space-y-1">
+                <div className="absolute right-0 top-9 w-44 bg-[#111622] border border-[#1E273D] rounded-xl shadow-xl p-1 z-50 text-xs space-y-0.5">
                   <button
                     type="button"
                     onClick={handleClearChatHistory}
-                    className="w-full px-3 py-2 text-left rounded-lg text-rose-300 hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                    className="w-full px-2.5 py-1.5 text-left rounded-lg text-rose-300 hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5 text-rose-400" />
                     <span>Очистить диалог</span>
@@ -583,9 +583,9 @@ export function RagAssistant({
                       refreshObdSnapshot();
                       setIsHeaderMenuOpen(false);
                     }}
-                    className="w-full px-3 py-2 text-left rounded-lg text-slate-200 hover:bg-[#1E293B] flex items-center gap-2 cursor-pointer transition-colors"
+                    className="w-full px-2.5 py-1.5 text-left rounded-lg text-slate-200 hover:bg-[#151C2C] flex items-center gap-2 cursor-pointer transition-colors"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+                    <RefreshCw className="w-3.5 h-3.5 text-[#06B6D4]" />
                     <span>Обновить данные</span>
                   </button>
                 </div>
@@ -596,61 +596,61 @@ export function RagAssistant({
 
         {/* Toast Notification */}
         {copiedToast && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-emerald-950/95 border border-emerald-500/60 text-emerald-200 px-4 py-2 rounded-full text-xs font-medium shadow-2xl z-50 flex items-center gap-2 animate-fade-in pointer-events-none">
-            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>Сводка скопирована</span>
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-emerald-950/95 border border-emerald-500/50 text-emerald-200 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg z-50 flex items-center gap-1.5 pointer-events-none">
+            <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Скопировано</span>
           </div>
         )}
 
         {/* 2. Messages Stream */}
-        <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto min-h-0 px-3 sm:px-5 py-3.5 space-y-3">
           
           {/* Welcome Screen when conversation is fresh */}
           {isChatEmptyOrWelcomeOnly && (
-            <div className="py-6 sm:py-10 flex flex-col items-center text-center max-w-lg mx-auto">
-              <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-4 shadow-lg shadow-cyan-500/10">
-                <Bot className="w-8 h-8" />
+            <div className="py-6 sm:py-8 flex flex-col items-center text-center max-w-md mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-[#06B6D4] mb-3">
+                <Bot className="w-6 h-6" />
               </div>
               
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                ВАСИЛИЧ
+              <h2 className="text-base sm:text-lg font-bold text-white mb-0.5">
+                Василич на связи
               </h2>
               
-              <p className="text-sm font-medium text-cyan-400 mb-4">
+              <p className="text-xs text-[#06B6D4] mb-3 font-medium">
                 {activeCar ? `${activeCar.make} ${activeCar.model} · ${(activeCar.mileage || 0).toLocaleString('ru-RU')} км` : 'Автомобиль в гараже'}
               </p>
 
-              <div className="bg-[#0F172A] border border-[#1E293B] rounded-2xl p-4 sm:p-5 text-[15px] sm:text-[16px] text-slate-200 leading-relaxed mb-6 shadow-sm">
-                «Рассказывай, что случилось с машиной. Можно обычными словами — я разберусь.»
+              <div className="bg-[#111622] border border-[#1E273D] rounded-xl p-3.5 text-xs sm:text-[13px] text-slate-300 leading-relaxed mb-4">
+                «Рассказывай, что с машиной. Можно обычными словами — я разберусь.»
               </div>
 
-              {/* Big Voice Button */}
+              {/* Voice Button */}
               <button
                 type="button"
                 onClick={toggleSpeechRecognition}
-                className={`w-full sm:w-auto min-w-[220px] h-14 px-8 rounded-2xl font-semibold text-[16px] flex items-center justify-center gap-3 transition-all cursor-pointer shadow-lg active:scale-95 mb-6 ${
+                className={`w-full sm:w-auto min-w-[180px] h-11 px-6 rounded-xl font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 mb-4 ${
                   isRecording 
-                    ? 'bg-rose-500 text-white shadow-rose-500/25 animate-pulse' 
-                    : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20'
+                    ? 'bg-rose-500 text-white shadow-sm' 
+                    : 'bg-[#06B6D4] hover:bg-cyan-400 text-slate-950'
                 }`}
                 title="Нажмите, чтобы сказать голосом"
               >
-                <Mic className="w-5 h-5" />
-                <span>{isRecording ? "Слушаю... говорите" : "🎙 Говорить"}</span>
+                <Mic className="w-4 h-4" />
+                <span>{isRecording ? "Слушаю..." : "Сказать голосом"}</span>
               </button>
 
               {/* Quick Sample Questions */}
-              <div className="w-full text-left space-y-2">
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
-                  Или спросите прямо сейчас:
+              <div className="w-full text-left space-y-1.5">
+                <div className="text-[11px] font-medium text-slate-400 px-1">
+                  Быстрые вопросы:
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {quickQuestions.map((q, qIdx) => (
                     <button
                       key={qIdx}
                       type="button"
                       onClick={() => sendMessageDirectly(q)}
-                      className="p-3 bg-[#0F172A] hover:bg-[#1E293B] border border-[#1E293B] hover:border-cyan-500/40 rounded-xl text-left text-xs sm:text-[13px] text-slate-300 hover:text-white transition-all cursor-pointer leading-snug"
+                      className="p-2.5 bg-[#111622] hover:bg-[#151C2C] border border-[#1E273D] hover:border-cyan-500/30 rounded-xl text-left text-xs text-slate-300 hover:text-white transition-all cursor-pointer leading-snug"
                     >
                       💬 {q}
                     </button>
@@ -667,10 +667,10 @@ export function RagAssistant({
             if (m.sender === 'user') {
               return (
                 <div key={m.id} className="flex flex-col items-end max-w-[85%] sm:max-w-[75%] ml-auto">
-                  <div className="text-[11px] text-slate-400 mb-1 pr-1">
+                  <div className="text-[10px] text-slate-500 mb-0.5 pr-1">
                     {m.timestamp}
                   </div>
-                  <div className="bg-[#1E293B] text-slate-100 border border-slate-700/60 rounded-2xl rounded-tr-sm px-4 py-2.5 text-[14px] sm:text-[15px] leading-relaxed shadow-sm">
+                  <div className="bg-[#1A2336] text-slate-100 border border-[#26354D] rounded-2xl rounded-tr-sm px-3.5 py-2 text-xs sm:text-[13px] leading-relaxed shadow-sm">
                     {m.text}
                   </div>
                 </div>
@@ -679,13 +679,13 @@ export function RagAssistant({
 
             return (
               <div key={m.id} className="flex flex-col items-start w-full max-w-full mr-auto">
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-1 pl-1">
-                  <span className="text-cyan-400 font-bold">ВАСИЛИЧ</span>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-0.5 pl-1">
+                  <span className="text-[#06B6D4] font-medium">Василич</span>
                   <span>·</span>
                   <span>{m.timestamp}</span>
                 </div>
 
-                <div className="w-full max-w-[96%] sm:max-w-[90%] bg-[#0F172A] border border-[#1E293B] rounded-2xl rounded-tl-sm px-4 py-3 sm:px-5 sm:py-3.5 text-[14px] sm:text-[15px] leading-relaxed text-slate-200 shadow-sm">
+                <div className="w-full max-w-[96%] sm:max-w-[90%] bg-[#111622] border border-[#1E273D] rounded-2xl rounded-tl-sm px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-[13px] leading-relaxed text-slate-200 shadow-sm">
                   {m.diagnosticResponse && m.diagnosticResponse.possibleCauses?.length > 0 ? (
                     <DiagnosticResponseCard
                       response={m.diagnosticResponse}
@@ -701,31 +701,31 @@ export function RagAssistant({
 
                   {/* Safety Warning */}
                   {m.safetyWarning && (
-                    <div className="mt-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[13px] flex items-start gap-2.5">
-                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+                    <div className="mt-2.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs flex items-start gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
                       <span className="leading-relaxed">{m.safetyWarning}</span>
                     </div>
                   )}
 
                   {/* Executed Action Line */}
                   {m.actionStatus === 'executed' && (
-                    <div className="mt-3 pt-2.5 border-t border-[#1E293B] flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Записано в историю машины</span>
+                    <div className="mt-2 pt-2 border-t border-[#1E273D] flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span>Записано в историю</span>
                     </div>
                   )}
 
                   {/* Cancelled Action Line */}
                   {m.actionStatus === 'cancelled' && (
-                    <div className="mt-3 pt-2.5 border-t border-[#1E293B] flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                      <X className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <div className="mt-2 pt-2 border-t border-[#1E273D] flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                      <X className="w-3 h-3 text-slate-400 shrink-0" />
                       <span>Отменено</span>
                     </div>
                   )}
 
-                  {/* Contextual Action Buttons (Strictly when user confirmation is needed) */}
+                  {/* Contextual Action Buttons (Only when user confirmation is pending) */}
                   {msgActions.length > 0 && (!m.actionStatus || m.actionStatus === 'pending') && (
-                    <div className="mt-3 pt-2.5 border-t border-[#1E293B] flex flex-wrap items-center gap-2">
+                    <div className="mt-2.5 pt-2 border-t border-[#1E273D] flex flex-wrap items-center gap-1.5">
                       {msgActions.map((act, actIdx) => {
                         let isConfirm = act.type === 'confirm_action' || act.label.toLowerCase().includes('записать') || act.label.toLowerCase().includes('исправить') || act.label.toLowerCase().includes('удалить');
                         let isCancel = act.type === 'cancel_action' || act.label.toLowerCase().includes('отмена') || act.label.toLowerCase().includes('нет') || act.label.toLowerCase().includes('изменить');
@@ -736,9 +736,9 @@ export function RagAssistant({
                               key={actIdx}
                               type="button"
                               onClick={() => handleActionClick(act, m.text, m.id)}
-                              className="h-10 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl flex items-center gap-2 cursor-pointer transition-all text-[14px] font-bold shadow-md shadow-emerald-500/20 active:scale-95"
+                              className="h-8 px-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg flex items-center gap-1.5 cursor-pointer transition-all text-xs font-semibold active:scale-95"
                             >
-                              <Check className="w-4 h-4 text-slate-950" />
+                              <Check className="w-3.5 h-3.5 text-slate-950" />
                               <span>{act.label}</span>
                             </button>
                           );
@@ -750,9 +750,9 @@ export function RagAssistant({
                               key={actIdx}
                               type="button"
                               onClick={() => handleActionClick(act, m.text, m.id)}
-                              className="h-10 px-4 bg-[#080B11] hover:bg-[#1E293B] text-slate-300 hover:text-white border border-[#1E293B] rounded-xl flex items-center gap-2 cursor-pointer transition-all text-[14px] font-medium"
+                              className="h-8 px-3 bg-[#151C2C] hover:bg-[#1C253B] text-slate-300 hover:text-white border border-[#1E273D] rounded-lg flex items-center gap-1.5 cursor-pointer transition-all text-xs font-medium"
                             >
-                              <X className="w-4 h-4 text-slate-400" />
+                              <X className="w-3.5 h-3.5 text-slate-400" />
                               <span>{act.label}</span>
                             </button>
                           );
@@ -763,9 +763,9 @@ export function RagAssistant({
                             key={actIdx}
                             type="button"
                             onClick={() => handleActionClick(act, m.text, m.id)}
-                            className="h-9 px-3.5 bg-[#080B11] hover:bg-[#1E293B] text-cyan-300 hover:text-white border border-cyan-500/30 rounded-xl flex items-center gap-2 cursor-pointer transition-all text-[13px] font-medium"
+                            className="h-8 px-3 bg-[#151C2C] hover:bg-[#1C253B] text-[#06B6D4] hover:text-white border border-cyan-500/25 rounded-lg flex items-center gap-1.5 cursor-pointer transition-all text-xs font-medium"
                           >
-                            <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                            <FileText className="w-3.5 h-3.5 text-[#06B6D4]" />
                             <span>{act.label}</span>
                           </button>
                         );
@@ -779,47 +779,47 @@ export function RagAssistant({
 
           {isLoading && (
             <div className="flex flex-col items-start w-full max-w-full mr-auto">
-              <div className="text-[11px] text-cyan-400 font-medium mb-1 pl-1">
-                ВАСИЛИЧ ДУМАЕТ...
+              <div className="text-[10px] text-[#06B6D4] font-medium mb-0.5 pl-1">
+                Василич думает...
               </div>
-              <div className="px-4 py-3 border border-[#1E293B] bg-[#0F172A] text-[14px] text-slate-300 rounded-2xl rounded-tl-sm flex items-center gap-3 shadow-sm">
-                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
-                <span>Василич сверяет историю машины...</span>
+              <div className="px-3.5 py-2.5 border border-[#1E273D] bg-[#111622] text-xs text-slate-300 rounded-2xl rounded-tl-sm flex items-center gap-2.5 shadow-sm">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#06B6D4]" />
+                <span>Сверяю историю автомобиля...</span>
               </div>
             </div>
           )}
           <div ref={chatEndRef} />
         </div>
 
-        {/* 3. Bottom Composer: Large touch target for mic, clean input */}
-        <div className="p-3 bg-[#0F172A] border-t border-[#1E293B] shrink-0">
+        {/* 3. Bottom Composer */}
+        <div className="p-2.5 bg-[#111622] border-t border-[#1E273D] shrink-0">
           <form onSubmit={handleSendMessage} className="flex items-center gap-2 w-full max-w-4xl mx-auto">
-            <div className="relative flex items-center flex-1 bg-[#080B11] border border-[#1E293B] focus-within:border-cyan-500/70 rounded-2xl px-2 py-1 transition-all">
+            <div className="relative flex items-center flex-1 bg-[#0B0E14] border border-[#1E273D] focus-within:border-cyan-500/70 rounded-xl px-1.5 py-0.5 transition-all">
               
               {/* Mic button */}
               <button
                 type="button"
                 disabled={isLoading || !isOnlineState}
                 onClick={toggleSpeechRecognition}
-                className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center cursor-pointer shrink-0 ${
+                className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center cursor-pointer shrink-0 ${
                   isRecording 
-                    ? 'text-white bg-rose-500 animate-pulse' 
-                    : 'text-slate-400 hover:text-cyan-400 hover:bg-slate-800/60'
+                    ? 'text-white bg-rose-500' 
+                    : 'text-slate-400 hover:text-[#06B6D4] hover:bg-[#151C2C]'
                 }`}
                 title={isRecording ? "Остановить запись" : "Голосовой ввод"}
                 aria-label="Голосовой ввод"
               >
-                <Mic className="w-5 h-5" />
+                <Mic className="w-4 h-4" />
               </button>
 
               <input
                 type="text"
                 required={!isRecording}
                 disabled={isLoading || !isOnlineState}
-                value={isRecording ? "🎙 Слушаю вас... Говорите обычными словами" : inputValue}
+                value={isRecording ? "🎙 Слушаю вас... Говорите" : inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder={!isOnlineState ? "Автономный режим (нет сети)" : isRecording ? "Слушаю..." : "Напишите Василичу…"}
-                className={`flex-1 bg-transparent px-3 py-2 text-[15px] text-slate-100 placeholder-slate-500 focus:outline-none min-w-0 ${isRecording ? 'font-medium text-rose-300 italic' : ''}`}
+                className={`flex-1 bg-transparent px-2.5 py-2 text-xs sm:text-[13px] text-slate-100 placeholder-slate-500 focus:outline-none min-w-0 ${isRecording ? 'font-medium text-rose-300 italic' : ''}`}
                 id="rag-input"
               />
 
@@ -827,15 +827,15 @@ export function RagAssistant({
               <button
                 type="submit"
                 disabled={isLoading || isRecording || !isOnlineState || !inputValue.trim()}
-                className="w-10 h-10 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-30 disabled:hover:bg-cyan-500 text-slate-950 flex items-center justify-center font-bold cursor-pointer shrink-0 transition-colors shadow-sm"
+                className="w-9 h-9 rounded-lg bg-[#06B6D4] hover:bg-cyan-400 disabled:opacity-30 disabled:hover:bg-[#06B6D4] text-slate-950 flex items-center justify-center font-bold cursor-pointer shrink-0 transition-colors"
                 id="btn-rag-send"
                 title="Отправить"
                 aria-label="Отправить"
               >
                 {isLoading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-950" />
                 ) : (
-                  <Send className="w-4 h-4 text-slate-950" />
+                  <Send className="w-3.5 h-3.5 text-slate-950" />
                 )}
               </button>
             </div>
@@ -871,11 +871,11 @@ export function RagAssistant({
 function FormattedMessage({ text }: { text: string }) {
   const lines = text.split('\n');
   return (
-    <div className="space-y-1.5 font-sans text-[14px] sm:text-[15px]">
+    <div className="space-y-1 font-sans text-xs sm:text-[13px]">
       {lines.map((line, idx) => {
         if (line.startsWith('### ')) {
           return (
-            <h4 key={idx} className="text-[14px] sm:text-[15px] font-semibold text-cyan-300 uppercase tracking-wide mt-2 mb-0.5 border-l-2 border-cyan-400 pl-2">
+            <h4 key={idx} className="text-xs font-semibold text-[#06B6D4] mt-2 mb-0.5">
               {line.substring(4)}
             </h4>
           );
@@ -883,7 +883,7 @@ function FormattedMessage({ text }: { text: string }) {
         if (line.startsWith('## ') || line.startsWith('# ')) {
           const headerText = line.startsWith('## ') ? line.substring(3) : line.substring(2);
           return (
-            <h3 key={idx} className="text-[15px] sm:text-[16px] font-bold text-white uppercase tracking-wider mt-2.5 mb-1 border-b border-[#1E293B] pb-1">
+            <h3 key={idx} className="text-xs sm:text-[13px] font-bold text-white mt-2 mb-0.5">
               {headerText}
             </h3>
           );
@@ -891,8 +891,8 @@ function FormattedMessage({ text }: { text: string }) {
         if (line.startsWith('* ') || line.startsWith('- ') || line.startsWith('• ')) {
           const content = parseInlineFormatting(line.replace(/^[\*\-•]\s*/, ''));
           return (
-            <div key={idx} className="flex items-start gap-2 ml-1 py-0.5 text-slate-200">
-              <span className="text-cyan-400 select-none text-xs mt-1">•</span>
+            <div key={idx} className="flex items-start gap-1.5 ml-0.5 py-0.5 text-slate-200">
+              <span className="text-[#06B6D4] select-none text-xs mt-0.5">•</span>
               <span className="flex-1 leading-relaxed">{content}</span>
             </div>
           );
@@ -900,14 +900,14 @@ function FormattedMessage({ text }: { text: string }) {
         const numberedMatch = line.match(/^(\d+[\.\)])\s+(.*)/);
         if (numberedMatch) {
           return (
-            <div key={idx} className="flex items-start gap-2 ml-1 py-0.5 text-slate-200">
-              <span className="text-cyan-400 font-bold text-[13px] mt-0.5">{numberedMatch[1]}</span>
+            <div key={idx} className="flex items-start gap-1.5 ml-0.5 py-0.5 text-slate-200">
+              <span className="text-[#06B6D4] font-semibold text-xs mt-0.5">{numberedMatch[1]}</span>
               <span className="flex-1 leading-relaxed">{parseInlineFormatting(numberedMatch[2])}</span>
             </div>
           );
         }
         if (line.trim() === '') {
-          return <div key={idx} className="h-1" />;
+          return <div key={idx} className="h-0.5" />;
         }
         return <p key={idx} className="leading-relaxed text-slate-200">{parseInlineFormatting(line)}</p>;
       })}
@@ -925,7 +925,7 @@ function parseInlineFormatting(text: string) {
       return <em key={i} className="text-slate-300 italic">{part.slice(1, -1)}</em>;
     }
     if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="bg-[#080B11] border border-[#1E293B] text-xs text-cyan-300 px-1 py-0.5 rounded font-mono">{part.slice(1, -1)}</code>;
+      return <code key={i} className="bg-[#0B0E14] border border-[#1E273D] text-[11px] text-[#06B6D4] px-1 py-0.5 rounded font-mono">{part.slice(1, -1)}</code>;
     }
     return part;
   });
