@@ -79,6 +79,7 @@ export function VehicleDashboard({
   const [tempMileage, setTempMileage] = useState<number | ''>('');
   const [isShowMechanicOpen, setIsShowMechanicOpen] = useState(false);
   const [isSimpleAddOpen, setIsSimpleAddOpen] = useState(false);
+  const [vasilichQuery, setVasilichQuery] = useState('');
 
   // Filter records for active car
   const activeCarRecords = useMemo(() => {
@@ -328,8 +329,6 @@ export function VehicleDashboard({
       setIsEditingMileage(false);
     }
   };
-
-  const [vasilichQuery, setVasilichQuery] = useState('');
 
   const handleVasilichSubmit = (e: React.FormEvent) => {
     e.preventDefault();
