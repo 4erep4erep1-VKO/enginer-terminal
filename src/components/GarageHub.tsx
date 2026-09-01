@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Car, Part } from '../types';
+import { Car, Part, MaintenanceRecord } from '../types';
 import { GarageManager } from './GarageManager';
 import { PartsInventory } from './PartsInventory';
 import { SettingsPanel } from './SettingsPanel';
@@ -14,6 +14,7 @@ interface GarageHubProps {
   cars: Car[];
   activeCarId: string | null;
   parts: Part[];
+  records?: MaintenanceRecord[];
   onSelectCar: (id: string) => void;
   onAddCar: (car: Omit<Car, 'ownerId' | 'createdAt' | 'updatedAt'>) => void;
   onUpdateCar?: (car: Car) => void;
@@ -29,6 +30,7 @@ export function GarageHub({
   cars,
   activeCarId,
   parts,
+  records = [],
   onSelectCar,
   onAddCar,
   onUpdateCar,
@@ -127,7 +129,11 @@ export function GarageHub({
       )}
 
       {subTab === 'settings' && (
-        <SettingsPanel />
+        <SettingsPanel 
+          cars={cars} 
+          activeCarId={activeCarId} 
+          records={records} 
+        />
       )}
 
     </div>

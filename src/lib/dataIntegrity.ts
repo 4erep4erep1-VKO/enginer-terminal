@@ -3,20 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Car, MaintenanceRecord, Part, VehicleTask, DiagnosticSession, UserSettings } from '../types';
-
-export interface TerminalBackupData {
-  version: string;
-  timestamp: string;
-  app: string;
-  cars: Car[];
-  activeCarId: string | null;
-  records: MaintenanceRecord[];
-  parts: Part[];
-  tasks: VehicleTask[];
-  diagnosticSessions: DiagnosticSession[];
-  settings?: UserSettings;
-}
+import { Car, MaintenanceRecord, Part, VehicleTask, DiagnosticSession } from '../types';
 
 /**
  * Validates and clamps a number to non-negative, fallback to defaultValue
@@ -466,54 +453,4 @@ export function migrateAndSanitizeLocalStorage(): {
       diagnosticSessions: []
     };
   }
-}
-
-/**
- * Validates a parsed backup object and returns clean sanitized structures
- */
-export function validateAndNormalizeBackup(data: any): {
-  isValid: boolean;
-  error?: string;
-  normalized?: TerminalBackupData;
-} {
-  if (!data || typeof data !== 'object') {
-    return { isValid: false, error: 'Некорректный формат JSON файла бэкапа' };
-  }
-
-  const rawCars = Array.isArray(data.cars) ? data.cars : [];
-  const cars = rawCars.map(validateCar).filter((c): c is Car => c !== null);
-  if (cars.length === 0) {
-    return { isValid: false, error: 'В бэкапе отсутствует список автомобилей' };
-  }
-
-  const validCarIds = cars.map(c => c.id);
-  const activeCarId = validCarIds.includes(data.activeCarId) ? data.activeCarId : cars[0].id;
-
-  const rawRecords = Array.isArray(data.records) ? data.records : [];
-  const records = rawRecords.map((r: any) => validateRecord(r, validCarIds)).filter((r): r is MaintenanceRecord => r !== null);
-
-  const rawParts = Array.isArray(data.parts) ? data.parts : [];
-  const parts = rawParts.map(validatePart).filter((p): p is Part => p !== null);
-
-  const rawTasks = Array.isArray(data.tasks) ? data.tasks : [];
-  const tasks = rawTasks.map((t: any) => validateTask(t, validCarIds)).filter((t): t is VehicleTask => t !== null);
-
-  const rawSessions = Array.isArray(data.diagnosticSessions) ? data.diagnosticSessions : [];
-  const diagnosticSessions = rawSessions.map((s: any) => validateDiagnosticSession(s, validCarIds)).filter((s): s is DiagnosticSession => s !== null);
-
-  return {
-    isValid: true,
-    normalized: {
-      version: '2.0',
-      timestamp: new Date().toISOString(),
-      app: 'Инженерный Терминал',
-      cars,
-      activeCarId,
-      records,
-      parts,
-      tasks,
-      diagnosticSessions,
-      settings: data.settings
-    }
-  };
 }

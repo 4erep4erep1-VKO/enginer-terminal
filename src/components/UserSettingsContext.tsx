@@ -21,7 +21,6 @@ const defaultSettings: UserSettings = {
   volumeUnit: 'L',
   pressureUnit: 'bar',
   assistantTone: 'vasilich',
-  garageMode: false,
 };
 
 const UserSettingsContext = createContext<UserSettingsContextType | undefined>(undefined);
@@ -46,13 +45,6 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
     const jsonStr = JSON.stringify(settings);
     localStorage.setItem('app_settings', jsonStr);
     localStorage.setItem('blueprint_user_settings', jsonStr);
-    if (typeof document !== 'undefined') {
-      if (settings.garageMode) {
-        document.documentElement.classList.add('garage-mode');
-      } else {
-        document.documentElement.classList.remove('garage-mode');
-      }
-    }
   }, [settings]);
 
   const updateSettings = (newSettings: Partial<UserSettings>) => {

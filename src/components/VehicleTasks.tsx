@@ -16,10 +16,13 @@ import {
   X,
   Edit3,
   Camera,
-  ZoomIn
+  ZoomIn,
+  AlertTriangle
 } from 'lucide-react';
 import { VehicleTask, TaskType, TaskStatus } from '../types';
+import { calculateTaskUrgency } from '../lib/taskUrgency';
 import { EditTaskModal } from './EditTaskModal';
+import { CompleteTaskModal } from './CompleteTaskModal';
 
 interface VehicleTasksProps {
   activeCarId: string;
@@ -28,6 +31,16 @@ interface VehicleTasksProps {
   onAddTask: (newTaskData: { title: string; type: TaskType; targetMileage?: number; targetDate?: string }) => void;
   onUpdateTask?: (task: VehicleTask) => void;
   onMarkTaskCompleted: (taskId: string) => void;
+  onCompleteTaskWithDetails?: (params: {
+    taskId: string;
+    partsPrice: number;
+    laborPrice: number;
+    partsUsed: string[];
+    mileage: number;
+    date: string;
+    category: any;
+    description: string;
+  }) => void;
   onDeleteTask: (taskId: string) => void;
 }
 
@@ -38,11 +51,13 @@ export function VehicleTasks({
   onAddTask,
   onUpdateTask,
   onMarkTaskCompleted,
+  onCompleteTaskWithDetails,
   onDeleteTask,
 }: VehicleTasksProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [filter, setFilter] = useState<'pending' | 'completed' | 'all'>('pending');
   const [editingTask, setEditingTask] = useState<VehicleTask | null>(null);
+  const [completingTask, setCompletingTask] = useState<VehicleTask | null>(null);
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
 
   // Form State
@@ -288,12 +303,9 @@ export function VehicleTasks({
       <div className="space-y-2.5">
         {filteredTasks.length > 0 ? (
           filteredTasks.map((task) => {
-            const isOverdue = 
-              task.status === 'pending' && 
-              task.type === 'mileage' && 
-              task.targetMileage !== undefined && 
-              activeCarMileage >= task.targetMileage;
-
+            const urgencyCalc = calculateTaskUrgency(task, activeCarMileage);
+            const isOverdue = urgencyCalc.isOverdue;
+            const isWarning = urgencyCalc.isWarning;
             const hasPhotos = task.photos && task.photos.length > 0;
 
             return (
@@ -305,7 +317,9 @@ export function VehicleTasks({
                 }}
                 className={`bg-[#111622] border p-3.5 sm:p-4 relative flex flex-col md:flex-row justify-between items-start md:items-center gap-3 transition-all cursor-pointer group rounded-2xl ${
                   isOverdue 
-                    ? 'border-rose-500/50 bg-rose-950/15' 
+                    ? 'border-rose-500/50 bg-rose-950/20 shadow-sm shadow-rose-950/40' 
+                    : isWarning
+                    ? 'border-amber-500/50 bg-amber-950/15 shadow-sm shadow-amber-950/30'
                     : task.status === 'completed'
                     ? 'border-[#1E273D] opacity-60 hover:opacity-90'
                     : 'border-[#1E273D] hover:border-cyan-500/30 hover:bg-[#151C2C]'
@@ -337,9 +351,16 @@ export function VehicleTasks({
                     )}
 
                     {isOverdue && (
-                      <span className="text-[10px] font-semibold bg-rose-950 border border-rose-500/40 text-rose-300 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <span className="text-[10px] font-semibold bg-rose-950/90 border border-rose-500/50 text-rose-300 px-2 py-0.5 rounded-md flex items-center gap-1">
                         <AlertOctagon className="w-3 h-3 text-rose-400" />
-                        Пора выполнить!
+                        {urgencyCalc.statusText || 'Просрочено'}
+                      </span>
+                    )}
+
+                    {isWarning && (
+                      <span className="text-[10px] font-semibold bg-amber-950/90 border border-amber-500/50 text-amber-300 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-400" />
+                        {urgencyCalc.statusText || 'Подходит срок'}
                       </span>
                     )}
 
@@ -366,8 +387,10 @@ export function VehicleTasks({
                       <span className="flex items-center gap-1 font-mono text-[11px]">
                         <Gauge className="w-3 h-3 text-[#06B6D4]" />
                         Цель: {task.targetMileage.toLocaleString()} км 
-                        <span className="text-slate-500">
-                          (осталось: {(task.targetMileage - activeCarMileage).toLocaleString()} км)
+                        <span className={isOverdue ? 'text-rose-400 font-semibold' : isWarning ? 'text-amber-400 font-semibold' : 'text-slate-500'}>
+                          {task.targetMileage - activeCarMileage <= 0 
+                            ? `(просрочено на ${(activeCarMileage - task.targetMileage).toLocaleString()} км)`
+                            : `(осталось ${(task.targetMileage - activeCarMileage).toLocaleString()} км)`}
                         </span>
                       </span>
                     )}
@@ -439,7 +462,7 @@ export function VehicleTasks({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (navigator.vibrate) navigator.vibrate(15);
-                        onMarkTaskCompleted(task.id);
+                        setCompletingTask(task);
                       }}
                       className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1 ${
                         isOverdue
@@ -483,6 +506,22 @@ export function VehicleTasks({
           </div>
         )}
       </div>
+
+      {/* Complete Task & Save to History Modal */}
+      <CompleteTaskModal
+        isOpen={!!completingTask}
+        task={completingTask}
+        currentCarMileage={activeCarMileage}
+        onClose={() => setCompletingTask(null)}
+        onConfirmComplete={(params) => {
+          if (onCompleteTaskWithDetails) {
+            onCompleteTaskWithDetails(params);
+          } else {
+            onMarkTaskCompleted(params.taskId);
+          }
+          setCompletingTask(null);
+        }}
+      />
 
       {/* Edit Task & Photo Upload Modal */}
       <EditTaskModal

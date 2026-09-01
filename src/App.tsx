@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Car, MaintenanceRecord, Part, VehicleTask, DiagnosticSession } from './types';
+import { Car, MaintenanceRecord, Part, VehicleTask, DiagnosticSession, RecordCategory } from './types';
 import { migrateAndSanitizeLocalStorage } from './lib/dataIntegrity';
 import { ServiceHub } from './components/ServiceHub';
 import { GarageHub } from './components/GarageHub';
@@ -18,6 +18,8 @@ import { VehicleDashboard } from './components/VehicleDashboard';
 import { RecordDetailModal } from './components/RecordDetailModal';
 import { useUserSettings } from './components/UserSettingsContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { useNotificationScheduler } from './hooks/useNotificationScheduler';
+import { calculateTaskUrgency } from './lib/taskUrgency';
 import { 
   Car as CarIcon,
   Cpu, 
@@ -221,6 +223,21 @@ export default function App() {
     .filter(r => r.carId === activeCarId)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // Notification scheduler hook for reminders & maintenance status
+  const { urgentNotifications, overdueCount, warningCount } = useNotificationScheduler(
+    cars,
+    tasks,
+    { enabled: isLoaded }
+  );
+
+  // Active car urgent maintenance count
+  const activeCarUrgentCount = tasks
+    .filter(t => t.carId === activeCarId && t.status === 'pending')
+    .filter(t => {
+      const calc = calculateTaskUrgency(t, activeCar?.mileage || 0);
+      return calc.urgency === 'overdue' || calc.urgency === 'warning';
+    }).length;
+
   // Quick Mileage Update Handler
   const handleQuickUpdateMileage = (newMileage: number) => {
     if (!activeCar) return;
@@ -386,15 +403,28 @@ export default function App() {
     }
   };
 
-  const handleAddTask = (newTaskData: { title: string; type: any; targetMileage?: number; targetDate?: string }) => {
+  const handleAddTask = (newTaskData: { 
+    title: string; 
+    type: any; 
+    targetMileage?: number; 
+    targetDate?: string;
+    category?: RecordCategory;
+    description?: string;
+    relatedDtc?: string;
+    source?: any;
+  }) => {
     if (!activeCarId) return;
     const newTask: VehicleTask = {
       id: Math.random().toString(36).substr(2, 9),
       carId: activeCarId,
-      title: newTaskData.title,
-      type: newTaskData.type,
-      targetMileage: newTaskData.targetMileage,
+      title: newTaskData.title || 'Новая задача',
+      type: newTaskData.type || (newTaskData.targetMileage ? 'mileage' : 'simple'),
+      targetMileage: newTaskData.targetMileage ? Number(newTaskData.targetMileage) : undefined,
       targetDate: newTaskData.targetDate,
+      category: newTaskData.category,
+      description: newTaskData.description,
+      relatedDtc: newTaskData.relatedDtc,
+      source: newTaskData.source || 'manual',
       status: 'pending',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -468,6 +498,75 @@ export default function App() {
         setConfirmState(prev => ({ ...prev, isOpen: false }));
       }
     });
+  };
+
+  const handleCompleteTaskWithDetails = (params: {
+    taskId: string;
+    partsPrice: number;
+    laborPrice: number;
+    partsUsed: string[];
+    mileage: number;
+    date: string;
+    category: any;
+    description: string;
+  }) => {
+    const task = tasks.find(t => t.id === params.taskId);
+    if (!task || !activeCarId) return;
+
+    // 1. Mark task as completed or remove it
+    setTasks(prev => prev.map(t => t.id === params.taskId ? { ...t, status: 'completed', updatedAt: new Date().toISOString() } : t));
+
+    // 2. Consume any reserved parts if attached to this task
+    if (task.relatedPartIds && task.relatedPartIds.length > 0) {
+      setParts(prevParts => prevParts.map(p => {
+        if (task.relatedPartIds!.includes(p.id)) {
+          return {
+            ...p,
+            quantity: Math.max(0, p.quantity - 1),
+            reservedQuantity: Math.max(0, (p.reservedQuantity || 0) - 1),
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return p;
+      }));
+    }
+
+    // 3. Create new Maintenance Record in Service History
+    const newRecord: MaintenanceRecord = {
+      id: `rec-${Date.now()}`,
+      carId: activeCarId,
+      description: params.description || task.title,
+      mileage: params.mileage,
+      partsPrice: params.partsPrice,
+      laborPrice: params.laborPrice,
+      date: params.date,
+      category: params.category || task.category || (task.relatedDtc ? 'Engine' : 'Other'),
+      partsUsed: params.partsUsed,
+      photoUrls: task.photos || [],
+      relatedTaskId: task.id,
+      relatedDtc: task.relatedDtc,
+      source: 'task',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    setRecords(prev => [newRecord, ...prev]);
+
+    // 4. Global Mileage Sync: If entered mileage is higher than activeCar.mileage, update car globally
+    if (activeCar && params.mileage > activeCar.mileage) {
+      const updatedCar: Car = {
+        ...activeCar,
+        mileage: params.mileage,
+        updatedAt: new Date().toISOString()
+      };
+      setCars(prev => prev.map(c => c.id === activeCar.id ? updatedCar : c));
+    }
+
+    // Switch to history tab to show the recorded service
+    setActiveTab('service');
+    setServiceSubTab('history');
+
+    if (navigator.vibrate) navigator.vibrate(25);
   };
 
   const handleMarkTaskCompleted = (id: string) => {
@@ -823,6 +922,7 @@ export default function App() {
           }
         }}
         onOpenTechSpecs={() => setShowTechSpecs(true)}
+        urgentMaintenanceCount={activeCarUrgentCount}
       />
 
       {/* CAR SELECTOR MODAL OVERLAY */}
@@ -1050,6 +1150,7 @@ export default function App() {
                 onAddTask={handleAddTask}
                 onUpdateTask={handleUpdateTask}
                 onMarkTaskCompleted={handleMarkTaskCompleted}
+                onCompleteTaskWithDetails={handleCompleteTaskWithDetails}
                 onDeleteTask={handleDeleteTask}
                 initialSubTab={serviceSubTab}
               />
@@ -1096,6 +1197,7 @@ export default function App() {
                 cars={cars}
                 activeCarId={activeCarId}
                 parts={parts}
+                records={records}
                 onSelectCar={(id) => {
                   setActiveCarId(id);
                   setShowAddForm(false);
@@ -1230,14 +1332,21 @@ export default function App() {
             setActiveTab('service');
             setShowAddForm(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 rounded-full transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 rounded-full transition-all cursor-pointer relative ${
             activeTab === 'service'
               ? 'text-cyan-400 bg-cyan-500/20 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
           id="mob-tab-service"
         >
-          <ClipboardList className="w-4 h-4 mb-0.5" />
+          <div className="relative">
+            <ClipboardList className="w-4 h-4 mb-0.5" />
+            {activeCarUrgentCount > 0 && (
+              <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-0.5 bg-amber-500 text-slate-950 text-[9px] font-mono font-bold rounded-full flex items-center justify-center animate-pulse">
+                {activeCarUrgentCount}
+              </span>
+            )}
+          </div>
           <span className="text-[9px] font-medium tracking-tight">ТО</span>
         </button>
 

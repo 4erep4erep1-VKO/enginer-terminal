@@ -3,6 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export type BodyType =
+  | 'sedan'
+  | 'crossover'
+  | 'suv'
+  | 'hatchback'
+  | 'wagon'
+  | 'coupe'
+  | 'pickup'
+  | 'minivan';
+
 export interface Car {
   id: string;
   make: string;
@@ -12,6 +22,8 @@ export interface Car {
   vin?: string;
   licensePlate?: string;
   mileage: number;
+  imageUrl?: string;
+  bodyType?: BodyType;
   ownerId: string;
   userId?: string;
   notes?: string;
@@ -289,7 +301,6 @@ export interface UserSettings {
   volumeUnit: VolumeUnit;
   pressureUnit?: PressureUnit;
   assistantTone: AssistantTone;
-  garageMode?: boolean;
 }
 
 export interface UserProfile {

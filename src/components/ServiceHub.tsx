@@ -7,7 +7,9 @@ import React, { useState } from 'react';
 import { Car, MaintenanceRecord, VehicleTask, TaskType } from '../types';
 import { ServiceHistory } from './ServiceHistory';
 import { VehicleTasks } from './VehicleTasks';
-import { ClipboardList, CheckSquare, History, Plus } from 'lucide-react';
+import { MaintenanceAlertWidget } from './MaintenanceAlertWidget';
+import { calculateTaskUrgency } from '../lib/taskUrgency';
+import { ClipboardList, CheckSquare, History, Plus, AlertTriangle } from 'lucide-react';
 
 interface ServiceHubProps {
   activeCar: Car | null;
@@ -24,6 +26,16 @@ interface ServiceHubProps {
   onAddTask: (newTaskData: { title: string; type: TaskType; targetMileage?: number; targetDate?: string }) => void;
   onUpdateTask?: (task: VehicleTask) => void;
   onMarkTaskCompleted: (taskId: string) => void;
+  onCompleteTaskWithDetails?: (params: {
+    taskId: string;
+    partsPrice: number;
+    laborPrice: number;
+    partsUsed: string[];
+    mileage: number;
+    date: string;
+    category: any;
+    description: string;
+  }) => void;
   onDeleteTask: (taskId: string) => void;
   initialSubTab?: 'plan' | 'history';
 }
@@ -43,6 +55,7 @@ export function ServiceHub({
   onAddTask,
   onUpdateTask,
   onMarkTaskCompleted,
+  onCompleteTaskWithDetails,
   onDeleteTask,
   initialSubTab = 'history',
 }: ServiceHubProps) {
@@ -50,6 +63,12 @@ export function ServiceHub({
 
   const activeCarTasks = tasks.filter(t => t.carId === activeCar?.id && t.status === 'pending');
   const activeCarRecords = records.filter(r => r.carId === activeCar?.id);
+
+  // Check urgent tasks count
+  const urgentTasksCount = activeCarTasks.filter(t => {
+    const calc = calculateTaskUrgency(t, activeCar?.mileage || 0);
+    return calc.urgency === 'overdue' || calc.urgency === 'warning';
+  }).length;
 
   return (
     <div className="space-y-3.5 font-sans pb-20">
@@ -73,11 +92,15 @@ export function ServiceHub({
           >
             <CheckSquare className="w-3.5 h-3.5" />
             <span>План ТО</span>
-            {activeCarTasks.length > 0 && (
+            {urgentTasksCount > 0 ? (
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">
+                {urgentTasksCount}
+              </span>
+            ) : activeCarTasks.length > 0 ? (
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-medium bg-[#0B0E14] text-[#06B6D4] border border-[#1E273D]">
                 {activeCarTasks.length}
               </span>
-            )}
+            ) : null}
           </button>
 
           {/* ИСТОРИЯ */}
@@ -103,6 +126,18 @@ export function ServiceHub({
         </div>
       </div>
 
+      {/* Maintenance Alerts Widget for current vehicle if any urgent/warning tasks exist */}
+      {activeCar && activeCarTasks.length > 0 && (
+        <MaintenanceAlertWidget
+          tasks={activeCarTasks}
+          currentMileage={activeCar.mileage || 0}
+          onNavigateToPlan={() => setSubTab('plan')}
+          onQuickCompleteTask={(taskId) => {
+            if (onMarkTaskCompleted) onMarkTaskCompleted(taskId);
+          }}
+        />
+      )}
+
       {/* Sub-view rendering */}
       {subTab === 'plan' ? (
         activeCar ? (
@@ -114,6 +149,7 @@ export function ServiceHub({
             onUpdateTask={onUpdateTask}
             onDeleteTask={onDeleteTask}
             onMarkTaskCompleted={onMarkTaskCompleted}
+            onCompleteTaskWithDetails={onCompleteTaskWithDetails}
           />
         ) : (
           <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-6 text-center text-slate-400 text-xs">

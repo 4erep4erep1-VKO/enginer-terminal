@@ -229,7 +229,8 @@ app.post("/api/rag/ask", async (req, res) => {
       diagnosticContext,
       obdSnapshot,
       chatHistory = [],
-      history = []
+      history = [],
+      assistantTone = 'vasilich'
     } = req.body;
 
     const carProfile = activeCar || reqCarProfile;
@@ -421,13 +422,46 @@ app.post("/api/rag/ask", async (req, res) => {
     if (Array.isArray(obdSnapshot?.dtcCodes)) activeDtcsList.push(...obdSnapshot.dtcCodes);
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 6. SYSTEM PROMPT: LIVE AUTOMOTIVE ASSISTANT (STAGE 11.4: UX-ПЕРЕОСМЫСЛЕНИЕ И ЧЕЛОВЕЧНЫЙ ДИАЛОГ)
+    // 6. SYSTEM PROMPT: LIVE AUTOMOTIVE ASSISTANT (STRICT PERSONAS)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const isTechnicalRequest = /инженерный|параметры|осциллограф|pinout|электросхема|допуски оем|моменты затяжки/i.test(question);
+    let toneInstruction = `
+ХАРАКТЕР И СТИЛЬ: «ОПЫТНЫЙ МЕХАНИК» (mechanic / vasilich)
+- Тон: Разговорный, свойский, с добродушным гаражным юмором, житейской мудростью и простыми аналогиями.
+- Правила:
+  1. Используй понятные автомобильные термины, объясняй на пальцах, как бывалый мастер в гараже.
+  2. Давай практические житейские советы по ремонту и обслуживанию.
+  3. Категорически запрещена сухая канцелярия и заумный академический сленг.
+  4. Общайся уважительно, тепло и по-товарищески.
+`;
+
+    if (assistantTone === 'strict' || assistantTone === 'engineer') {
+      toneInstruction = `
+ХАРАКТЕР И СТИЛЬ: «СТРОГИЙ ИНЖЕНЕР-ДИАГНОСТ» (engineer / strict)
+- Тон: Академический, технически безупречный, аналитический, без лишних эмоций и без "гаражного" сленга.
+- Правила:
+  1. Обязательно указывай конкретные допуски и стандарты производителей (OEM, SAE, API, ACEA, DOT, ISO).
+  2. Указывай точные моменты затяжки резьбовых соединений в Н·м (Ньютон-метрах), если речь идет о крепеже.
+  3. Оценивай вероятности неисправностей в процентах (%) и формируй четкий пошаговый алгоритм инструментальной диагностики (проверка мультиметром, осциллографом, манометром, сканером).
+  4. Структурируй выводы строго логически: Гипотеза -> Проверка -> Допуск -> Решение.
+`;
+    } else if (assistantTone === 'brief' || assistantTone === 'concise') {
+      toneInstruction = `
+ХАРАКТЕР И СТИЛЬ: «КРАТКО И ПО ДЕЛУ» (concise / brief)
+- Тон: Максимально сжатый телеграфный стиль, военная лаконичность.
+- Правила:
+  1. СТРОГО НЕ БОЛЕЕ 2-3 ПРЕДЛОЖЕНИЙ или короткий маркированный список.
+  2. КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНЫ любые приветствия («Привет», «Здравствуйте», «Доброго времени суток»).
+  3. КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНЫ любые вводные фразы («Конечно, помогу», «Я понял», «Давайте разберем», «Итак»).
+  4. Только сухие факты, регламентные цифры, каталожные артикулы, пробеги, цены и конкретные действия. Ни единого лишнего слова.
+`;
+    }
 
     const systemPrompt = `
-Ты — «Василич», заботливый, толковый и доброжелательный автомеханик-наставник.
-Ты общаешься с водителем в формате естественного живого чата — как опытный мастер в гараже или хороший знакомый.
+Ты — «Василич», виртуальный автомобильный наставник и диагностический помощник.
+
+${toneInstruction}
+
+Ты общаешься с водителем в формате естественного диалога в контексте его автомобиля.
 
 ТВОЙ СОБЕСЕДНИК:
 Обычный человек, который может вообще не разбираться в устройстве автомобилей или только недавно научился пользоваться смартфоном (в том числе водители старшего поколения).
@@ -467,6 +501,20 @@ app.post("/api/rag/ask", async (req, res) => {
 
 Удалить?»
      Заполни "pendingAction" с типом "delete_record" и actions: [{"type": "confirm_action", "label": "Да, удалить"}, {"type": "cancel_action", "label": "Нет"}]
+
+   - Если водитель просит запланировать работу, напомнить или добавить задачу в план ТО (например: «замена масла в коробке передач на 60 000 км», «напомни поменять ремень ГРМ на 90 тыс», «поставь задачу заменить тормозные колодки на 45000»):
+     «Понял, запланировал: **Замена масла в КПП** на **60 000 км**. Добавил задачу в План ТО.»
+     Заполни "executedAction" с типом "add_task" и полями:
+     {
+       "type": "add_task",
+       "data": {
+         "title": "Замена масла в КПП",
+         "type": "mileage",
+         "targetMileage": 60000,
+         "category": "Transmission",
+         "notes": "Плановое обслуживание КПП"
+       }
+     }
 
    - Если водитель обновляет пробег («Пробег сейчас 53 тысячи»):
      «Понял, обновил текущий пробег: 53 000 км.»
@@ -739,36 +787,76 @@ ${contextString}
           actions.push({ type: "confirm_action", label: "Записать" }, { type: "cancel_action", label: "Отмена" });
         }
       }
-      // Action: Add task / Reminder in Plan ТО ("напомни через 5000 поменять масло", "напомни через 10000")
-      else if (/напомни|поставь задачу|в план то|запланируй|напомнить/i.test(qLower)) {
-        let deltaKm = 5000;
-        const numMatch = qLower.match(/через\s*(\d+[\d\s]*)/i);
-        if (numMatch) {
-          deltaKm = parseInt(numMatch[1].replace(/\s+/g, ''), 10);
+      // Action: Add task / Reminder in Plan ТО ("замена масла в коробке передач на 60 000 км", "напомни через 5000 поменять масло", "в план то")
+      else if (/напомни|поставь задачу|в план то|запланируй|напомнить|надо сделать|нужно сделать|замена .* на \d+/i.test(qLower) || (/замена|поменять/i.test(qLower) && /\bна\s+\d{2,6}/i.test(qLower))) {
+        let targetMileage = 0;
+        let deltaKm = 0;
+
+        const relativeMatch = qLower.match(/через\s*(\d+[\d\s]*)/i);
+        if (relativeMatch) {
+          deltaKm = parseInt(relativeMatch[1].replace(/\s+/g, ''), 10);
           if (deltaKm < 100 && qLower.includes('тыс')) deltaKm = deltaKm * 1000;
+          targetMileage = currentMileage + deltaKm;
+        } else {
+          const directMatch = qLower.match(/(?:на\s+)?(\d{2,6})\s*(?:км|тысяч|тыс)?/i);
+          if (directMatch) {
+            let val = parseInt(directMatch[1].replace(/\s+/g, ''), 10);
+            if (val < 1000 && (qLower.includes('тыс') || val <= 300)) val = val * 1000;
+            targetMileage = val;
+          }
         }
 
-        const targetMileage = currentMileage + deltaKm;
-        let taskTitle = "Техническое обслуживание";
+        if (!targetMileage || targetMileage <= 0) {
+          targetMileage = currentMileage > 0 ? currentMileage + 5000 : 50000;
+        }
+
+        let taskTitle = "";
         let taskCategory: any = "Other";
 
-        if (/масл/i.test(qLower)) {
+        if (/коробк|кпп|трансмисс|сцеплен|акпп|мкпп|редуктор|раздатка/i.test(qLower)) {
+          taskCategory = "Transmission";
+          if (/масл/i.test(qLower)) {
+            taskTitle = "Замена масла в КПП";
+          } else if (/сцеплен/i.test(qLower)) {
+            taskTitle = "Замена комплекта сцепления";
+          } else {
+            taskTitle = "Обслуживание коробки передач";
+          }
+        } else if (/масл/i.test(qLower)) {
           taskTitle = "Замена моторного масла и фильтра";
           taskCategory = "Oil & Fluids";
-        } else if (/колодк|диск|тормоз/i.test(qLower)) {
+        } else if (/колодк|диск|тормоз|суппорт/i.test(qLower)) {
           taskTitle = "Проверка и замена тормозных колодок";
           taskCategory = "Brakes";
         } else if (/свеч/i.test(qLower)) {
           taskTitle = "Замена свечей зажигания";
           taskCategory = "Engine";
-        } else if (/грм/i.test(qLower)) {
-          taskTitle = "Замена ремня ГРМ";
+        } else if (/грм|ремень/i.test(qLower)) {
+          taskTitle = "Замена ремня ГРМ и роликов";
           taskCategory = "Engine";
+        } else if (/подвеск|стойк|рычаг|амортиз|шаров/i.test(qLower)) {
+          taskTitle = "Диагностика и ремонт подвески";
+          taskCategory = "Suspension";
+        } else if (/фильтр/i.test(qLower)) {
+          taskTitle = "Замена воздушного и салонного фильтров";
+          taskCategory = "Oil & Fluids";
+        } else if (/аккумулятор|фары|лампа|генератор|датчик/i.test(qLower)) {
+          taskTitle = "Проверка электрооборудования";
+          taskCategory = "Electrical";
         } else {
-          taskTitle = question.replace(/напомни|пожалуйста|в план то|через\s*\d+\s*(?:км|тыс)?/gi, '').trim() || "Плановое ТО";
+          // Clean user prompt to form a meaningful title
+          let cleaned = question
+            .replace(/^(василич|привет|подскажи|напомни|пожалуйста|поставь задачу|добавь в план то|в план то|запланируй|надо|нужно)[:,\s]*/gi, '')
+            .replace(/\b(на|через)\s+\d+[\d\s]*(?:км|тысяч|тыс)?/gi, '')
+            .trim();
+          if (cleaned.length > 3) {
+            taskTitle = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+          } else {
+            taskTitle = "Плановое техническое обслуживание";
+          }
         }
 
-        fallbackMessage = `Хорошо. Поставил **${taskTitle}** на **${targetMileage.toLocaleString('ru-RU')} км** (через ${deltaKm.toLocaleString('ru-RU')} км).`;
+        fallbackMessage = `Понял, запланировал: **${taskTitle}** на **${targetMileage.toLocaleString('ru-RU')} км**. Добавил задачу в План ТО.`;
         executedAction = {
           type: "add_task",
           data: {
@@ -776,7 +864,8 @@ ${contextString}
             title: taskTitle,
             type: "mileage",
             targetMileage,
-            category: taskCategory
+            category: taskCategory,
+            notes: "Запланировано через Василича"
           }
         };
       }
@@ -1104,6 +1193,108 @@ app.post("/api/diagrams/search", async (req: Request, res: Response): Promise<vo
   } catch (err: any) {
     console.error("Error searching diagrams:", err);
     res.status(500).json({ error: "Failed to search diagrams", details: err.message });
+  }
+});
+
+// Endpoint: Search real vehicle photo by exact make & model
+app.post("/api/cars/search-photo", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { make = '', model = '', year } = req.body;
+    if (!make.trim()) {
+      res.status(400).json({ error: "Missing car make", found: false });
+      return;
+    }
+
+    const cleanMake = make.trim();
+    const cleanModel = model.trim();
+    const carQuery = `${cleanMake} ${cleanModel} ${year || ''} car auto side view official hd`.trim();
+
+    console.log(`[Car Photo Search] Searching photo for: "${carQuery}"`);
+
+    // Search via DuckDuckGo Images
+    const tokenUrl = `https://duckduckgo.com/?q=${encodeURIComponent(carQuery)}`;
+    const tokenRes = await fetch(tokenUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      }
+    });
+    const tokenHtml = await tokenRes.text();
+    const vqdMatch = tokenHtml.match(/vqd=["']([^"']+)["']/i) || tokenHtml.match(/vqd=([\d-]+)/i);
+    const vqd = vqdMatch ? vqdMatch[1] : null;
+
+    if (!vqd) {
+      res.json({ found: false, imageUrl: null, message: "Search token unavailable" });
+      return;
+    }
+
+    const searchUrl = `https://duckduckgo.com/i.js?q=${encodeURIComponent(carQuery)}&o=json&vqd=${vqd}&f=,,,&p=1`;
+    const searchRes = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Referer': 'https://duckduckgo.com/'
+      }
+    });
+
+    if (!searchRes.ok) {
+      res.json({ found: false, imageUrl: null, message: "Search request failed" });
+      return;
+    }
+
+    const data = await searchRes.json();
+    const results = (data.results && Array.isArray(data.results)) ? data.results : [];
+
+    // Filter results to ensure high confidence matching
+    const makeLower = cleanMake.toLowerCase();
+    const modelLower = cleanModel.toLowerCase();
+
+    let matchedImage: string | null = null;
+    let imageTitle = '';
+
+    for (const item of results) {
+      const title = (item.title || '').toLowerCase();
+      const url = (item.image || item.url || '').toLowerCase();
+      
+      // Strict confidence: Title or URL must contain make or model to avoid wrong cars (e.g. Lada matching Mercedes)
+      const hasMake = title.includes(makeLower) || url.includes(makeLower);
+      const hasModel = !modelLower || title.includes(modelLower) || url.includes(modelLower);
+
+      if (hasMake && hasModel && item.image && !item.image.endsWith('.svg')) {
+        matchedImage = item.image;
+        imageTitle = item.title;
+        break;
+      }
+    }
+
+    // Secondary fallback: if exact make+model wasn't found in title, check if make is present in top 3 results
+    if (!matchedImage && results.length > 0) {
+      for (const item of results.slice(0, 3)) {
+        const title = (item.title || '').toLowerCase();
+        if (title.includes(makeLower) && item.image && !item.image.endsWith('.svg')) {
+          matchedImage = item.image;
+          imageTitle = item.title;
+          break;
+        }
+      }
+    }
+
+    if (matchedImage) {
+      const proxiedUrl = `/api/diagrams/proxy-image?url=${encodeURIComponent(matchedImage)}`;
+      res.json({
+        found: true,
+        imageUrl: proxiedUrl,
+        originalUrl: matchedImage,
+        title: imageTitle
+      });
+    } else {
+      res.json({
+        found: false,
+        imageUrl: null,
+        message: "No high-confidence photo match found. Fallback to vector silhouette."
+      });
+    }
+  } catch (err: any) {
+    console.error("Error searching car photo:", err);
+    res.status(500).json({ error: "Failed to search car photo", details: err.message, found: false });
   }
 });
 

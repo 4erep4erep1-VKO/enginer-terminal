@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { ShowMechanicModal } from './ShowMechanicModal';
 import { SimpleAddRecordModal } from './SimpleAddRecordModal';
+import { VehiclePhoto } from './VehiclePhoto';
+import { calculateTaskUrgency } from '../lib/taskUrgency';
 
 interface VehicleDashboardProps {
   activeCar: Car | null;
@@ -110,67 +112,38 @@ export function VehicleDashboard({
     }> = [];
 
     const currentMileage = activeCar.mileage || 0;
-    const now = Date.now();
+    const now = new Date();
 
-    // 1. Check Overdue Tasks
+    // 1. Check Overdue & Warning Tasks using standardized calculation (<=7 days or <=500 km)
     activeCarPendingTasks.forEach(task => {
-      if (task.type === 'mileage' && task.targetMileage !== undefined && currentMileage >= task.targetMileage) {
-        const overKm = currentMileage - task.targetMileage;
+      const calc = calculateTaskUrgency(task, currentMileage, now);
+      if (calc.urgency === 'overdue') {
+        const overKm = calc.remainingKm !== undefined && calc.remainingKm < 0 ? Math.abs(calc.remainingKm) : undefined;
         items.push({
           id: `overdue-${task.id}`,
           title: `Пора выполнить: ${task.title}`,
-          description: `Просрочено на ${overKm > 0 ? overKm.toLocaleString('ru-RU') : 0} ${distanceLabel}. По плану ТО уже подошло.`,
+          description: overKm !== undefined 
+            ? `Просрочено на ${overKm.toLocaleString('ru-RU')} ${distanceLabel}. По плану ТО уже подошло.`
+            : calc.statusText || 'Срок выполнения истек. Рекомендуется выполнить сейчас.',
           type: 'overdue',
           actionLabel: 'Выполнить',
           onAction: () => onMarkTaskCompleted ? onMarkTaskCompleted(task.id) : onNavigateTab('service')
         });
-      } else if (task.targetDate) {
-        const diffDays = Math.ceil((new Date(task.targetDate).getTime() - now) / (1000 * 60 * 60 * 24));
-        if (diffDays <= 0) {
-          items.push({
-            id: `overdue-date-${task.id}`,
-            title: `Срок подошел: ${task.title}`,
-            description: `Срок выполнения истек ${Math.abs(diffDays)} дн. назад.`,
-            type: 'overdue',
-            actionLabel: 'Выполнить',
-            onAction: () => onMarkTaskCompleted ? onMarkTaskCompleted(task.id) : onNavigateTab('service')
-          });
-        }
+      } else if (calc.urgency === 'warning') {
+        items.push({
+          id: `urgent-${task.id}`,
+          title: `Скоро ТО: ${task.title}`,
+          description: calc.statusText 
+            ? `${calc.statusText} до регламентного обслуживания.`
+            : 'Подходит срок выполнения регламентной работы.',
+          type: 'urgent',
+          actionLabel: 'Посмотреть',
+          onAction: () => onNavigateTab('service')
+        });
       }
     });
 
-    // 2. Check Urgent Tasks (due soon: <= 1000 km or <= 14 days)
-    if (items.length < 3) {
-      activeCarPendingTasks.forEach(task => {
-        if (task.type === 'mileage' && task.targetMileage !== undefined) {
-          const diff = task.targetMileage - currentMileage;
-          if (diff > 0 && diff <= 1000) {
-            items.push({
-              id: `urgent-${task.id}`,
-              title: `Скоро ТО: ${task.title}`,
-              description: `Осталось примерно ${diff.toLocaleString('ru-RU')} ${distanceLabel} до регламентной замены.`,
-              type: 'urgent',
-              actionLabel: 'Посмотреть',
-              onAction: () => onNavigateTab('service')
-            });
-          }
-        } else if (task.targetDate) {
-          const diffDays = Math.ceil((new Date(task.targetDate).getTime() - now) / (1000 * 60 * 60 * 24));
-          if (diffDays > 0 && diffDays <= 14) {
-            items.push({
-              id: `urgent-date-${task.id}`,
-              title: `Скоро: ${task.title}`,
-              description: `Регламент запланирован через ${diffDays} дн.`,
-              type: 'urgent',
-              actionLabel: 'Посмотреть',
-              onAction: () => onNavigateTab('service')
-            });
-          }
-        }
-      });
-    }
-
-    // 3. Check if service history is empty or old (> 10 000 km ago)
+    // 2. Check if service history is empty or old (> 10 000 km ago)
     if (items.length < 3) {
       const lastRecord = activeCarRecords.length > 0 ? activeCarRecords[0] : null;
       if (!lastRecord) {
@@ -346,20 +319,29 @@ export function VehicleDashboard({
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="md:col-span-2">
         <section className="bento-card p-4 sm:p-5 h-full flex flex-col justify-between min-h-[145px]">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-[#06B6D4] shrink-0">
-                <CarIcon className="w-5 h-5" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-16 h-12 rounded-xl overflow-hidden shrink-0 border border-cyan-500/20 bg-[#090C12]">
+                <VehiclePhoto 
+                  car={activeCar} 
+                  size="sm" 
+                  className="w-full h-full rounded-lg"
+                />
               </div>
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-base font-bold text-white tracking-tight">
+                  <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">
                     {activeCar.make} {activeCar.model}
                   </h1>
                   {activeCar.year && (
                     <span className="text-xs text-slate-400 font-mono">
                       {activeCar.year} г.в.
+                    </span>
+                  )}
+                  {activeCar.licensePlate && (
+                    <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[#10151E] text-slate-300 border border-[#1E273D]">
+                      {activeCar.licensePlate}
                     </span>
                   )}
                 </div>
@@ -372,9 +354,9 @@ export function VehicleDashboard({
             <button
               type="button"
               onClick={onOpenGarageManager}
-              className="text-[11px] text-[#06B6D4] hover:underline font-medium shrink-0 cursor-pointer"
+              className="text-xs text-[#06B6D4] hover:underline font-medium shrink-0 cursor-pointer self-end sm:self-auto"
             >
-              Гараж
+              Гараж & фото →
             </button>
           </div>
 

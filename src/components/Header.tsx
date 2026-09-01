@@ -6,6 +6,7 @@
 import React from 'react';
 import { Car } from '../types';
 import { LogoIcon } from './LogoIcon';
+import { VehiclePhoto } from './VehiclePhoto';
 import { 
   Car as CarIcon,
   ChevronDown,
@@ -34,6 +35,7 @@ export interface HeaderProps {
   activeTab: MainNavTab;
   onSelectTab: (tab: MainNavTab) => void;
   onOpenTechSpecs: () => void;
+  urgentMaintenanceCount?: number;
 }
 
 export function Header({
@@ -47,6 +49,7 @@ export function Header({
   activeTab,
   onSelectTab,
   onOpenTechSpecs,
+  urgentMaintenanceCount = 0,
 }: HeaderProps) {
   return (
     <header className={`border-b border-cyan-500/15 bg-[#090C12]/90 sticky top-0 z-40 backdrop-blur-md transition-transform duration-200 ease-in-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
@@ -81,10 +84,16 @@ export function Header({
               if (navigator.vibrate) navigator.vibrate(10);
               onOpenCarSelector();
             }}
-            className="bg-[#10151E]/90 hover:bg-[#151C2C] border border-cyan-500/15 hover:border-cyan-500/30 text-slate-200 font-sans text-xs font-medium px-2.5 py-1 flex items-center gap-1.5 cursor-pointer rounded-xl transition-all active:scale-95 shrink-0 max-w-[170px]"
+            className="bg-[#10151E]/90 hover:bg-[#151C2C] border border-cyan-500/15 hover:border-cyan-500/30 text-slate-200 font-sans text-xs font-medium px-2 py-1 flex items-center gap-1.5 cursor-pointer rounded-xl transition-all active:scale-95 shrink-0 max-w-[180px]"
           >
-            <CarIcon className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
-            <span className="truncate max-w-[110px]">
+            {activeCar ? (
+              <div className="w-5 h-4 rounded overflow-hidden shrink-0 border border-cyan-500/30">
+                <VehiclePhoto car={activeCar} size="xs" className="w-full h-full rounded" />
+              </div>
+            ) : (
+              <CarIcon className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
+            )}
+            <span className="truncate max-w-[105px]">
               {activeCar ? `${activeCar.make} ${activeCar.model}` : 'Выбрать авто'}
             </span>
             <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
@@ -126,11 +135,17 @@ export function Header({
               if (navigator.vibrate) navigator.vibrate(10);
               onOpenCarSelector();
             }}
-            className="bg-[#10151E]/95 hover:bg-[#151C2C]/80 border border-cyan-500/15 hover:border-cyan-500/30 text-slate-200 font-sans text-xs font-medium px-3 py-1.5 flex items-center gap-2 cursor-pointer transition-all rounded-xl active:scale-98"
+            className="bg-[#10151E]/95 hover:bg-[#151C2C]/80 border border-cyan-500/15 hover:border-cyan-500/30 text-slate-200 font-sans text-xs font-medium px-2.5 py-1.5 flex items-center gap-2 cursor-pointer transition-all rounded-xl active:scale-98"
             title="Выбрать активный автомобиль"
           >
-            <CarIcon className="w-4 h-4 text-[#06B6D4] shrink-0" />
-            <span className="truncate max-w-[190px]">
+            {activeCar ? (
+              <div className="w-7 h-5 rounded overflow-hidden shrink-0 border border-cyan-500/30">
+                <VehiclePhoto car={activeCar} size="xs" className="w-full h-full rounded" />
+              </div>
+            ) : (
+              <CarIcon className="w-4 h-4 text-[#06B6D4] shrink-0" />
+            )}
+            <span className="truncate max-w-[180px]">
               {activeCar ? `${activeCar.make} ${activeCar.model}` : 'Выбрать авто'}
             </span>
             {activeCar?.mileage !== undefined && (
@@ -207,8 +222,18 @@ export function Header({
               }`}
               id="tab-btn-service"
             >
-              <ClipboardList className="w-3.5 h-3.5" />
+              <div className="relative">
+                <ClipboardList className="w-3.5 h-3.5" />
+                {urgentMaintenanceCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                )}
+              </div>
               <span>ТО</span>
+              {urgentMaintenanceCount > 0 && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {urgentMaintenanceCount}
+                </span>
+              )}
             </button>
 
             {/* 3. ВАСИЛИЧ */}
