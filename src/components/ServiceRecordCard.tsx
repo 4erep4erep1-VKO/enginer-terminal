@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MaintenanceRecord, RecordCategory } from '../types';
 import { 
   Wrench, 
@@ -23,7 +23,11 @@ import {
   Droplets,
   Zap,
   Shield,
-  Clock
+  Clock,
+  Receipt,
+  Paperclip,
+  ZoomIn,
+  X
 } from 'lucide-react';
 import { CATEGORY_NAMES } from './AddRecordForm';
 import { useUserSettings } from './UserSettingsContext';
@@ -38,7 +42,16 @@ export interface ServiceRecordCardProps {
 
 export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: ServiceRecordCardProps) {
   const { formatCurrency, formatMileage } = useUserSettings();
-  const totalCost = record.partsPrice + record.laborPrice;
+  const [cardLightboxImg, setCardLightboxImg] = useState<string | null>(null);
+
+  const totalCost = (record.partsPrice || 0) + (record.laborPrice || 0);
+
+  // Unified list of photo receipts and documents
+  const allPhotos = Array.from(new Set([
+    ...(record.attachments || []),
+    ...(record.photoUrls || []),
+    ...(record.photoReceiptUrl ? [record.photoReceiptUrl] : [])
+  ])).filter(Boolean);
 
   // Helper to get node/category icon
   const getCategoryIcon = (category: RecordCategory) => {
@@ -118,6 +131,20 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
             {record.source === 'task' && (
               <span className="bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded-md">
                 Из плана
+              </span>
+            )}
+            {allPhotos.length > 0 && (
+              <span 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (navigator.vibrate) navigator.vibrate(10);
+                  setCardLightboxImg(allPhotos[0]);
+                }}
+                className="bg-cyan-950/80 hover:bg-cyan-900/90 border border-cyan-500/30 text-cyan-300 text-[10px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors"
+                title="Посмотреть прикрепленный чек"
+              >
+                <Receipt className="w-3 h-3 text-cyan-400" />
+                <span>Чек ({allPhotos.length})</span>
               </span>
             )}
             <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
@@ -211,17 +238,40 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
         </div>
       </div>
 
-      {/* Attached Media */}
-      {record.photoUrls && record.photoUrls.length > 0 && (
-        <div className="mt-1.5 pt-2 border-t border-[#1E273D]">
-          <div className="text-[11px] text-slate-400 mb-1.5 flex items-center gap-1">
-            <ImageIcon className="w-3 h-3 text-[#06B6D4]" />
-            <span>Фотоотчет</span>
+      {/* Attached Receipts & Media */}
+      {allPhotos.length > 0 && (
+        <div className="mt-2 pt-2.5 border-t border-[#1E273D]">
+          <div className="text-[11px] text-slate-300 font-medium mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Receipt className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <span className="text-slate-200">Чеки и документы ({allPhotos.length}):</span>
+            </div>
+            <span className="text-[10px] text-slate-500 font-mono">нажмите для зума</span>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {record.photoUrls.map((url, i) => (
-              <div key={i} className="w-16 h-12 border border-[#1E273D] rounded-lg overflow-hidden bg-[#0B0E14] shrink-0">
-                <img src={url} alt={`record-${i}`} className="w-full h-full object-cover opacity-90" referrerPolicy="no-referrer" />
+          <div className="flex gap-2.5 overflow-x-auto pb-1.5 scrollbar-thin">
+            {allPhotos.map((url, i) => (
+              <div 
+                key={i} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (navigator.vibrate) navigator.vibrate(10);
+                  setCardLightboxImg(url);
+                }}
+                className="relative group w-20 h-16 border border-[#1E273D] hover:border-cyan-500/50 rounded-xl overflow-hidden bg-[#0B0E14] shrink-0 cursor-pointer transition-all shadow-sm"
+                title={`Чек #${i + 1} — нажать для просмотра`}
+              >
+                <img 
+                  src={url} 
+                  alt={`receipt-${i + 1}`} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 opacity-90 group-hover:opacity-100" 
+                  referrerPolicy="no-referrer" 
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <ZoomIn className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div className="absolute bottom-0 inset-x-0 bg-black/75 backdrop-blur-xs text-[9px] text-center font-mono text-cyan-300 py-0.5">
+                  Чек #{i + 1}
+                </div>
               </div>
             ))}
           </div>
@@ -229,7 +279,7 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
       )}
 
       {/* Action Buttons */}
-      <div className="mt-2 pt-2 border-t border-[#1E273D] flex items-center justify-end gap-1.5">
+      <div className="mt-2.5 pt-2 border-t border-[#1E273D] flex items-center justify-end gap-2">
         {onEdit && (
           <button 
             type="button"
@@ -238,11 +288,11 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
               if (navigator.vibrate) navigator.vibrate(15);
               onEdit(record);
             }}
-            className="text-xs text-slate-300 hover:text-white border border-[#1E273D] hover:border-cyan-500/40 bg-[#151C2C] px-2.5 py-1 rounded-lg cursor-pointer flex items-center gap-1 transition-colors"
+            className="text-xs text-slate-300 hover:text-white border border-[#1E273D] hover:border-cyan-500/40 bg-[#151C2C] px-3 py-1.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-colors font-medium"
             id={`btn-edit-${record.id}`}
             title="Редактировать запись"
           >
-            <Edit3 className="w-3 h-3 text-[#06B6D4]" />
+            <Edit3 className="w-3.5 h-3.5 text-[#06B6D4]" />
             <span>Редактировать</span>
           </button>
         )}
@@ -254,15 +304,49 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
               if (navigator.vibrate) navigator.vibrate(15);
               onDelete(record.id);
             }}
-            className="text-xs text-rose-400 hover:text-rose-200 border border-[#1E273D] hover:border-rose-500/40 bg-[#151C2C] px-2.5 py-1 rounded-lg cursor-pointer transition-colors flex items-center gap-1"
+            className="text-xs text-rose-400 hover:text-rose-200 border border-[#1E273D] hover:border-rose-500/40 bg-[#151C2C] px-3 py-1.5 rounded-xl cursor-pointer transition-colors flex items-center gap-1.5 font-medium"
             id={`btn-del-${record.id}`}
             title="Удалить запись"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="w-3.5 h-3.5" />
             <span>Удалить</span>
           </button>
         )}
       </div>
+
+      {/* Fullscreen Lightbox for Card */}
+      {cardLightboxImg && (
+        <div 
+          className="fixed inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-4 animate-fade-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            setCardLightboxImg(null);
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCardLightboxImg(null);
+            }}
+            className="absolute top-4 right-4 p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl cursor-pointer"
+            title="Закрыть"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <div 
+            className="max-w-4xl max-h-[85vh] p-2 flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={cardLightboxImg} 
+              alt="Чек / Документ" 
+              className="max-w-full max-h-[85vh] object-contain rounded-xl border border-cyan-500/40 shadow-2xl" 
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

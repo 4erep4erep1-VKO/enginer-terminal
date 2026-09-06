@@ -3,6 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { CarEngineInfo } from './types/car';
+import { VehicleMemorySummary } from './types/chat';
+export * from './types/car';
+export * from './types/chat';
+
 export type BodyType =
   | 'sedan'
   | 'crossover'
@@ -19,6 +24,7 @@ export interface Car {
   model: string;
   year: number;
   engine?: string;
+  engineInfo?: CarEngineInfo;
   vin?: string;
   licensePlate?: string;
   mileage: number;
@@ -27,6 +33,13 @@ export interface Car {
   ownerId: string;
   userId?: string;
   notes?: string;
+  // Unified CarProfile extensions
+  brand?: string;
+  generation?: string;
+  transmission?: string;
+  driveType?: string;
+  currentOdometer?: number;
+  photoUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,7 +75,11 @@ export interface MaintenanceRecord {
   partsUsed?: string[];
   partsUsedDetails?: PartUsageItem[];
   photoUrls?: string[];
+  attachments?: string[];
+  photoReceiptUrl?: string;
   voiceTranscript?: string;
+  comment?: string;
+  totalCost?: number;
   source?: 'manual' | 'task' | 'dtc' | 'ai' | 'voice' | 'obd';
   relatedTaskId?: string;
   relatedDtc?: string;
@@ -237,6 +254,8 @@ export interface Message {
   pendingAction?: AppActionPayload;
   executedAction?: AppActionPayload;
   actionStatus?: 'pending' | 'executed' | 'cancelled';
+  quickOptions?: string[];
+  vehicleMemory?: VehicleMemorySummary;
 }
 
 export type TaskType = 'simple' | 'mileage';

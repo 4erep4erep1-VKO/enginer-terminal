@@ -19,7 +19,8 @@ import {
   Cpu,
   Bot,
   Warehouse,
-  BookOpen
+  BookOpen,
+  Mic
 } from 'lucide-react';
 
 export type MainNavTab = 'dashboard' | 'service' | 'rag' | 'garage' | 'obd';
@@ -28,6 +29,7 @@ export interface HeaderProps {
   isHeaderVisible: boolean;
   activeCar?: Car;
   onOpenCarSelector: () => void;
+  onOpenVoiceRecord?: () => void;
   deferredPrompt?: any;
   isInstalled?: boolean;
   onInstallClick?: () => void;
@@ -37,12 +39,14 @@ export interface HeaderProps {
   onSelectTab: (tab: MainNavTab) => void;
   onOpenTechSpecs: () => void;
   urgentMaintenanceCount?: number;
+  hasCriticalIssues?: boolean;
 }
 
 export function Header({
   isHeaderVisible,
   activeCar,
   onOpenCarSelector,
+  onOpenVoiceRecord,
   deferredPrompt,
   isInstalled,
   onInstallClick,
@@ -51,6 +55,7 @@ export function Header({
   onSelectTab,
   onOpenTechSpecs,
   urgentMaintenanceCount = 0,
+  hasCriticalIssues = false,
 }: HeaderProps) {
   return (
     <header className={`border-b border-cyan-500/15 bg-[#090C12]/90 sticky top-0 z-40 backdrop-blur-md transition-transform duration-200 ease-in-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
@@ -79,6 +84,21 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-2">
+          {onOpenVoiceRecord && (
+            <button
+              type="button"
+              onClick={() => {
+                if (navigator.vibrate) navigator.vibrate(10);
+                onOpenVoiceRecord();
+              }}
+              className="w-8 h-8 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 flex items-center justify-center cursor-pointer transition-all active:scale-95 shrink-0 shadow-sm shadow-amber-500/10"
+              title="Рассказать Василичу (Голос/Текст)"
+              id="mobile-header-voice-btn"
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => {
@@ -157,6 +177,22 @@ export function Header({
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
           </button>
 
+          {onOpenVoiceRecord && (
+            <button
+              type="button"
+              onClick={() => {
+                if (navigator.vibrate) navigator.vibrate(10);
+                onOpenVoiceRecord();
+              }}
+              className="bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 hover:border-amber-500/40 text-amber-400 font-sans text-xs font-semibold px-3 py-1.5 flex items-center gap-1.5 cursor-pointer rounded-xl transition-all active:scale-98 shadow-sm shadow-amber-500/10"
+              title="Рассказать Василичу о ТО (Голос/Текст)"
+              id="desktop-header-voice-btn"
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>Рассказать Василичу</span>
+            </button>
+          )}
+
           {deferredPrompt && !isInstalled && onInstallClick && (
             <button
               onClick={onInstallClick}
@@ -200,15 +236,29 @@ export function Header({
                 if (navigator.vibrate) navigator.vibrate(10);
                 onSelectTab('dashboard');
               }}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 relative ${
                 activeTab === 'dashboard'
                   ? 'bg-[#151C2C] text-[#06B6D4] border border-[#06B6D4]/30 font-semibold'
                   : 'bg-transparent text-slate-400 border border-transparent hover:text-slate-200 hover:bg-[#151C2C]/50'
               }`}
               id="tab-btn-dashboard"
             >
-              <CarIcon className="w-3.5 h-3.5" />
+              <div className="relative">
+                <CarIcon className="w-3.5 h-3.5" />
+                {urgentMaintenanceCount > 0 && (
+                  <span className={`absolute -top-1 -right-1.5 w-2 h-2 rounded-full ${hasCriticalIssues ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'}`} />
+                )}
+              </div>
               <span>Главная</span>
+              {urgentMaintenanceCount > 0 && (
+                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border ${
+                  hasCriticalIssues 
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse' 
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}>
+                  {urgentMaintenanceCount}
+                </span>
+              )}
             </button>
 
             {/* 2. ТО */}
@@ -217,7 +267,7 @@ export function Header({
                 if (navigator.vibrate) navigator.vibrate(10);
                 onSelectTab('service'); 
               }}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 relative ${
                 activeTab === 'service'
                   ? 'bg-[#151C2C] text-[#06B6D4] border border-[#06B6D4]/30 font-semibold'
                   : 'bg-transparent text-slate-400 border border-transparent hover:text-slate-200 hover:bg-[#151C2C]/50'
@@ -227,12 +277,16 @@ export function Header({
               <div className="relative">
                 <ClipboardList className="w-3.5 h-3.5" />
                 {urgentMaintenanceCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                  <span className={`absolute -top-1 -right-1.5 w-2 h-2 rounded-full ${hasCriticalIssues ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'}`} />
                 )}
               </div>
               <span>ТО</span>
               {urgentMaintenanceCount > 0 && (
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border ${
+                  hasCriticalIssues 
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse' 
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}>
                   {urgentMaintenanceCount}
                 </span>
               )}

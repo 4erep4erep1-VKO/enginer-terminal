@@ -10,7 +10,8 @@ import { VehicleTasks } from './VehicleTasks';
 import { MaintenanceAlertWidget } from './MaintenanceAlertWidget';
 import { calculateTaskUrgency } from '../lib/taskUrgency';
 import { FluidHealthWidget } from './FluidHealthWidget';
-import { ClipboardList, CheckSquare, History, Plus, AlertTriangle } from 'lucide-react';
+import { ClipboardList, CheckSquare, History, Plus, AlertTriangle, Download } from 'lucide-react';
+import { PdfServiceReport } from './PdfServiceReport';
 
 interface ServiceHubProps {
   activeCar: Car | null;
@@ -65,6 +66,7 @@ export function ServiceHub({
   onSetInitialRecordValues,
 }: ServiceHubProps) {
   const [subTab, setSubTab] = useState<'plan' | 'history'>(initialSubTab);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   const activeCarTasks = tasks.filter(t => t.carId === activeCar?.id && t.status === 'pending');
   const activeCarRecords = records.filter(r => r.carId === activeCar?.id);
@@ -78,7 +80,7 @@ export function ServiceHub({
   return (
     <div className="space-y-3.5 font-sans pb-20">
       
-      {/* Top Segmented Switch: [ ПЛАН ] [ ИСТОРИЯ ] */}
+      {/* Top Segmented Switch: [ ПЛАН ] [ ИСТОРИЯ ] [ КНИЖКА PDF ] */}
       <div className="flex items-center justify-between bg-[#111622] border border-[#1E273D] p-1 rounded-xl shadow-sm">
         <div className="flex items-center gap-1 w-full">
           {/* ПЛАН */}
@@ -127,6 +129,21 @@ export function ServiceHub({
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded font-medium bg-[#0B0E14] text-slate-300 border border-[#1E273D]">
               {activeCarRecords.length}
             </span>
+          </button>
+
+          {/* СКАЧАТЬ КНИЖКУ PDF */}
+          <button
+            type="button"
+            onClick={() => {
+              if (navigator.vibrate) navigator.vibrate(10);
+              setIsPdfModalOpen(true);
+            }}
+            className="py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-cyan-500/20 shrink-0"
+            id="btn-servicehub-pdf-export"
+            title="Сервисная книжка с QR-кодом (PDF)"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Книжка PDF</span>
           </button>
         </div>
       </div>
@@ -190,6 +207,14 @@ export function ServiceHub({
           onClearInitialValues={onClearInitialValues}
         />
       )}
+
+      {/* PDF СЕРВИСНАЯ КНИЖКА С QR-КОДОМ */}
+      <PdfServiceReport
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        car={activeCar}
+        records={records}
+      />
 
     </div>
   );

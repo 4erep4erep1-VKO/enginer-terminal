@@ -21,6 +21,12 @@ import { useUserSettings } from './components/UserSettingsContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useNotificationScheduler } from './hooks/useNotificationScheduler';
 import { calculateTaskUrgency } from './lib/taskUrgency';
+import { calculateSmartCarInsights } from './lib/calcSmartReminders';
+import { VoiceRecordModal } from './components/VoiceRecordModal';
+import { ConfirmServiceEntryModal } from './components/ConfirmServiceEntryModal';
+import { PdfServiceReport } from './components/PdfServiceReport';
+import { ParsedServiceEntry } from './types/car';
+import { useCarStore } from './store/useCarStore';
 import { 
   Car as CarIcon,
   Cpu, 
@@ -77,6 +83,12 @@ export default function App() {
     relatedDtc?: string;
     source?: 'task' | 'obd' | 'manual';
   } | undefined>(undefined);
+
+  // Voice / Text Service Record Flow
+  const [isVoiceRecordModalOpen, setIsVoiceRecordModalOpen] = useState(false);
+  const [isConfirmServiceModalOpen, setIsConfirmServiceModalOpen] = useState(false);
+  const [parsedServiceEntry, setParsedServiceEntry] = useState<ParsedServiceEntry | null>(null);
+  const [showPdfReportModal, setShowPdfReportModal] = useState(false);
 
   // Header Scroll and Auto-Hide State
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -246,13 +258,14 @@ export default function App() {
     .filter(r => r.carId === activeCarId)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Active car urgent maintenance count
-  const activeCarUrgentCount = tasks
-    .filter(t => t.carId === activeCarId && t.status === 'pending')
-    .filter(t => {
-      const calc = calculateTaskUrgency(t, activeCar?.mileage || 0);
-      return calc.urgency === 'overdue' || calc.urgency === 'warning';
-    }).length;
+  // Smart car insights (fluids with critical wear < 10%, overdue tasks, average daily mileage)
+  const smartCarInsights = React.useMemo(() => {
+    return calculateSmartCarInsights(activeCar, records, tasks);
+  }, [activeCar, records, tasks]);
+
+  // Active car urgent maintenance count (total issues: critical/urgent fluids + overdue tasks)
+  const activeCarUrgentCount = smartCarInsights.totalIssueCount;
+  const hasCriticalUrgent = smartCarInsights.hasCriticalIssues;
 
   // Quick Mileage Update Handler
   const handleQuickUpdateMileage = (newMileage: number) => {
@@ -326,10 +339,87 @@ export default function App() {
     setRecords(prev => [fullRecord, ...prev]);
     setShowAddForm(false);
 
-    if (activeCar && newRecData.mileage > activeCar.mileage) {
-      const updatedCar = { ...activeCar, mileage: newRecData.mileage };
+    if (activeCar && newRecData.mileage >= activeCar.mileage) {
+      const updatedCar = { 
+        ...activeCar, 
+        mileage: newRecData.mileage,
+        currentOdometer: newRecData.mileage,
+        updatedAt: new Date().toISOString()
+      };
       setCars(prev => prev.map(c => c.id === activeCar.id ? updatedCar : c));
     }
+  };
+
+  const handleOpenVoiceRecord = () => {
+    setIsVoiceRecordModalOpen(true);
+  };
+
+  const handleParsedServiceReady = (parsed: ParsedServiceEntry) => {
+    setParsedServiceEntry(parsed);
+    setIsConfirmServiceModalOpen(true);
+  };
+
+  const handleConfirmSaveService = (finalEntry: ParsedServiceEntry) => {
+    if (!activeCarId) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const newRecordId = `rec-${Date.now()}`;
+
+    // Map category to Legacy RecordCategory
+    let legacyCat: RecordCategory = 'Oil & Fluids';
+    if (finalEntry.category === 'maintenance') legacyCat = 'Oil & Fluids';
+    else if (finalEntry.category === 'repair') legacyCat = 'Engine';
+    else if (finalEntry.category === 'tuning') legacyCat = 'Other';
+    else if (finalEntry.category === 'symptom') legacyCat = 'Diagnostics';
+
+    const newRecord: MaintenanceRecord = {
+      id: newRecordId,
+      carId: activeCarId,
+      date: todayStr,
+      description: finalEntry.title,
+      category: legacyCat,
+      mileage: finalEntry.odometer,
+      partsPrice: finalEntry.costParts,
+      laborPrice: finalEntry.costWork,
+      totalCost: finalEntry.totalCost,
+      partsUsed: finalEntry.partsUsed?.map(p => p.name) || [],
+      photoUrls: finalEntry.photoUrls || finalEntry.attachments || [],
+      attachments: finalEntry.attachments || finalEntry.photoUrls || [],
+      comment: finalEntry.comment,
+      source: 'voice',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Save to records in App.tsx (which updates car mileage too)
+    handleAddRecord(newRecord);
+
+    // Also sync to useCarStore for unified domain model
+    useCarStore.getState().addServiceRecord({
+      id: newRecordId,
+      carId: activeCarId,
+      date: todayStr,
+      odometer: finalEntry.odometer,
+      title: finalEntry.title,
+      category: finalEntry.category,
+      worksDone: finalEntry.worksDone,
+      partsUsed: finalEntry.partsUsed,
+      costParts: finalEntry.costParts,
+      costWork: finalEntry.costWork,
+      totalCost: finalEntry.totalCost,
+      photoUrls: finalEntry.photoUrls || finalEntry.attachments || [],
+      attachments: finalEntry.attachments || finalEntry.photoUrls || [],
+      comment: finalEntry.comment,
+      source: 'voice',
+    });
+
+    setIsConfirmServiceModalOpen(false);
+  };
+
+  const handleEditServiceRequest = (entry: ParsedServiceEntry) => {
+    setParsedServiceEntry(entry);
+    setIsConfirmServiceModalOpen(false);
+    setIsVoiceRecordModalOpen(true);
   };
 
   const handleUpdateRecord = (updatedRecord: MaintenanceRecord) => {
@@ -922,8 +1012,10 @@ export default function App() {
             setShowAddForm(false);
           }
         }}
+        onOpenVoiceRecord={handleOpenVoiceRecord}
         onOpenTechSpecs={() => setShowTechSpecs(true)}
         urgentMaintenanceCount={activeCarUrgentCount}
+        hasCriticalIssues={hasCriticalUrgent}
       />
 
       {/* PWA INSTALL PROMPT BANNER */}
@@ -1075,6 +1167,7 @@ export default function App() {
                   setActiveTab('service');
                   setServiceSubTab('history');
                 }}
+                onOpenAddRecordWithVoice={handleOpenVoiceRecord}
                 onOpenAddRecordWithPrefill={(prefill) => {
                   setInitialRecordValues(prefill);
                   setShowAddForm(true);
@@ -1106,6 +1199,7 @@ export default function App() {
                 onStartDiagnosticSession={handleStartDiagnosticSession}
                 onOpenDiagnosticSessionModal={handleOpenDiagnosticSessionModal}
                 onRecheckDiagnosticSession={handleRecheckDiagnosticSession}
+                onOpenPdfReport={() => setShowPdfReportModal(true)}
               />
             </ErrorBoundary>
           </div>
@@ -1313,6 +1407,35 @@ export default function App() {
         selectedSessionId={selectedDiagnosticSessionId}
       />
 
+      {/* VOICE / TEXT SERVICE RECORD MODAL («Рассказать Василичу») */}
+      <VoiceRecordModal
+        isOpen={isVoiceRecordModalOpen}
+        onClose={() => setIsVoiceRecordModalOpen(false)}
+        carName={activeCar ? `${activeCar.make} ${activeCar.model}` : 'Автомобиль'}
+        currentOdometer={activeCar?.mileage || 0}
+        initialText={parsedServiceEntry?.rawTranscript || ''}
+        onParsedReady={handleParsedServiceReady}
+      />
+
+      {/* CONFIRMATION SERVICE ENTRY MODAL (CRITICAL: Safe verification before saving) */}
+      <ConfirmServiceEntryModal
+        isOpen={isConfirmServiceModalOpen}
+        onClose={() => setIsConfirmServiceModalOpen(false)}
+        parsedEntry={parsedServiceEntry}
+        carName={activeCar ? `${activeCar.make} ${activeCar.model}` : 'Автомобиль'}
+        currentCarOdometer={activeCar?.mileage || 0}
+        onConfirmSave={handleConfirmSaveService}
+        onEditRequest={handleEditServiceRequest}
+      />
+
+      {/* PDF СЕРВИСНАЯ КНИЖКА С QR-КОДОМ */}
+      <PdfServiceReport
+        isOpen={showPdfReportModal}
+        onClose={() => setShowPdfReportModal(false)}
+        car={activeCar}
+        records={records}
+      />
+
       {/* FOOTER HUD - Only shown when NOT on Vasilich screen */}
       {activeTab !== 'rag' && (
         <footer className="max-w-7xl mx-auto px-4 mt-8 pb-20 md:pb-8 text-center text-xs text-slate-500 space-y-1 font-sans">
@@ -1332,14 +1455,25 @@ export default function App() {
             setActiveTab('dashboard');
             setShowAddForm(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 rounded-full transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 rounded-full transition-all cursor-pointer relative ${
             activeTab === 'dashboard'
               ? 'text-cyan-400 bg-cyan-500/20 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
           id="mob-tab-dashboard"
         >
-          <CarIcon className="w-4 h-4 mb-0.5" />
+          <div className="relative">
+            <CarIcon className="w-4 h-4 mb-0.5" />
+            {activeCarUrgentCount > 0 && (
+              <span className={`absolute -top-1 -right-2 min-w-[14px] h-[14px] px-0.5 ${
+                hasCriticalUrgent
+                  ? 'bg-rose-500 animate-pulse text-white'
+                  : 'bg-amber-500 text-slate-950'
+              } text-[9px] font-mono font-bold rounded-full flex items-center justify-center`}>
+                {activeCarUrgentCount}
+              </span>
+            )}
+          </div>
           <span className="text-[9px] font-medium tracking-tight">Главная</span>
         </button>
 
@@ -1361,7 +1495,11 @@ export default function App() {
           <div className="relative">
             <ClipboardList className="w-4 h-4 mb-0.5" />
             {activeCarUrgentCount > 0 && (
-              <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-0.5 bg-amber-500 text-slate-950 text-[9px] font-mono font-bold rounded-full flex items-center justify-center animate-pulse">
+              <span className={`absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-0.5 ${
+                hasCriticalUrgent
+                  ? 'bg-rose-500 animate-pulse text-white'
+                  : 'bg-amber-500 text-slate-950'
+              } text-[9px] font-mono font-bold rounded-full flex items-center justify-center`}>
                 {activeCarUrgentCount}
               </span>
             )}

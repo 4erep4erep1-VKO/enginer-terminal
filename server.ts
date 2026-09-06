@@ -8,6 +8,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { buildVehicleContext } from "./src/lib/ai/buildVehicleContext";
 
 dotenv.config();
 
@@ -224,6 +225,66 @@ Format JSON:
   } catch (err: any) {
     console.error("Error in parse-record:", err);
     res.status(500).json({ error: "Failed to parse text", details: err.message });
+  }
+});
+
+// Endpoint: Parse service transcript with unified CarProfile & ServiceRecord format
+app.post("/api/parse-service-record", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { transcript, currentOdometer, carContext } = req.body;
+    if (!transcript || typeof transcript !== "string") {
+      res.status(400).json({ error: "Missing transcript text" });
+      return;
+    }
+
+    const systemPrompt = `Ты — Василич, опытный автомеханик и инженер.
+Твоя задача — разобрать текст или голосовую диктовку водителя о выполненном техническом обслуживании или ремонте и извлечь структурированные данные.
+Ориентировочный текущий одометр авто: ${currentOdometer || 0} км.
+Контекст автомобиля: ${carContext?.make || 'Автомобиль'} ${carContext?.model || ''}.
+Валюты: тенге (тг, ₸), рубли (руб, р), доллары ($). Распознавай разговорные выражения ('косарь'=1000, 'пятерка'=5000 и т.д.).
+Верни СТРОГИЙ JSON объект:
+{
+  "title": string (Название работы, например: "Замена свечей зажигания" или "Замена масла и фильтра"),
+  "odometer": number (Пробег в км, число. Если не назван, используй ориентир ${currentOdometer || 0}),
+  "worksDone": string[] (Массив строк с выполненными работами),
+  "partsUsed": Array<{ "name": string, "price": number, "partNumber"?: string }> (Массив деталей/жидкостей),
+  "costParts": number (Общая стоимость запчастей, число),
+  "costWork": number (Стоимость работы мастера, число),
+  "totalCost": number (Общая сумма = costParts + costWork),
+  "category": "maintenance" | "repair" | "symptom" | "tuning",
+  "comment": string (любые важные детали, например бренд масла или артикул)
+}`;
+
+    let response: any = null;
+    const candidateModels = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+
+    for (const modelName of candidateModels) {
+      try {
+        response = await getAiClient().models.generateContent({
+          model: modelName,
+          contents: `Разбери запись ТО: "${transcript}"`,
+          config: {
+            systemInstruction: systemPrompt,
+            responseMimeType: "application/json",
+          }
+        });
+        if (response && response.text) break;
+      } catch (err: any) {
+        console.warn(`[ParseServiceRecord] Model ${modelName} failed:`, err.message || err);
+      }
+    }
+
+    if (response && response.text) {
+      try {
+        const parsed = JSON.parse(response.text.trim());
+        res.json({ parsed });
+        return;
+      } catch (e) {}
+    }
+
+    res.status(500).json({ error: "AI parsing fallback" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to parse service record", details: err.message });
   }
 });
 
@@ -505,6 +566,12 @@ const handleRagAsk = async (req: Request, res: Response): Promise<void> => {
     if (Array.isArray(dtcs)) activeDtcsList.push(...dtcs);
     if (Array.isArray(obdSnapshot?.dtcCodes)) activeDtcsList.push(...obdSnapshot.dtcCodes);
 
+    // Build unified vehicle memory and context
+    const vehicleContextResult = buildVehicleContext(carProfile, carRecords, question, {
+      activeDtcs: activeDtcsList,
+      tasks: carTasks
+    });
+
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 6. SYSTEM PROMPT: LIVE AUTOMOTIVE ASSISTANT (STRICT PERSONAS)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -557,12 +624,12 @@ ${toneInstruction}
    - Объясняй всё простыми, понятными человеческими словами без высокомерия и без длинных занудных лекций.
    - Один ответ = один цельный, легко читаемый текст (размер абзацев 2–4 строки).
 
-2. ПАМЯТЬ АВТОМОБИЛЯ (ЭТАП 11.2):
+2. ПАМЯТЬ АВТОМОБИЛЯ (ВАСИЛИЧ ПОМНИТ ТВОЮ МАШИНУ):
    - Ты действительно помнишь эту конкретную машину (${carTitle}, текущий пробег ${currentMileage.toLocaleString('ru-RU')} км).
    - Если в истории ТО есть запись — называй точные даты и пробеги («Масло последний раз меняли 15 марта 2024 года на 45 000 км. Сейчас 52 000 — прошло 7 000 км.»).
    - Если информации нет — честно и прямо скажи: «По остальным работам у меня записей нет.» Ничего не выдумывай!
 
-3. СКАЗАЛ → ПОНЯЛ → СДЕЛАЛ (ЭТАП 11.3 / 11.4):
+3. СКАЗАЛ → ПОНЯЛ → СДЕЛАЛ:
    - Если водитель сообщает о выполненной работе («Сегодня поменял масло, пробег 52 тысячи, отдал 3500»):
      Коротко резюмируй:
      «Понял. Масло и фильтр — 52 000 км, сегодня, 3 500 ₽.
@@ -604,10 +671,17 @@ ${toneInstruction}
      «Понял, обновил текущий пробег: 53 000 км.»
      Заполни "executedAction" с типом "update_mileage".
 
-4. ПРАВИЛО КНОПОК (СТРОГО):
-   - ЕСЛИ пользователь может просто продолжить разговор — НЕ ПОКАЗЫВАТЬ КНОПКУ (массив "actions" должен быть пустым []).
-   - Кнопки появляются ТОЛЬКО тогда, когда нужно подтвердить действие ("pendingAction") или показать сводку мастеру ("Показать мастеру").
-   - ЗАПРЕЩЕНО создавать кнопки «Уточнить», «Создать задачу», «Проверить», «Подробнее» после обычных ответов.
+4. ПРАВИЛО КНОПОК:
+   - Кнопки подтверждения ("actions") появляются ТОЛЬКО тогда, когда нужно подтвердить действие ("pendingAction") или показать сводку мастеру ("Показать мастеру").
+
+5. ПОШАГОВЫЙ ИНТЕРАКТИВНЫЙ ДИАГНОСТИЧЕСКИЙ ДИАЛОГ (ВАЖНО!):
+   - Если водитель жалуется на стук, скрип, вибрацию, плохой запуск, троение, пропуски или проблему:
+     1. НЕ ВЫВАЛИВАЙ длинный список из 10 возможных поломок! Это пугает водителя.
+     2. СВЕРЬСЯ С ИСТОРИЕЙ РЕМОНТОВ И ЖИДКОСТЕЙ (блок «ПАМЯТЬ АВТОМОБИЛЯ»):
+        - Если связанная деталь недавно менялась (например, свечи 5 000 км назад), обязательно скажи: «Свечи мы меняли недавно (на 45 000 км), так что вряд ли они. Давай проверим катушки или давление топлива.»
+        - Если деталь менялась очень давно или записей нет, отметь это.
+     3. Назови 1-2 самые вероятные причины и задай РОВНО ОДИН конкретный вопрос для уточнения симптома.
+     4. ОБЯЗАТЕЛЬНО заполни поле "quickOptions" массивом из 2-4 коротких вариантов ответа для быстрых кнопок в UI (например: ["На холодную", "На горячую", "Постоянно"] или ["Глухой стук", "Звонкий металлический"]).
 
 ${isReferenceMode ? `
 ДАННЫЕ АВТОМОБИЛЯ (МОДИФИКАЦИЯ):
@@ -615,18 +689,13 @@ ${carContextText}
 
 РЕЖИМ ОТВЕТА: БЫСТРЫЙ СПРАВОЧНИК (FAST REFERENCE MODE)
 - Запрос пользователя классифицирован как справочный (моменты затяжки, допуски масел, артикулы, зазоры клапанов, схемы, общие вопросы).
-- В системный контекст переданы ТОЛЬКО марка, модель, двигатель и год (без журнала ТО, расходов и склада) для минимального расхода токенов и мгновенного ответа.
 - Давай точные технические данные, каталожные допуски и регламенты для ${carContextText}.
 ` : `
 РЕАЛЬНАЯ СИСТЕМНАЯ ДАТА:
 Сегодня: ${dateFormattedRu} (${dayOfWeek}, ${isoDateStr}).
 Текущий пробег на одометре: ${currentMileage.toLocaleString('ru-RU')} км.
 
-ДАННЫЕ ТЕКУЩЕГО АВТОМОБИЛЯ:
-${carContextText}
-
-ПАМЯТЬ АВТОМОБИЛЯ (ИСТОРИЯ ТО):
-${historyContextString}
+${vehicleContextResult.formattedContext}
 
 ФИНАНСОВЫЙ И СЕРВИСНЫЙ АНАЛИЗ:
 Всего записей с ценой: ${recordsWithPriceCount}, без указания цены: ${recordsWithoutPriceCount}.
@@ -646,6 +715,7 @@ ${contextString}
 ФОРМАТ ОТВЕТА (СТРОГИЙ JSON):
 {
   "message": "Твой живой, уважительный, ясный ответ в Markdown.",
+  "quickOptions": ["Вариант ответа 1", "Вариант ответа 2", "Вариант ответа 3"],
   "pendingAction": {
     "type": "add_record" | "update_record" | "delete_record" | "update_mileage" | "add_task" | "update_car_notes",
     "data": { ... }
@@ -733,7 +803,7 @@ ${contextString}
       let fallbackMessage = "";
       let pendingAction: any = null;
       let executedAction: any = null;
-      const actions: any[] = [];
+      let actions: any[] = [];
 
       // Check if previous message had a pending action and user confirms:
       const lastAssistantMsg = (allChatHistory && Array.isArray(allChatHistory))
@@ -1101,21 +1171,37 @@ ${pendingTasks}
         }
       } 
       // 8. Recurring issues: knocking / morning startup / bad start
-      else if (qLower.includes("утром плохо заводится") || qLower.includes("плохо заводится") || qLower.includes("странно заводится") || qLower.includes("троит") || qLower.includes("глохнет") || qLower.includes("стучит")) {
-        let matchingRecord = null;
-        if (qLower.includes("заводит") || qLower.includes("троит") || qLower.includes("глохнет")) {
-          matchingRecord = lastSparkRecord || carRecords.find(r => /свеч|катушк|топлив|форсунк|зажиган|аккумулятор|акб/i.test(r.description || ''));
-        } else if (qLower.includes("стучит") || qLower.includes("подвеск") || qLower.includes("звук")) {
-          matchingRecord = lastSuspensionRecord || carRecords.find(r => /подвеск|стойк|рычаг|амортиз|втулк|сайлент/i.test(r.description || ''));
+      else if (qLower.includes("утром плохо заводится") || qLower.includes("плохо заводится") || qLower.includes("странно заводится") || qLower.includes("троит") || qLower.includes("глохнет") || qLower.includes("стучит") || qLower.includes("скрип") || qLower.includes("вибраци")) {
+        let matchingRecord = vehicleContextResult.matchedPastRecords[0] || null;
+        if (!matchingRecord) {
+          if (qLower.includes("заводит") || qLower.includes("троит") || qLower.includes("глохнет")) {
+            matchingRecord = lastSparkRecord || carRecords.find(r => /свеч|катушк|топлив|форсунк|зажиган|аккумулятор|акб/i.test(r.description || ''));
+          } else if (qLower.includes("стучит") || qLower.includes("подвеск") || qLower.includes("звук") || qLower.includes("скрип")) {
+            matchingRecord = lastSuspensionRecord || carRecords.find(r => /подвеск|стойк|рычаг|амортиз|втулк|сайлент|колодк|тормоз/i.test(r.description || ''));
+          }
         }
 
-        if (qLower.includes("заводит")) {
-          const sparkNote = matchingRecord ? `(кстати, свечи мы меняли на ${(matchingRecord.mileage || 0).toLocaleString('ru-RU')} км)` : '';
-          fallbackMessage = `Если машина утром плохо заводится, чаще всего причина в одном из трёх:\n\n1. **Аккумулятор** — подсел или теряет пусковой ток на холодную.\n2. **Свечи зажигания** ${sparkNote} — нагар или увеличенный зазор.\n3. **Давление топлива** — насос не успевает накачать перед пуском. Попробуй включить зажигание на 3 секунды до поворота ключа.\n\nПодскажи: стартер крутит бодро или еле-еле?`;
-        } else if (matchingRecord) {
-          fallbackMessage = `Давай посмотрим историю: похожая проблема уже была на пробеге **${(matchingRecord.mileage || 0).toLocaleString('ru-RU')} км** (${matchingRecord.date || 'ранее'}) — тогда делали: *${matchingRecord.description}*.\n\nЯ бы проверил этот узел в первую очередь. Симптом проявляется постоянно или только на холодную?`;
+        if (qLower.includes("заводит") || qLower.includes("троит")) {
+          const sparkNote = matchingRecord ? `\n\n*(По истории: на пробеге ${(matchingRecord.mileage || 0).toLocaleString('ru-RU')} км мы делали: ${matchingRecord.description})*` : '';
+          fallbackMessage = `Если машина утром плохо заводится или троит, давай проверим по шагам:${sparkNote}\n\n1. **Аккумулятор** — проседает пусковой ток на холодную.\n2. **Свечи зажигания / катушки** — нагар или пробой изолятора.\n3. **Давление топлива** — насос или обратный клапан.\n\nПодскажи: стартер крутит бодро или еле-еле?`;
+          actions = [];
+          parsedData = {
+            message: fallbackMessage,
+            quickOptions: ["Стартер крутит бодро", "Еле-еле проворачивает", "Только щелкает реле", "Схватывает и сразу глохнет"]
+          };
+        } else if (qLower.includes("стучит") || qLower.includes("подвеск")) {
+          const suspNote = matchingRecord ? `По истории: на пробеге **${(matchingRecord.mileage || 0).toLocaleString('ru-RU')} км** (${matchingRecord.date || 'ранее'}) делали: *${matchingRecord.description}*.\n\n` : '';
+          fallbackMessage = `${suspNote}Давай сузим круг по стуку в подвеске.\n\nПри каких условиях он громче всего слышен?`;
+          parsedData = {
+            message: fallbackMessage,
+            quickOptions: ["На мелкой гребенке / гравии", "При проезде лежачих полицейских", "При резком торможении", "При вывороте руля на месте"]
+          };
         } else {
           fallbackMessage = `В истории похожих записей нет. Давай разберёмся спокойно:\n\nПодскажи, звук или проблема проявляется на холостых оборотах, на кочках или при разгоне?`;
+          parsedData = {
+            message: fallbackMessage,
+            quickOptions: ["На холостых оборотах", "На неровностях дороги", "При ускорении", "При нажатии на тормоз"]
+          };
         }
       } 
       // 9. What is planned soon / what should I do soon
@@ -1149,6 +1235,7 @@ ${pendingTasks}
 
       parsedData = {
         message: fallbackMessage,
+        quickOptions: parsedData?.quickOptions || [],
         pendingAction: pendingAction,
         executedAction: executedAction,
         actions: actions,
@@ -1182,6 +1269,8 @@ ${pendingTasks}
       answer: finalAnswerMessage,
       intent: detectedIntent,
       actions: parsedData.actions || finalStructured.actions || [],
+      quickOptions: parsedData.quickOptions || [],
+      vehicleMemory: vehicleContextResult.memorySummary,
       pendingAction: parsedData.pendingAction || null,
       executedAction: parsedData.executedAction || null,
       diagnosticResponse: finalStructured,

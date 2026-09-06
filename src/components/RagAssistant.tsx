@@ -6,6 +6,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTypewriter } from '../hooks/useTypewriter';
 import { Message, Car, MaintenanceRecord, Part, VehicleTask, ObdSnapshot, CarDiagram, DiagnosticResponse, DiagnosticSession, AppActionPayload } from '../types';
+import { buildVehicleContext } from '../lib/ai/buildVehicleContext';
+import { VehicleMemorySummary } from '../types/chat';
 import { DiagramLightboxModal } from './DiagramLightboxModal';
 import { ConfirmTaskModal, TaskCategory } from './ConfirmTaskModal';
 import { DiagnosticResponseCard } from './DiagnosticResponseCard';
@@ -318,10 +320,16 @@ export function RagAssistant({
       'когда на то', 'пора на то', 'что по регламенту для моей'
     ].some(k => q.includes(k));
 
-    if (isReferenceQuery && !isHistoryQuery) {
+    // Diagnostic & symptoms queries where vehicle history & past repairs are essential
+    const isDiagnosticSymptomQuery = [
+      'заводит', 'троит', 'глохнет', 'стучит', 'скрип', 'шум', 'вибраци', 'дёрга', 'дерга',
+      'не едет', 'звук', 'горит чек', 'ошибк', 'диагностик', 'что может быть', 'что с машиной'
+    ].some(k => q.includes(k));
+
+    if (isReferenceQuery && !isHistoryQuery && !isDiagnosticSymptomQuery) {
       return false;
     }
-    if (isHistoryQuery) {
+    if (isHistoryQuery || isDiagnosticSymptomQuery) {
       return true;
     }
     if (/\b(поменял|сделал|заменил|запиши|запишите|отдал|потратил|план|напомни)\b/i.test(q)) {
@@ -329,6 +337,12 @@ export function RagAssistant({
     }
     return false;
   };
+
+  // Precomputed Vehicle Memory Context ("Василич помнит твою машину")
+  const vehicleMemorySummary = React.useMemo(() => {
+    if (!activeCar) return null;
+    return buildVehicleContext(activeCar, records || [], '', { tasks: tasks || [] }).memorySummary;
+  }, [activeCar, records, tasks]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
@@ -919,6 +933,8 @@ export function RagAssistant({
         text: rawAnswer,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         actions: data.actions || [],
+        quickOptions: data.quickOptions || [],
+        vehicleMemory: data.vehicleMemory || undefined,
         safetyWarning: structuredDiagnostic?.safetyWarning || '',
         diagnosticResponse: structuredDiagnostic,
         userQuery: questionText,
@@ -1161,6 +1177,8 @@ export function RagAssistant({
         text: rawAnswer,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         actions: data.actions || [],
+        quickOptions: data.quickOptions || [],
+        vehicleMemory: data.vehicleMemory || undefined,
         safetyWarning: structuredDiagnostic?.safetyWarning || '',
         diagnosticResponse: structuredDiagnostic,
         userQuery: questionText,
@@ -1507,6 +1525,45 @@ export function RagAssistant({
           </div>
         </div>
 
+        {/* Car Memory Bar ("Василич помнит твою машину") */}
+        {vehicleMemorySummary && (
+          <div 
+            id="bar-vehicle-memory"
+            className="px-3.5 sm:px-4 py-2 bg-[#0A0E17]/95 border-b border-[#1E273D]/80 flex items-center justify-between text-[11px] text-slate-400 gap-2 shrink-0 backdrop-blur-sm shadow-inner"
+          >
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="inline-flex items-center gap-1 text-cyan-400 font-medium shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                Память машины:
+              </span>
+              <span className="text-slate-200 font-semibold truncate">{vehicleMemorySummary.carHeadline}</span>
+              <span className="text-slate-600 hidden xs:inline">·</span>
+              <span className="text-slate-300 font-mono text-[10px] hidden xs:inline">{vehicleMemorySummary.currentOdometer.toLocaleString('ru-RU')} км</span>
+              <span className="text-slate-600 hidden sm:inline">·</span>
+              <span className="text-slate-400 text-[10px] hidden sm:inline">ТО: {vehicleMemorySummary.recordsCount} зап.</span>
+            </div>
+            {vehicleMemorySummary.fluidsSummary && vehicleMemorySummary.fluidsSummary.length > 0 && (
+              <div className="flex items-center gap-1 shrink-0">
+                {vehicleMemorySummary.fluidsSummary.slice(0, 2).map((fluid) => (
+                  <span
+                    key={fluid.key}
+                    title={`${fluid.name}: ресурс ${fluid.health}% (${fluid.statusText})`}
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-medium border ${
+                      fluid.isOverdue || fluid.health <= 15
+                        ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                        : fluid.health <= 40
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                    }`}
+                  >
+                    {fluid.name.split(' ')[0]}: {fluid.health}%
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Toast Notification */}
         {copiedToast && (
           <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-emerald-950/95 border border-emerald-500/50 text-emerald-200 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg z-50 flex items-center gap-1.5 pointer-events-none">
@@ -1832,6 +1889,35 @@ export function RagAssistant({
                           </button>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {/* Interactive Quick Options for Step-by-Step Diagnostic Dialogue */}
+                  {m.quickOptions && m.quickOptions.length > 0 && (
+                    <div 
+                      id={`diagnostic-quick-options-${m.id}`}
+                      className="mt-2.5 pt-2 border-t border-[#1E273D]/70 flex flex-wrap items-center gap-1.5 animate-in fade-in"
+                    >
+                      <span className="text-[11px] text-cyan-400 font-medium mr-1 flex items-center gap-1 shrink-0">
+                        <Sparkles className="w-3 h-3 text-cyan-400 shrink-0" />
+                        <span>Уточнить:</span>
+                      </span>
+                      {m.quickOptions.map((opt, optIdx) => (
+                        <button
+                          key={optIdx}
+                          type="button"
+                          id={`btn-quick-option-${m.id}-${optIdx}`}
+                          disabled={isLoading}
+                          onClick={() => {
+                            if (!isLoading && !isSubmittingRef.current) {
+                              sendMessageDirectly(opt);
+                            }
+                          }}
+                          className="h-7 px-2.5 bg-[#151E2E] hover:bg-[#1C2A40] active:scale-95 text-cyan-300 hover:text-cyan-100 border border-cyan-500/35 hover:border-cyan-500/70 rounded-lg text-xs font-medium cursor-pointer transition-all flex items-center gap-1 shadow-sm disabled:opacity-40"
+                        >
+                          <span>{opt}</span>
+                        </button>
+                      ))}
                     </div>
                   )}
 
