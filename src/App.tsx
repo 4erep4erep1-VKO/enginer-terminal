@@ -14,6 +14,7 @@ import { ObdScanner } from './components/ObdScanner';
 import { TechSpecsModal } from './components/TechSpecsModal';
 import { DiagnosticSessionsModal } from './components/DiagnosticSessionsModal';
 import { Header, MainNavTab } from './components/Header';
+import { InstallPromptBanner } from './components/InstallPromptBanner';
 import { VehicleDashboard } from './components/VehicleDashboard';
 import { RecordDetailModal } from './components/RecordDetailModal';
 import { useUserSettings } from './components/UserSettingsContext';
@@ -76,6 +77,31 @@ export default function App() {
     relatedDtc?: string;
     source?: 'task' | 'obd' | 'manual';
   } | undefined>(undefined);
+
+  // Header Scroll and Auto-Hide State
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+
+  // Confirmation Modal State
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  // Notification scheduler hook for reminders & maintenance status
+  const { urgentNotifications, overdueCount, warningCount } = useNotificationScheduler(
+    cars,
+    tasks,
+    { enabled: isLoaded }
+  );
 
   // 1. Initial LocalStorage Load with Automated Migration and Strict Schema Sanitization
   useEffect(() => {
@@ -175,9 +201,6 @@ export default function App() {
     setDeferredPrompt(null);
   };
 
-  // Header Scroll and Auto-Hide Logic
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-
   useEffect(() => {
     let lastScrollYVal = window.scrollY;
     let timer: NodeJS.Timeout | null = null;
@@ -223,13 +246,6 @@ export default function App() {
     .filter(r => r.carId === activeCarId)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Notification scheduler hook for reminders & maintenance status
-  const { urgentNotifications, overdueCount, warningCount } = useNotificationScheduler(
-    cars,
-    tasks,
-    { enabled: isLoaded }
-  );
-
   // Active car urgent maintenance count
   const activeCarUrgentCount = tasks
     .filter(t => t.carId === activeCarId && t.status === 'pending')
@@ -248,21 +264,6 @@ export default function App() {
     });
     if (navigator.vibrate) navigator.vibrate(20);
   };
-
-  // Confirmation Modal State
-  const [confirmState, setConfirmState] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText?: string;
-    cancelText?: string;
-    onConfirm: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-  });
 
   const handleAddCar = (newCarData: Omit<Car, 'ownerId' | 'createdAt' | 'updatedAt'>) => {
     const fullCar: Car = {
@@ -925,6 +926,13 @@ export default function App() {
         urgentMaintenanceCount={activeCarUrgentCount}
       />
 
+      {/* PWA INSTALL PROMPT BANNER */}
+      <InstallPromptBanner
+        deferredPrompt={deferredPrompt}
+        isInstalled={isInstalled}
+        onInstall={handleInstallClick}
+      />
+
       {/* CAR SELECTOR MODAL OVERLAY */}
       {isCarSelectorOpen && (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -1067,6 +1075,12 @@ export default function App() {
                   setActiveTab('service');
                   setServiceSubTab('history');
                 }}
+                onOpenAddRecordWithPrefill={(prefill) => {
+                  setInitialRecordValues(prefill);
+                  setShowAddForm(true);
+                  setActiveTab('service');
+                  setServiceSubTab('history');
+                }}
                 onOpenAddTask={() => {
                   setActiveTab('service');
                   setServiceSubTab('plan');
@@ -1153,6 +1167,11 @@ export default function App() {
                 onCompleteTaskWithDetails={handleCompleteTaskWithDetails}
                 onDeleteTask={handleDeleteTask}
                 initialSubTab={serviceSubTab}
+                onNavigateToRagWithQuestion={(question) => {
+                  setRagInitialQuestion(question);
+                  setActiveTab('rag');
+                }}
+                onSetInitialRecordValues={(values) => setInitialRecordValues(values)}
               />
             </ErrorBoundary>
           </div>

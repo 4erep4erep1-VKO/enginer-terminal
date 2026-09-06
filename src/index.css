@@ -267,3 +267,25 @@
 .modal-animate-in {
   animation: fadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Neon Animated Glow In Effect for Headings & Greetings */
+@keyframes glowIn {
+  0% {
+    opacity: 0;
+    text-shadow: 0 0 0px rgba(6, 182, 212, 0);
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 20px rgba(34, 211, 238, 1);
+  }
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 4px rgba(6, 182, 212, 0.4);
+  }
+}
+
+.animate-glow-in {
+  display: inline-block;
+  opacity: 0;
+  animation: glowIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

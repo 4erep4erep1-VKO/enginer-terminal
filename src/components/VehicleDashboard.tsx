@@ -32,6 +32,7 @@ import { ShowMechanicModal } from './ShowMechanicModal';
 import { SimpleAddRecordModal } from './SimpleAddRecordModal';
 import { VehiclePhoto } from './VehiclePhoto';
 import { calculateTaskUrgency } from '../lib/taskUrgency';
+import { FluidHealthWidget } from './FluidHealthWidget';
 
 interface VehicleDashboardProps {
   activeCar: Car | null;
@@ -42,6 +43,7 @@ interface VehicleDashboardProps {
   diagnosticSessions?: DiagnosticSession[];
   onOpenGarageManager: () => void;
   onOpenAddRecord: () => void;
+  onOpenAddRecordWithPrefill?: (values: any) => void;
   onOpenAddRecordWithVoice?: () => void;
   onOpenAddTask: () => void;
   onOpenAddPart: () => void;
@@ -65,6 +67,7 @@ export function VehicleDashboard({
   parts,
   onOpenGarageManager,
   onOpenAddRecord,
+  onOpenAddRecordWithPrefill,
   onOpenAddRecordWithVoice,
   onOpenAddTask,
   onOpenAddPart,
@@ -305,6 +308,7 @@ export function VehicleDashboard({
 
   const handleVasilichSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (vasilichQuery.trim()) {
       onNavigateToRagWithQuestion(vasilichQuery.trim());
       setVasilichQuery('');
@@ -471,7 +475,11 @@ export function VehicleDashboard({
                       <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">{item.description}</p>
                       <button
                         type="button"
-                        onClick={item.onAction}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          item.onAction();
+                        }}
                         className="mt-2 text-[10px] text-cyan-400 font-semibold flex items-center gap-0.5 hover:underline cursor-pointer"
                       >
                         <span>{item.actionLabel}</span>
@@ -640,6 +648,24 @@ export function VehicleDashboard({
           </button>
 
         </section>
+      </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          4.1 ЗДОРОВЬЕ ЖИДКОСТЕЙ (col-span-3 Dual-Limit Tracker)
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="md:col-span-3">
+        <FluidHealthWidget
+          activeCar={activeCar}
+          records={records}
+          onOpenAddRecord={(initialData) => {
+            if (onOpenAddRecordWithPrefill && initialData) {
+              onOpenAddRecordWithPrefill(initialData);
+            } else {
+              setIsSimpleAddOpen(true);
+            }
+          }}
+          onNavigateToRagWithQuestion={onNavigateToRagWithQuestion}
+        />
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

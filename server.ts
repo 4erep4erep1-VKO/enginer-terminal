@@ -32,7 +32,22 @@ function getAiClient(): GoogleGenAI {
 }
 
 const app = express();
-app.use(express.json());
+// Increase body limit to 25mb to avoid HTTP 413 (Payload Too Large) with large contexts/images
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ limit: "25mb", extended: true }));
+
+// Custom middleware to handle 413 Payload Too Large cleanly
+app.use((err: any, req: Request, res: Response, next: any) => {
+  if (err && (err.status === 413 || err.type === 'entity.too.large' || err.statusCode === 413)) {
+    console.warn("Express HTTP 413 Payload Too Large intercepted:", err.message);
+    res.status(413).json({
+      error: "Payload Too Large",
+      message: "Размер тела запроса превышает лимит сервера. Василич оптимизирует контекст автоматически."
+    });
+    return;
+  }
+  next(err);
+});
 
 const PORT = 3000;
 
@@ -212,8 +227,64 @@ Format JSON:
   }
 });
 
+/**
+ * Fast Intent Router for Vasilich Automotive AI.
+ * Distinguishes between:
+ * - 'reference': torques, fluids specs, clearances, pinouts, wiring schemas, fuses, part numbers, definitions
+ * - 'analytical': service records, when to change oil, what was done at maintenance, how much spent, task planning
+ */
+function classifyQuestionIntent(questionText: string, contextMode?: string): 'reference' | 'analytical' {
+  if (contextMode === 'quick_reference') return 'reference';
+  if (contextMode === 'full_history') return 'analytical';
+
+  const q = (questionText || '').toLowerCase().trim();
+
+  // 1. Analytical & service log keywords (requires maintenance history & odometer analysis)
+  const analyticalKeywords = [
+    'когда менять', 'пора ли', 'интервал', 'истори', 'журнал', 'сервисн',
+    'прошлое то', 'прошлый раз', 'когда я менял', 'когда менялось', 'что делал',
+    'что я делал', 'что делали', 'что менял', 'список работ', 'план то', 'планирован',
+    'следующее то', 'регламент то', 'сколько проехал', 'мои записи', 'последняя замена',
+    'прошлая замена', 'чек', 'расходы', 'сколько потратил', 'сколько потрачено',
+    'когда была замена', 'была ли замена', 'затраты', 'стоимость то', 'потратил на ремонт',
+    'что делать на то', 'когда на то', 'пора на то', 'что по регламенту для моей'
+  ];
+
+  // 2. Pure Technical reference keywords
+  const referenceKeywords = [
+    'момент затяжк', 'моменты затяжк', 'н*м', ' нм', 'нм ', 'затянут',
+    'допуск', 'допуски', 'вязкост', 'зазор', 'зазоры клапан', 'зазор свеч',
+    'схем', 'распиновк', 'электросхем', 'предохранител', 'где находится', 'артикул',
+    'код детали', 'номер запчаст', 'как снять', 'как разобрать', 'принцип работы',
+    'почему греется', 'почему троит', 'симптомы', 'ошибка p', 'dtc', 'как проверить',
+    'давление в шин', 'сопротивление', 'цоколь', 'порядок зажигания', 'объем масла'
+  ];
+
+  const hasAnalytical = analyticalKeywords.some(k => q.includes(k));
+  const hasReference = referenceKeywords.some(k => q.includes(k));
+
+  if (hasReference && !hasAnalytical) {
+    return 'reference';
+  }
+
+  if (hasAnalytical) {
+    return 'analytical';
+  }
+
+  // Interactive record creation/updates/planning
+  if (/\b(поменял|сделал|заменил|запиши|запишите|отдал|потратил|план|напомни|сделай запись)\b/i.test(q)) {
+    return 'analytical';
+  }
+
+  // Default: general questions about specifications or parts -> reference
+  return 'reference';
+}
+
 // Endpoint 2: Vasilyich Conversational Automotive Advisor & Diagnostic Copilot
-app.post("/api/rag/ask", async (req, res) => {
+const handleRagAsk = async (req: Request, res: Response): Promise<void> => {
+  // Set 30s timeout per user requirement
+  req.setTimeout(30000);
+  res.setTimeout(30000);
   try {
     const {
       question,
@@ -230,12 +301,17 @@ app.post("/api/rag/ask", async (req, res) => {
       obdSnapshot,
       chatHistory = [],
       history = [],
-      assistantTone = 'vasilich'
+      assistantTone = 'vasilich',
+      contextMode
     } = req.body;
 
     const carProfile = activeCar || reqCarProfile;
     const allParts = Array.isArray(parts) && parts.length > 0 ? parts : (Array.isArray(warehouseItems) ? warehouseItems : []);
     const allChatHistory = Array.isArray(chatHistory) && chatHistory.length > 0 ? chatHistory : (Array.isArray(history) ? history : []);
+
+    // Fast Intent Router: reference vs. analytical
+    const detectedIntent = classifyQuestionIntent(question, contextMode);
+    const isReferenceMode = detectedIntent === 'reference';
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 0. REAL DYNAMIC DATE & TIME CONTEXT (STAGE 11.2)
@@ -261,21 +337,27 @@ app.post("/api/rag/ask", async (req, res) => {
 
     const currentMileage = Number(carProfile?.mileage) || 0;
     const carTitle = carProfile ? `${carProfile.make} ${carProfile.model}` : "автомобиль";
-    const carNameText = carProfile ? `${carProfile.make} ${carProfile.model} (${carProfile.year || 'год не указан'})` : "автомобиль не выбран в Гараже";
     const carEngineText = carProfile?.engine ? `, двигатель: ${carProfile.engine}` : "";
     const carVinText = carProfile?.vin ? `, VIN: ${carProfile.vin}` : "";
     const carPlateText = carProfile?.licensePlate ? `, госномер: ${carProfile.licensePlate}` : "";
-    
-    const carContextText = carProfile
-      ? `Автомобиль: ${carProfile.make} ${carProfile.model}, ${carProfile.year || ''} г.в.${carEngineText}${carVinText}${carPlateText}, текущий реальный пробег на одометре: ${currentMileage.toLocaleString('ru-RU')} км.`
-      : "Автомобиль не выбран в Гараже.";
+
+    // For Reference Mode: pass ONLY make, model, engine and year (e.g. "LADA Granta FL, 1.6 16V, 2021")
+    const referenceCarString = carProfile 
+      ? [carProfile.make, carProfile.model, carProfile.engine, carProfile.year].filter(Boolean).join(', ')
+      : "автомобиль не выбран";
+
+    const carContextText = isReferenceMode
+      ? referenceCarString
+      : (carProfile
+          ? `Автомобиль: ${carProfile.make} ${carProfile.model}, ${carProfile.year || ''} г.в.${carEngineText}${carVinText}${carPlateText}, текущий реальный пробег на одометре: ${currentMileage.toLocaleString('ru-RU')} км.`
+          : "Автомобиль не выбран в Гараже.");
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 1. VEHICLE MEMORY: MAINTENANCE & REPAIR HISTORY (STRICT ISOLATION)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     const activeCarId = carProfile?.id;
     let carRecords: any[] = [];
-    if (Array.isArray(records)) {
+    if (!isReferenceMode && Array.isArray(records)) {
       carRecords = activeCarId 
         ? records.filter((r: any) => r.carId === activeCarId || (!r.carId && !records.some((other: any) => other.carId && other.carId !== activeCarId)))
         : records;
@@ -299,37 +381,39 @@ app.post("/api/rag/ask", async (req, res) => {
     let lastSparkRecord: any = null;
     let lastSuspensionRecord: any = null;
 
-    for (const r of carRecords) {
-      const cost = (Number(r.partsPrice) || 0) + (Number(r.laborPrice) || 0);
-      if (cost > 0) {
-        recordsWithPriceCount++;
-        totalSpentAllTime += cost;
-      } else {
-        recordsWithoutPriceCount++;
-      }
+    if (!isReferenceMode) {
+      for (const r of carRecords) {
+        const cost = (Number(r.partsPrice) || 0) + (Number(r.laborPrice) || 0);
+        if (cost > 0) {
+          recordsWithPriceCount++;
+          totalSpentAllTime += cost;
+        } else {
+          recordsWithoutPriceCount++;
+        }
 
-      const recDate = new Date(r.date || r.createdAt || 0);
-      if (recDate >= oneYearAgo) {
-        totalSpentLastYear += cost;
-      }
+        const recDate = new Date(r.date || r.createdAt || 0);
+        if (recDate >= oneYearAgo) {
+          totalSpentLastYear += cost;
+        }
 
-      const descLower = ((r.description || '') + ' ' + (r.category || '')).toLowerCase();
-      if (!lastOilRecord && (descLower.includes('масл') || descLower.includes('маслян'))) {
-        lastOilRecord = r;
-      }
-      if (!lastBrakeRecord && (descLower.includes('колодк') || descLower.includes('тормоз') || descLower.includes('диск'))) {
-        lastBrakeRecord = r;
-      }
-      if (!lastSparkRecord && (descLower.includes('свеч') || descLower.includes('катушк') || descLower.includes('зажиган'))) {
-        lastSparkRecord = r;
-      }
-      if (!lastSuspensionRecord && (descLower.includes('подвеск') || descLower.includes('сайлент') || descLower.includes('амортиз') || descLower.includes('рычаг') || descLower.includes('стойк') || descLower.includes('шаров'))) {
-        lastSuspensionRecord = r;
+        const descLower = ((r.description || '') + ' ' + (r.category || '')).toLowerCase();
+        if (!lastOilRecord && (descLower.includes('масл') || descLower.includes('маслян'))) {
+          lastOilRecord = r;
+        }
+        if (!lastBrakeRecord && (descLower.includes('колодк') || descLower.includes('тормоз') || descLower.includes('диск'))) {
+          lastBrakeRecord = r;
+        }
+        if (!lastSparkRecord && (descLower.includes('свеч') || descLower.includes('катушк') || descLower.includes('зажиган'))) {
+          lastSparkRecord = r;
+        }
+        if (!lastSuspensionRecord && (descLower.includes('подвеск') || descLower.includes('сайлент') || descLower.includes('амортиз') || descLower.includes('рычаг') || descLower.includes('стойк') || descLower.includes('шаров'))) {
+          lastSuspensionRecord = r;
+        }
       }
     }
 
     let historyContextString = "В сервисном журнале этого автомобиля пока нет сохранённых записей ТО.";
-    if (carRecords.length > 0) {
+    if (!isReferenceMode && carRecords.length > 0) {
       historyContextString = carRecords.map((r, idx) => {
         const recMileage = Number(r.mileage) || 0;
         const kmAgo = currentMileage > recMileage ? ` (${(currentMileage - recMileage).toLocaleString('ru-RU')} км назад)` : '';
@@ -344,14 +428,14 @@ app.post("/api/rag/ask", async (req, res) => {
     // 2. VEHICLE MEMORY: TASKS (PLANNED & COMPLETED)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     let carTasks: any[] = [];
-    if (Array.isArray(tasks)) {
+    if (!isReferenceMode && Array.isArray(tasks)) {
       carTasks = activeCarId 
         ? tasks.filter((t: any) => t.carId === activeCarId || (!t.carId && !tasks.some((other: any) => other.carId && other.carId !== activeCarId)))
         : tasks;
     }
 
     let tasksContextString = "Активных плановых задач нет.";
-    if (carTasks.length > 0) {
+    if (!isReferenceMode && carTasks.length > 0) {
       const pending = carTasks.filter(t => t.status === "pending");
       const completed = carTasks.filter(t => t.status === "completed");
 
@@ -385,7 +469,7 @@ app.post("/api/rag/ask", async (req, res) => {
       : sessionsList;
 
     let sessionContextString = "Предыдущих диагностических сессий не зафиксировано.";
-    if (carSessions.length > 0) {
+    if (!isReferenceMode && carSessions.length > 0) {
       sessionContextString = carSessions.map((s, idx) => {
         const dtcs = s.initialDtcCodes || s.initialDtc || [];
         const statusMap: Record<string, string> = {
@@ -407,7 +491,7 @@ app.post("/api/rag/ask", async (req, res) => {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     let carParts: any[] = allParts;
     let partsContextString = "Склад пуст или данные не переданы.";
-    if (carParts.length > 0) {
+    if (!isReferenceMode && carParts.length > 0) {
       partsContextString = carParts.map(p => `- ${p.name || p.title} (${p.category || 'Запчасть'}): ${p.quantity || 1} шт. ${p.partNumber ? `[Арт: ${p.partNumber}]` : ''}`).join("\n");
     }
 
@@ -525,6 +609,15 @@ ${toneInstruction}
    - Кнопки появляются ТОЛЬКО тогда, когда нужно подтвердить действие ("pendingAction") или показать сводку мастеру ("Показать мастеру").
    - ЗАПРЕЩЕНО создавать кнопки «Уточнить», «Создать задачу», «Проверить», «Подробнее» после обычных ответов.
 
+${isReferenceMode ? `
+ДАННЫЕ АВТОМОБИЛЯ (МОДИФИКАЦИЯ):
+${carContextText}
+
+РЕЖИМ ОТВЕТА: БЫСТРЫЙ СПРАВОЧНИК (FAST REFERENCE MODE)
+- Запрос пользователя классифицирован как справочный (моменты затяжки, допуски масел, артикулы, зазоры клапанов, схемы, общие вопросы).
+- В системный контекст переданы ТОЛЬКО марка, модель, двигатель и год (без журнала ТО, расходов и склада) для минимального расхода токенов и мгновенного ответа.
+- Давай точные технические данные, каталожные допуски и регламенты для ${carContextText}.
+` : `
 РЕАЛЬНАЯ СИСТЕМНАЯ ДАТА:
 Сегодня: ${dateFormattedRu} (${dayOfWeek}, ${isoDateStr}).
 Текущий пробег на одометре: ${currentMileage.toLocaleString('ru-RU')} км.
@@ -535,6 +628,11 @@ ${carContextText}
 ПАМЯТЬ АВТОМОБИЛЯ (ИСТОРИЯ ТО):
 ${historyContextString}
 
+ФИНАНСОВЫЙ И СЕРВИСНЫЙ АНАЛИЗ:
+Всего записей с ценой: ${recordsWithPriceCount}, без указания цены: ${recordsWithoutPriceCount}.
+Всего потрачено за все время: ${totalSpentAllTime.toLocaleString('ru-RU')} ₽.
+Потрачено за последний год: ${totalSpentLastYear.toLocaleString('ru-RU')} ₽.
+
 ПЛАН ТЕХНИЧЕСКОГО ОБСЛУЖИВАНИЯ (ЗАДАЧИ):
 ${tasksContextString}
 
@@ -543,6 +641,7 @@ ${partsContextString}
 
 СПРАВОЧНАЯ БАЗА МАНУАЛОВ И РЕГЛАМЕНТОВ:
 ${contextString}
+`}
 
 ФОРМАТ ОТВЕТА (СТРОГИЙ JSON):
 {
@@ -1081,18 +1180,22 @@ ${pendingTasks}
 
     res.json({
       answer: finalAnswerMessage,
+      intent: detectedIntent,
       actions: parsedData.actions || finalStructured.actions || [],
       pendingAction: parsedData.pendingAction || null,
       executedAction: parsedData.executedAction || null,
       diagnosticResponse: finalStructured,
-      retrievedContexts: carRecords.slice(0, 3).map(r => ({ car: carTitle, category: r.category || 'ТО' })),
-      retrievedHistory: carRecords.slice(0, 5).map(r => ({ date: r.date, description: r.description }))
+      retrievedContexts: isReferenceMode ? [] : carRecords.slice(0, 3).map(r => ({ car: carTitle, category: r.category || 'ТО' })),
+      retrievedHistory: isReferenceMode ? [] : carRecords.slice(0, 5).map(r => ({ date: r.date, description: r.description }))
     });
   } catch (err: any) {
     console.error("Error in RAG assistant:", err);
     res.status(500).json({ error: "Assistant error", details: err.message });
   }
-});
+};
+
+app.post("/api/rag/ask", handleRagAsk);
+app.post("/api/chat", handleRagAsk);
 
 // Endpoint 3: Vehicle Electrical Wiring & Fuse Box Diagrams Search (REAL WEB SEARCH)
 async function searchRealWebImages(searchQuery: string): Promise<Array<{ id: string; title: string; imageUrl: string; thumbnail: string; source: string; category: string; description: string }>> {

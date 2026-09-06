@@ -9,6 +9,7 @@ import { ServiceHistory } from './ServiceHistory';
 import { VehicleTasks } from './VehicleTasks';
 import { MaintenanceAlertWidget } from './MaintenanceAlertWidget';
 import { calculateTaskUrgency } from '../lib/taskUrgency';
+import { FluidHealthWidget } from './FluidHealthWidget';
 import { ClipboardList, CheckSquare, History, Plus, AlertTriangle } from 'lucide-react';
 
 interface ServiceHubProps {
@@ -38,6 +39,8 @@ interface ServiceHubProps {
   }) => void;
   onDeleteTask: (taskId: string) => void;
   initialSubTab?: 'plan' | 'history';
+  onNavigateToRagWithQuestion?: (question: string) => void;
+  onSetInitialRecordValues?: (values: any) => void;
 }
 
 export function ServiceHub({
@@ -58,6 +61,8 @@ export function ServiceHub({
   onCompleteTaskWithDetails,
   onDeleteTask,
   initialSubTab = 'history',
+  onNavigateToRagWithQuestion,
+  onSetInitialRecordValues,
 }: ServiceHubProps) {
   const [subTab, setSubTab] = useState<'plan' | 'history'>(initialSubTab);
 
@@ -135,6 +140,21 @@ export function ServiceHub({
           onQuickCompleteTask={(taskId) => {
             if (onMarkTaskCompleted) onMarkTaskCompleted(taskId);
           }}
+        />
+      )}
+
+      {/* Dual-Limit Fluid Health Tracker */}
+      {activeCar && (
+        <FluidHealthWidget
+          activeCar={activeCar}
+          records={records}
+          onOpenAddRecord={(initialData) => {
+            if (onSetInitialRecordValues && initialData) {
+              onSetInitialRecordValues(initialData);
+            }
+            onOpenAddForm();
+          }}
+          onNavigateToRagWithQuestion={onNavigateToRagWithQuestion}
         />
       )}
 

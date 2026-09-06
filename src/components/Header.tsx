@@ -7,6 +7,7 @@ import React from 'react';
 import { Car } from '../types';
 import { LogoIcon } from './LogoIcon';
 import { VehiclePhoto } from './VehiclePhoto';
+import { GlowText } from './GlowText';
 import { 
   Car as CarIcon,
   ChevronDown,
@@ -69,7 +70,7 @@ export function Header({
           </div>
           <div className="flex flex-col leading-none min-w-0 truncate">
             <span className="text-xs font-bold tracking-tight text-slate-100 font-sans truncate">
-              ВАСИЛИЧ
+              <GlowText text="Инженерный Терминал" delay={0.03} />
             </span>
             <span className={`text-[8px] font-mono mt-0.5 block truncate max-w-fit px-1 rounded-full ${isOnline ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
               {isOnline ? 'ОНЛАЙН' : 'ОФЛАЙН'}
@@ -118,10 +119,10 @@ export function Header({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-sans text-base font-bold tracking-tight text-slate-100 leading-tight">
-                ВАСИЛИЧ
+                <GlowText text="Инженерный Терминал" delay={0.04} />
               </h1>
               <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#10151E] text-[#06B6D4] border border-cyan-500/15 font-mono font-medium">
-                ГАРАЖ
+                ВАСИЛИЧ
               </span>
             </div>
           </div>
@@ -159,11 +160,12 @@ export function Header({
           {deferredPrompt && !isInstalled && onInstallClick && (
             <button
               onClick={onInstallClick}
-              className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/25 font-sans font-semibold text-[10px] px-2.5 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0"
-              title="Установить PWA на устройство"
+              className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/25 font-sans font-semibold text-[10px] px-2.5 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 shadow-sm shadow-cyan-500/10"
+              title="Добавить Терминал на рабочий стол"
             >
               <Download className="w-3 h-3 shrink-0" />
-              <span>PWA</span>
+              <span className="hidden sm:inline">Установить</span>
+              <span className="sm:hidden">PWA</span>
             </button>
           )}
 

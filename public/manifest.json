@@ -1,23 +1,25 @@
 {
+  "id": "/",
   "name": "Инженерный Терминал",
   "short_name": "Терминал",
-  "description": "Автономный журнал ТО, склад запчастей и гаражный инженерный терминал",
+  "description": "Умный цифровой автогараж и PWA-сервисная книжка",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#00f0ff",
-  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

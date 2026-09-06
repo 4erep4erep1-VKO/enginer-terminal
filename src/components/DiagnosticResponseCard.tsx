@@ -360,7 +360,11 @@ export function DiagnosticResponseCard({
         {onAskFollowup && (
           <button
             type="button"
-            onClick={() => onAskFollowup(`Василич, поясни подробнее: ${response.summary}`)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAskFollowup(`Василич, поясни подробнее: ${response.summary}`);
+            }}
             className="h-8 px-2.5 rounded-lg bg-transparent hover:bg-[#1E293B] text-slate-400 hover:text-slate-200 text-[12px] flex items-center justify-center gap-1.5 sm:ml-auto cursor-pointer transition-colors"
             id="btn-diag-followup"
           >

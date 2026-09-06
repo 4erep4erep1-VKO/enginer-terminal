@@ -1,9 +1,14 @@
-const CACHE_NAME = 'terminal-v2.5-cache';
+const CACHE_NAME = 'terminal-v3.0-cache';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon.svg'
+  '/favicon.ico',
+  '/favicon.svg',
+  '/icon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {

@@ -16,6 +16,7 @@ import {
   Trash2, 
   RotateCcw, 
   RefreshCw, 
+  Sparkles,
   MoreVertical,
   Zap,
   Check,
@@ -37,6 +38,7 @@ import {
   CornerDownLeft
 } from 'lucide-react';
 import { useUserSettings } from './UserSettingsContext';
+import { GlowText } from './GlowText';
 
 interface RagAssistantProps {
   activeCar: Car | null;
@@ -125,6 +127,130 @@ export function extractTaskSummary(fullText: string): string {
   return 'Совет от Василича';
 }
 
+/**
+ * Strips heavy payload objects (base64 vehicle images, maintenance photo URLs, deep diagnostic JSON)
+ * and strictly trims conversation history to the last 6-8 messages to prevent HTTP 413 (Payload Too Large).
+ */
+function sanitizeChatPayload({
+  questionText,
+  activeCar,
+  records,
+  parts,
+  tasks,
+  diagnosticSessions,
+  obdSnapshot,
+  chatHistory,
+  assistantTone,
+  contextMode,
+  maxHistory = 8
+}: {
+  questionText: string;
+  activeCar?: Car | null;
+  records?: MaintenanceRecord[];
+  parts?: Part[];
+  tasks?: VehicleTask[];
+  diagnosticSessions?: DiagnosticSession[];
+  obdSnapshot?: ObdSnapshot | null;
+  chatHistory?: Message[];
+  assistantTone?: string;
+  contextMode?: string;
+  maxHistory?: number;
+}) {
+  // 1. Trim message history: take strictly the last 6-8 messages, strip all heavy UI/action/diagnostic fields
+  const trimmedHistory = (chatHistory || [])
+    .slice(-maxHistory)
+    .map(m => ({
+      sender: m.sender === 'user' ? 'user' : 'assistant',
+      // Send text string only, capped to 1000 characters per message
+      text: typeof m.text === 'string' ? m.text.slice(0, 1000) : ''
+    }))
+    .filter(m => m.text.trim().length > 0);
+
+  // 2. Minimal vehicle JSON - strictly omit imageUrl or base64 image strings!
+  const minimalCar = activeCar ? {
+    id: activeCar.id,
+    make: activeCar.make,
+    model: activeCar.model,
+    year: activeCar.year,
+    engine: activeCar.engine,
+    vin: activeCar.vin,
+    licensePlate: activeCar.licensePlate,
+    mileage: activeCar.mileage,
+    bodyType: activeCar.bodyType,
+    notes: activeCar.notes ? String(activeCar.notes).slice(0, 400) : undefined
+  } : null;
+
+  // 3. Clean maintenance records - strictly strip photoUrls (base64 pictures) and audio transcripts, max 20
+  const minimalRecords = (records || []).slice(0, 20).map(r => ({
+    id: r.id,
+    carId: r.carId,
+    description: r.description ? String(r.description).slice(0, 250) : '',
+    mileage: r.mileage,
+    partsPrice: r.partsPrice,
+    laborPrice: r.laborPrice,
+    date: r.date,
+    category: r.category,
+    partsUsed: r.partsUsed?.slice(0, 5),
+    source: r.source,
+    relatedDtc: r.relatedDtc
+  }));
+
+  // 4. Clean warehouse parts (max 25)
+  const minimalParts = (parts || []).slice(0, 25).map(p => ({
+    id: p.id,
+    name: p.name,
+    partNumber: p.partNumber,
+    quantity: p.quantity,
+    price: p.price,
+    location: p.location
+  }));
+
+  // 5. Clean tasks (max 15)
+  const minimalTasks = (tasks || []).slice(0, 15).map(t => ({
+    id: t.id,
+    title: t.title,
+    description: t.description ? String(t.description).slice(0, 200) : '',
+    type: t.type,
+    targetMileage: t.targetMileage,
+    targetDate: t.targetDate,
+    status: t.status
+  }));
+
+  // 6. Clean diagnostic sessions (max 2)
+  const minimalSessions = (diagnosticSessions || []).slice(-2).map(s => ({
+    id: s.id,
+    status: s.status,
+    startedAt: s.startedAt,
+    dtcCodes: (s.currentDtcCodes || s.initialDtcCodes || []).slice(0, 5),
+    notes: s.notes ? String(s.notes).slice(0, 200) : ''
+  }));
+
+  // 7. Clean OBD snapshot
+  const minimalObd = obdSnapshot ? {
+    timestamp: obdSnapshot.timestamp,
+    dtcCodes: (obdSnapshot.dtcCodes || []).map(d => typeof d === 'string' ? d : d.code).slice(0, 5),
+    telemetry: obdSnapshot.telemetry ? {
+      rpm: obdSnapshot.telemetry.rpm,
+      coolantTemp: obdSnapshot.telemetry.coolantTemp,
+      speed: obdSnapshot.telemetry.speed,
+      voltage: obdSnapshot.telemetry.voltage
+    } : null
+  } : null;
+
+  return {
+    question: questionText.slice(0, 2500),
+    activeCar: minimalCar,
+    records: minimalRecords,
+    parts: minimalParts,
+    tasks: minimalTasks,
+    diagnosticSessions: minimalSessions,
+    obdSnapshot: minimalObd,
+    chatHistory: trimmedHistory,
+    assistantTone: assistantTone || 'vasilich',
+    contextMode
+  };
+}
+
 export function RagAssistant({
   activeCar,
   records,
@@ -145,6 +271,64 @@ export function RagAssistant({
   const [isOnlineState, setIsOnlineState] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [isToneMenuOpen, setIsToneMenuOpen] = useState(false);
+  const [smartContextEnabled, setSmartContextEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('vasilich_smart_context');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+  const [loadingStatusText, setLoadingStatusText] = useState<string>('Василич думает...');
+
+  const toggleSmartContext = () => {
+    setSmartContextEnabled(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('vasilich_smart_context', String(next));
+      } catch {
+        // ignore
+      }
+      if (navigator.vibrate) navigator.vibrate(20);
+      return next;
+    });
+  };
+
+  const isMaintenanceOrHistoryQuery = (query: string): boolean => {
+    const q = (query || '').toLowerCase().trim();
+
+    // Explicit technical reference/QA queries (torques, fluids specs, diagrams, pinouts, fuses, valve clearances, definitions)
+    const isReferenceQuery = [
+      'момент затяжк', 'моменты затяжк', 'н*м', ' нм', 'нм ', 'затянут',
+      'допуск', 'допуски', 'вязкост', 'какое масло лить', 'зазор', 'зазоры клапан', 'зазор свеч',
+      'схем', 'распиновк', 'электросхем', 'предохранител', 'где находится', 'артикул',
+      'код детали', 'номер запчаст', 'как снять', 'как разобрать', 'принцип работы',
+      'почему греется', 'почему троит', 'симптомы', 'ошибка p', 'dtc', 'как проверить',
+      'давление в шин', 'сопротивление', 'цоколь', 'порядок зажигания', 'объем масла'
+    ].some(k => q.includes(k));
+
+    // Car maintenance logs/records/planning history queries (require checking service records)
+    const isHistoryQuery = [
+      'когда менять', 'пора ли', 'интервал', 'пробег', 'истори', 'журнал', 'сервисн',
+      'прошлое то', 'прошлый раз', 'когда я менял', 'когда менялось', 'что делал', 'что я делал',
+      'что делали', 'что менял', 'список работ', 'план то', 'планирован', 'следующее то',
+      'регламент то', 'сколько проехал', 'мои записи', 'последняя замена', 'прошлая замена',
+      'чек', 'расходы', 'сколько потратил', 'сколько потрачено', 'когда была замена',
+      'была ли замена', 'затраты', 'стоимость то', 'потратил на ремонт', 'что делать на то',
+      'когда на то', 'пора на то', 'что по регламенту для моей'
+    ].some(k => q.includes(k));
+
+    if (isReferenceQuery && !isHistoryQuery) {
+      return false;
+    }
+    if (isHistoryQuery) {
+      return true;
+    }
+    if (/\b(поменял|сделал|заменил|запиши|запишите|отдал|потратил|план|напомни)\b/i.test(q)) {
+      return true;
+    }
+    return false;
+  };
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
@@ -266,6 +450,9 @@ export function RagAssistant({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef<boolean>(false);
+  const processedInitialQuestionRef = useRef<string | null>(null);
   const [typingMessageId, setTypingMessageId] = useState<string | null>(null);
   const [copiedToast, setCopiedToast] = useState(false);
   const [taskToast, setTaskToast] = useState<{
@@ -460,15 +647,23 @@ export function RagAssistant({
     smartScrollToBottom(false);
   }, [messages, isLoading]);
 
-  // Initial Question Handler from other tabs
+  // Initial Question Handler from other tabs (with anti-duplicate protection)
   useEffect(() => {
     if (initialQuestion && initialQuestion.trim().length > 0) {
-      sendMessageDirectly(initialQuestion);
-      if (onClearInitialQuestion) {
-        onClearInitialQuestion();
+      const q = initialQuestion.trim();
+      if (processedInitialQuestionRef.current !== q) {
+        processedInitialQuestionRef.current = q;
+        if (!isLoading && !isSubmittingRef.current) {
+          sendMessageDirectly(q);
+        }
+        if (onClearInitialQuestion) {
+          onClearInitialQuestion();
+        }
       }
+    } else if (!initialQuestion) {
+      processedInitialQuestionRef.current = null;
     }
-  }, [initialQuestion]);
+  }, [initialQuestion, onClearInitialQuestion]);
 
   const handleClearChatHistory = () => {
     if (navigator.vibrate) navigator.vibrate(20);
@@ -614,7 +809,10 @@ export function RagAssistant({
   };
 
   const sendMessageWithCustomHistory = async (questionText: string, historyPrefix: Message[]) => {
-    if (!questionText.trim() || isLoading) return;
+    if (!questionText.trim() || isLoading || isSubmittingRef.current) return;
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     if (!isOnlineState) {
       const offlineMsg: Message = {
@@ -624,6 +822,8 @@ export function RagAssistant({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages([...historyPrefix, offlineMsg]);
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
       return;
     }
 
@@ -640,24 +840,64 @@ export function RagAssistant({
     isUserAtBottomRef.current = true;
     setTimeout(() => smartScrollToBottom(true, true), 30);
 
+    const isAnalytical = smartContextEnabled ? isMaintenanceOrHistoryQuery(questionText) : false;
+    const hasHistoryRecords = Boolean(records && records.length > 0);
+    const shouldIncludeHistory = isAnalytical && hasHistoryRecords;
+
+    if (shouldIncludeHistory) {
+      setLoadingStatusText('Сверяю историю автомобиля...');
+    } else {
+      setLoadingStatusText('Василич думает...');
+    }
+
+    const cleanPayload = sanitizeChatPayload({
+      questionText,
+      activeCar,
+      records: shouldIncludeHistory ? records : [],
+      parts: shouldIncludeHistory ? parts : [],
+      tasks: shouldIncludeHistory ? tasks : [],
+      diagnosticSessions: shouldIncludeHistory ? diagnosticSessions : [],
+      obdSnapshot: shouldIncludeHistory ? obdSnapshot : null,
+      chatHistory: historyPrefix,
+      assistantTone: settings.assistantTone,
+      contextMode: shouldIncludeHistory ? 'full_history' : 'quick_reference',
+      maxHistory: 8
+    });
+
     try {
-      const response = await fetch('/api/rag/ask', {
+      let response = await fetch('/api/rag/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: questionText,
-          activeCar,
-          records,
-          parts,
-          tasks,
-          diagnosticSessions,
-          obdSnapshot,
-          chatHistory: historyPrefix.slice(-6),
-          assistantTone: settings.assistantTone
-        })
+        body: JSON.stringify(cleanPayload)
       });
 
+      // Auto-recover if 413 Payload Too Large is encountered
+      if (response.status === 413) {
+        console.warn('HTTP 413 detected in sendMessageWithCustomHistory, retrying with ultra-minimal payload...');
+        const ultraMinimal = sanitizeChatPayload({
+          questionText,
+          activeCar,
+          records: [],
+          parts: [],
+          tasks: [],
+          diagnosticSessions: [],
+          obdSnapshot: null,
+          chatHistory: [],
+          assistantTone: settings.assistantTone,
+          contextMode: 'quick_reference',
+          maxHistory: 0
+        });
+        response = await fetch('/api/rag/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ultraMinimal)
+        });
+      }
+
       if (!response.ok) {
+        if (response.status === 413) {
+          throw new Error('Размер запроса превышает лимит сервера (HTTP 413). Попробуйте сформулировать вопрос короче.');
+        }
         throw new Error(`Ошибка HTTP: ${response.status}`);
       }
 
@@ -701,6 +941,8 @@ export function RagAssistant({
       setMessages([...newMessagesList, errorMsg]);
     } finally {
       setIsLoading(false);
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -807,7 +1049,10 @@ export function RagAssistant({
   };
 
   const sendMessageDirectly = async (questionText: string) => {
-    if (!questionText.trim() || isLoading) return;
+    if (!questionText.trim() || isLoading || isSubmittingRef.current) return;
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     setInputValue('');
     spokenTextRef.current = '';
@@ -822,6 +1067,8 @@ export function RagAssistant({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, offlineMsg]);
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
       return;
     }
 
@@ -835,24 +1082,64 @@ export function RagAssistant({
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
+    const isAnalytical = smartContextEnabled ? isMaintenanceOrHistoryQuery(questionText) : false;
+    const hasHistoryRecords = Boolean(records && records.length > 0);
+    const shouldIncludeHistory = isAnalytical && hasHistoryRecords;
+
+    if (shouldIncludeHistory) {
+      setLoadingStatusText('Сверяю историю автомобиля...');
+    } else {
+      setLoadingStatusText('Василич думает...');
+    }
+
+    const cleanPayload = sanitizeChatPayload({
+      questionText,
+      activeCar,
+      records: shouldIncludeHistory ? records : [],
+      parts: shouldIncludeHistory ? parts : [],
+      tasks: shouldIncludeHistory ? tasks : [],
+      diagnosticSessions: shouldIncludeHistory ? diagnosticSessions : [],
+      obdSnapshot: shouldIncludeHistory ? obdSnapshot : null,
+      chatHistory: messages,
+      assistantTone: settings.assistantTone,
+      contextMode: shouldIncludeHistory ? 'full_history' : 'quick_reference',
+      maxHistory: 8
+    });
+
     try {
-      const response = await fetch('/api/rag/ask', {
+      let response = await fetch('/api/rag/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: questionText,
-          activeCar,
-          records,
-          parts,
-          tasks,
-          diagnosticSessions,
-          obdSnapshot,
-          chatHistory: messages.slice(-6),
-          assistantTone: settings.assistantTone
-        })
+        body: JSON.stringify(cleanPayload)
       });
 
+      // Auto-recover if 413 Payload Too Large is encountered
+      if (response.status === 413) {
+        console.warn('HTTP 413 detected in sendMessageDirectly, retrying with ultra-minimal payload...');
+        const ultraMinimal = sanitizeChatPayload({
+          questionText,
+          activeCar,
+          records: [],
+          parts: [],
+          tasks: [],
+          diagnosticSessions: [],
+          obdSnapshot: null,
+          chatHistory: [],
+          assistantTone: settings.assistantTone,
+          contextMode: 'quick_reference',
+          maxHistory: 0
+        });
+        response = await fetch('/api/rag/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ultraMinimal)
+        });
+      }
+
       if (!response.ok) {
+        if (response.status === 413) {
+          throw new Error('Размер запроса превышает лимит сервера (HTTP 413). Попробуйте сформулировать вопрос короче.');
+        }
         throw new Error(`Ошибка HTTP: ${response.status}`);
       }
 
@@ -896,12 +1183,15 @@ export function RagAssistant({
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
+    e.stopPropagation();
+    if (!inputValue.trim() || isLoading || isSubmittingRef.current) return;
     const userText = inputValue.trim();
     setInputValue('');
     await sendMessageDirectly(userText);
@@ -1031,7 +1321,7 @@ export function RagAssistant({
             </div>
             <div className="min-w-0">
               <h1 className="font-bold text-xs sm:text-sm text-white tracking-wide leading-tight flex items-center gap-1.5">
-                ВАСИЛИЧ
+                <GlowText text="ВАСИЛИЧ" delay={0.04} />
               </h1>
               <p className="text-[11px] text-slate-400 truncate">
                 {activeCar ? `${activeCar.make} ${activeCar.model} · ${(activeCar.mileage || 0).toLocaleString('ru-RU')} км` : 'Автомобиль не выбран'}
@@ -1041,6 +1331,37 @@ export function RagAssistant({
 
           {/* Right Header Menu */}
           <div className="flex items-center gap-1.5">
+            {/* Smart Context Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleSmartContext}
+              className={`h-7 px-2.5 rounded-lg border text-xs flex items-center gap-1.5 cursor-pointer transition-all ${
+                smartContextEnabled 
+                  ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/25 shadow-[0_0_12px_rgba(6,182,212,0.15)]' 
+                  : 'bg-[#0B0E14] text-slate-400 border-[#1E273D] hover:bg-[#151C2C] hover:text-slate-300'
+              }`}
+              title={
+                smartContextEnabled
+                  ? 'Умный контекст: ВКЛ (автоопределение Fast / Full по смыслу вопроса)'
+                  : 'Умный контекст: ВЫКЛ (принудительный режим «Быстрый Справочник» — минимум токенов, максимальная скорость)'
+              }
+              id="btn-smart-context-toggle"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${smartContextEnabled ? 'text-cyan-400' : 'text-slate-500'}`} />
+              <span className="text-[11px] font-medium hidden sm:inline">
+                Умный контекст
+              </span>
+              <span 
+                className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded transition-colors ${
+                  smartContextEnabled 
+                    ? 'bg-cyan-400 text-slate-950 shadow-[0_0_8px_rgba(34,211,238,0.7)]' 
+                    : 'bg-slate-800 text-slate-400'
+                }`}
+              >
+                {smartContextEnabled ? 'ВКЛ' : 'ВЫКЛ'}
+              </span>
+            </button>
+
             {/* Quick Style / Tone Dropdown */}
             <div className="relative">
               <button
@@ -1128,8 +1449,33 @@ export function RagAssistant({
               </button>
 
               {isHeaderMenuOpen && (
-                <div className="absolute right-0 top-9 w-52 bg-[#111622] border border-[#1E273D] rounded-xl shadow-xl p-1 z-50 text-xs space-y-0.5 backdrop-blur-md">
-                  <div className="px-2 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                <div className="absolute right-0 top-9 w-64 bg-[#111622] border border-[#1E273D] rounded-xl shadow-xl p-2 z-50 text-xs space-y-1.5 backdrop-blur-md">
+                  <div className="p-2 bg-[#0B0E14] border border-[#1E273D] rounded-xl">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-semibold text-slate-200 flex items-center gap-1.5 text-xs">
+                        <Sparkles className="w-3.5 h-3.5 text-[#06B6D4]" /> Умный контекст
+                      </span>
+                      <button
+                        type="button"
+                        onClick={toggleSmartContext}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                          smartContextEnabled
+                            ? 'bg-cyan-400 text-slate-950 shadow-[0_0_8px_rgba(34,211,238,0.5)]'
+                            : 'bg-slate-800 text-slate-400 border border-slate-700'
+                        }`}
+                        id="btn-menu-toggle-smart-context"
+                      >
+                        {smartContextEnabled ? 'ВКЛ' : 'ВЫКЛ'}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      {smartContextEnabled
+                        ? '• ВКЛ: работает автоопределение интента (Fast / Full). Справочные вопросы отвечаются без лишней истории, аналитические — с полным журналом ТО.'
+                        : '• ВЫКЛ: принудительный режим «Быстрый Справочник» (минимум токенов, максимальная скорость ответа).'}
+                    </p>
+                  </div>
+
+                  <div className="px-1 pt-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                     Управление диалогом
                   </div>
                   <button
@@ -1258,7 +1604,7 @@ export function RagAssistant({
               </div>
               
               <h2 className="text-lg sm:text-xl font-bold text-white mb-1">
-                Василич на связи
+                <GlowText text="Василич на связи" delay={0.04} />
               </h2>
               
               <p className="text-xs text-[#06B6D4] mb-4 font-semibold tracking-wide">
@@ -1266,7 +1612,12 @@ export function RagAssistant({
               </p>
 
               <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-4 text-xs sm:text-[13px] text-slate-300 leading-relaxed mb-5 shadow-sm">
-                «Рассказывай, что с машиной. Можно обычными словами — я разберусь.»
+                <GlowText 
+                  text={activeCar 
+                    ? `Здорово! Я Василич — твой автомеханик-наставник по ${activeCar.make} ${activeCar.model}.\nРассказывай, что с машиной — я разберусь.` 
+                    : '«Рассказывай, что с машиной. Можно обычными словами — я разберусь.»'}
+                  delay={0.02} 
+                />
               </div>
 
               {/* Voice Button */}
@@ -1387,8 +1738,16 @@ export function RagAssistant({
                       onShowDiagram={() => handleShowDiagramForMessage(m.diagnosticResponse?.relatedDtc || m.userQuery)}
                       onCreateTask={() => {}}
                       onCheckInventory={() => onNavigateTab && onNavigateTab('garage')}
-                      onAskFollowup={(q) => sendMessageDirectly(q)}
+                      onAskFollowup={(q) => {
+                        if (!isLoading && !isSubmittingRef.current) {
+                          sendMessageDirectly(q);
+                        }
+                      }}
                     />
+                  ) : m.isWelcome ? (
+                    <div className="text-slate-200 leading-relaxed font-normal">
+                      <GlowText text={m.text.replace(/\*\*/g, '')} delay={0.015} />
+                    </div>
                   ) : (
                     <FormattedMessage 
                       text={m.text} 
@@ -1546,7 +1905,7 @@ export function RagAssistant({
               </div>
               <div className="px-3.5 py-2.5 border border-[#1E273D] bg-[#111622] text-xs text-slate-300 rounded-2xl rounded-tl-sm flex items-center gap-2.5 shadow-sm">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#06B6D4]" />
-                <span>Сверяю историю автомобиля...</span>
+                <span>{loadingStatusText}</span>
               </div>
             </div>
           )}

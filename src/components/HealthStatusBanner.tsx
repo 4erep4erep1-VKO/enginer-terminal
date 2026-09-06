@@ -154,7 +154,9 @@ export function HealthStatusBanner({
         <div className="w-full sm:w-auto shrink-0 flex items-center gap-2">
           <button
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               if ('vibrate' in navigator) navigator.vibrate(15);
               onNavigateToRagWithQuestion('Что мне сейчас делать с машиной? Оцени текущий статус и дай совет.');
             }}
