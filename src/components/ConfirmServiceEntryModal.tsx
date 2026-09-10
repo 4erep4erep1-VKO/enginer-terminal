@@ -67,19 +67,19 @@ export function ConfirmServiceEntryModal({
   // Sync state when parsedEntry changes
   useEffect(() => {
     if (parsedEntry) {
-      setTitle(parsedEntry.title || '');
-      setOdometer(parsedEntry.odometer !== undefined ? parsedEntry.odometer : (currentCarOdometer || 0));
+      setTitle(parsedEntry?.title || '');
+      setOdometer(parsedEntry?.odometer !== undefined ? parsedEntry.odometer : (currentCarOdometer ?? 0));
       
-      const partsNames = parsedEntry.partsUsed && parsedEntry.partsUsed.length > 0
-        ? parsedEntry.partsUsed.map(p => p.name).join(', ')
+      const partsNames = (parsedEntry?.partsUsed && parsedEntry.partsUsed.length > 0)
+        ? parsedEntry.partsUsed.map(p => (typeof p === 'string' ? p : p?.name || '')).filter(Boolean).join(', ')
         : '';
       setPartsText(partsNames);
 
-      setCostParts(parsedEntry.costParts || '');
-      setCostWork(parsedEntry.costWork || '');
-      setTotalCost(parsedEntry.totalCost || (parsedEntry.costParts || 0) + (parsedEntry.costWork || 0) || '');
-      setCategory(parsedEntry.category || 'maintenance');
-      setAttachedPhotos(parsedEntry.photoUrls || parsedEntry.attachments || []);
+      setCostParts(parsedEntry?.costParts || '');
+      setCostWork(parsedEntry?.costWork || '');
+      setTotalCost(parsedEntry?.totalCost || ((parsedEntry?.costParts || 0) + (parsedEntry?.costWork || 0)) || '');
+      setCategory(parsedEntry?.category || 'maintenance');
+      setAttachedPhotos(parsedEntry?.photoUrls || parsedEntry?.attachments || []);
       setIsEditing(false);
       setIsSaved(false);
     }
@@ -164,7 +164,7 @@ export function ConfirmServiceEntryModal({
     if (navigator.vibrate) navigator.vibrate(25);
 
     // Build final entry
-    const finalOdometer = typeof odometer === 'number' ? odometer : currentCarOdometer;
+    const finalOdometer = typeof odometer === 'number' ? odometer : (currentCarOdometer ?? 0);
     const finalCostParts = typeof costParts === 'number' ? costParts : 0;
     const finalCostWork = typeof costWork === 'number' ? costWork : 0;
     const finalTotalCost = typeof totalCost === 'number'
@@ -173,19 +173,19 @@ export function ConfirmServiceEntryModal({
 
     const partsUsedList: ServicePartUsed[] = partsText.trim()
       ? partsText.split(',').map(s => ({ name: s.trim() })).filter(p => p.name.length > 0)
-      : parsedEntry.partsUsed;
+      : (parsedEntry?.partsUsed ?? []);
 
     const finalEntry: ParsedServiceEntry = {
-      title: title.trim() || parsedEntry.title || 'Техническое обслуживание',
+      title: title.trim() || parsedEntry?.title || 'Техническое обслуживание',
       odometer: finalOdometer,
-      worksDone: [title.trim() || parsedEntry.title],
+      worksDone: [title.trim() || parsedEntry?.title || 'Обслуживание'],
       partsUsed: partsUsedList,
       costParts: finalCostParts,
       costWork: finalCostWork,
       totalCost: finalTotalCost,
       category: category,
-      comment: parsedEntry.comment,
-      rawTranscript: parsedEntry.rawTranscript,
+      comment: parsedEntry?.comment,
+      rawTranscript: parsedEntry?.rawTranscript,
       photoUrls: attachedPhotos,
       attachments: attachedPhotos,
     };
@@ -205,14 +205,14 @@ export function ConfirmServiceEntryModal({
     if (onEditRequest) {
       const finalEntry: ParsedServiceEntry = {
         title,
-        odometer: typeof odometer === 'number' ? odometer : currentCarOdometer,
-        worksDone: [title],
+        odometer: typeof odometer === 'number' ? odometer : (currentCarOdometer ?? 0),
+        worksDone: [title || 'Обслуживание'],
         partsUsed: partsText ? partsText.split(',').map(s => ({ name: s.trim() })) : [],
         costParts: typeof costParts === 'number' ? costParts : 0,
         costWork: typeof costWork === 'number' ? costWork : 0,
         totalCost: typeof totalCost === 'number' ? totalCost : 0,
         category,
-        rawTranscript: parsedEntry.rawTranscript,
+        rawTranscript: parsedEntry?.rawTranscript,
       };
       onEditRequest(finalEntry);
     } else {
@@ -220,10 +220,10 @@ export function ConfirmServiceEntryModal({
     }
   };
 
-  // Formatted parts display string
+  // Formatted parts display string with optional chaining
   const displayParts = partsText.trim() || 
-    (parsedEntry.partsUsed && parsedEntry.partsUsed.length > 0
-      ? parsedEntry.partsUsed.map(p => p.name).join(', ')
+    ((parsedEntry?.partsUsed?.length ?? 0) > 0
+      ? parsedEntry!.partsUsed.map(p => (typeof p === 'string' ? p : p?.name || '')).filter(Boolean).join(', ')
       : 'Не указаны');
 
   // Formatted cost display
@@ -231,7 +231,7 @@ export function ConfirmServiceEntryModal({
     ? totalCost
     : ((typeof costParts === 'number' ? costParts : 0) + (typeof costWork === 'number' ? costWork : 0));
 
-  const displayOdometer = typeof odometer === 'number' ? odometer : currentCarOdometer;
+  const displayOdometer = typeof odometer === 'number' ? odometer : (currentCarOdometer ?? 0);
 
   return (
     <div 

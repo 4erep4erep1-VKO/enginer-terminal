@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserSettings, Currency, DistanceUnit, VolumeUnit, PressureUnit, AssistantTone } from '../types';
+import React, { createContext, useContext } from 'react';
+import { create } from 'zustand';
+import { UserSettings, Currency } from '../types';
 
-interface UserSettingsContextType {
+export interface UserSettingsContextType {
   settings: UserSettings;
   updateSettings: (newSettings: Partial<UserSettings>) => void;
   formatCurrency: (amount: number) => string;
@@ -15,7 +16,7 @@ interface UserSettingsContextType {
   currencySymbol: string;
 }
 
-const defaultSettings: UserSettings = {
+export const defaultSettings: UserSettings = {
   currency: 'KZT',
   distanceUnit: 'km',
   volumeUnit: 'L',
@@ -23,33 +24,74 @@ const defaultSettings: UserSettings = {
   assistantTone: 'vasilich',
 };
 
-const UserSettingsContext = createContext<UserSettingsContextType | undefined>(undefined);
+function getSafeStorage(key: string): string | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem(key);
+    }
+  } catch (e) {
+    console.warn(`[UserSettings] Error reading ${key} from storage:`, e);
+  }
+  return null;
+}
 
-export function UserSettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<UserSettings>(() => {
-    const savedAppSettings = localStorage.getItem('app_settings');
-    const savedBlueprint = localStorage.getItem('blueprint_user_settings');
+function setSafeStorage(key: string, value: string): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(key, value);
+    }
+  } catch (e) {
+    console.warn(`[UserSettings] Error saving ${key} to storage:`, e);
+  }
+}
+
+function getInitialSettings(): UserSettings {
+  try {
+    const savedAppSettings = getSafeStorage('app_settings');
+    const savedBlueprint = getSafeStorage('blueprint_user_settings');
     const saved = savedAppSettings || savedBlueprint;
     if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return { ...defaultSettings, ...parsed };
-      } catch (e) {
-        return defaultSettings;
-      }
+      const parsed = JSON.parse(saved);
+      return { ...defaultSettings, ...parsed };
     }
-    return defaultSettings;
-  });
+  } catch (e) {
+    console.warn('[UserSettings] Could not parse stored settings, using defaults:', e);
+  }
+  return defaultSettings;
+}
 
-  useEffect(() => {
-    const jsonStr = JSON.stringify(settings);
-    localStorage.setItem('app_settings', jsonStr);
-    localStorage.setItem('blueprint_user_settings', jsonStr);
-  }, [settings]);
+interface UserSettingsStoreState {
+  settings: UserSettings;
+  updateSettings: (newSettings: Partial<UserSettings>) => void;
+}
 
-  const updateSettings = (newSettings: Partial<UserSettings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
-  };
+export const useUserSettingsStore = create<UserSettingsStoreState>((set) => ({
+  settings: getInitialSettings(),
+  updateSettings: (newSettings: Partial<UserSettings>) => {
+    set((state) => {
+      const updated = { ...state.settings, ...newSettings };
+      try {
+        const jsonStr = JSON.stringify(updated);
+        setSafeStorage('app_settings', jsonStr);
+        setSafeStorage('blueprint_user_settings', jsonStr);
+      } catch (e) {
+        console.warn('[UserSettings] Failed serializing settings:', e);
+      }
+      return { settings: updated };
+    });
+  },
+}));
+
+export const UserSettingsContext = createContext<UserSettingsContextType | undefined>(undefined);
+
+export function UserSettingsProvider({ children }: { children: React.ReactNode }) {
+  // Pure pass-through component: zero hook dependencies, completely crash-proof
+  return <>{children}</>;
+}
+
+export function useUserSettings(): UserSettingsContextType {
+  const settings = useUserSettingsStore((state) => state.settings);
+  const updateSettings = useUserSettingsStore((state) => state.updateSettings);
 
   const getCurrencySymbol = (curr: Currency) => {
     switch (curr) {
@@ -68,7 +110,6 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
   const currencySymbol = getCurrencySymbol(settings.currency);
 
   const formatCurrency = (amount: number) => {
-    // Format with thousand separators
     const formatted = (amount || 0).toLocaleString('ru-RU', {
       maximumFractionDigits: 0,
     });
@@ -109,43 +150,17 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
     return `${converted.toLocaleString('ru-RU')} ${distanceLabel}`;
   };
 
-  return (
-    <UserSettingsContext.Provider
-      value={{
-        settings,
-        updateSettings,
-        formatCurrency,
-        formatMileage,
-        convertDistance,
-        unconvertDistance,
-        formatPressure,
-        distanceLabel,
-        volumeLabel,
-        pressureLabel,
-        currencySymbol,
-      }}
-    >
-      {children}
-    </UserSettingsContext.Provider>
-  );
-}
-
-export function useUserSettings() {
-  const context = useContext(UserSettingsContext);
-  if (!context) {
-    return {
-      settings: defaultSettings,
-      updateSettings: () => {},
-      formatCurrency: (val: number) => `${(val || 0).toLocaleString('ru-RU')} ₸`,
-      formatMileage: (km: number) => `${(km || 0).toLocaleString('ru-RU')} км`,
-      convertDistance: (val: number) => val,
-      unconvertDistance: (val: number) => val,
-      formatPressure: (barVal: number) => `${barVal.toFixed(1)} бар`,
-      distanceLabel: 'км',
-      volumeLabel: 'л',
-      pressureLabel: 'бар',
-      currencySymbol: '₸'
-    } as unknown as UserSettingsContextType;
-  }
-  return context;
+  return {
+    settings,
+    updateSettings,
+    formatCurrency,
+    formatMileage,
+    convertDistance,
+    unconvertDistance,
+    formatPressure,
+    distanceLabel,
+    volumeLabel,
+    pressureLabel,
+    currencySymbol,
+  };
 }

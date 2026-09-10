@@ -89,7 +89,7 @@ export function checkOdometerRecency(car: Car | null, records: MaintenanceRecord
     return { isStale: false, daysSinceUpdate: 0, currentOdometer: 0, lastUpdatedDate: null };
   }
 
-  const currentOdometer = car.mileage || 0;
+  const currentOdometer = car?.odometer ?? car?.mileage ?? 0;
   const now = new Date();
 
   // Check stored confirmation timestamp from localStorage if available
@@ -178,7 +178,7 @@ export function calculateSmartCarInsights(
     };
   }
 
-  const currentMileage = car.mileage || 0;
+  const currentMileage = car?.odometer ?? car?.mileage ?? 0;
   const carRecords = records.filter(r => r.carId === car.id);
   const carTasks = tasks.filter(t => t.carId === car.id && t.status === 'pending');
 

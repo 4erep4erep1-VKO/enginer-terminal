@@ -19,7 +19,6 @@ import {
   Cpu,
   Bot,
   Warehouse,
-  BookOpen,
   Mic
 } from 'lucide-react';
 
@@ -37,7 +36,6 @@ export interface HeaderProps {
   isOnline: boolean;
   activeTab: MainNavTab;
   onSelectTab: (tab: MainNavTab) => void;
-  onOpenTechSpecs: () => void;
   urgentMaintenanceCount?: number;
   hasCriticalIssues?: boolean;
 }
@@ -53,7 +51,6 @@ export function Header({
   isOnline,
   activeTab,
   onSelectTab,
-  onOpenTechSpecs,
   urgentMaintenanceCount = 0,
   hasCriticalIssues = false,
 }: HeaderProps) {
@@ -324,19 +321,6 @@ export function Header({
             >
               <Warehouse className="w-3.5 h-3.5" />
               <span>Гараж</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { 
-                if (navigator.vibrate) navigator.vibrate(10);
-                onOpenTechSpecs();
-              }}
-              className="px-3 py-1.5 rounded-lg bg-[#111622] text-slate-300 border border-[#1E273D] hover:border-[#26324D] hover:text-white text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
-              <span>Справочник OEM</span>
             </button>
           </div>
         </nav>

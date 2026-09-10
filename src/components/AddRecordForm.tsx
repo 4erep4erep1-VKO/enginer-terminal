@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRecordParser } from '../hooks/useRecordParser';
 import { useUserSettings } from './UserSettingsContext';
 import { MaintenanceRecord, RecordCategory } from '../types';
+import { normalizeVoiceTranscript, extractFinalSpeechTranscript } from '../lib/voiceNormalizer';
 import { 
   Mic, 
   MicOff, 
@@ -132,7 +133,7 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
     if (SpeechRecognition) {
       const rec = new SpeechRecognition();
       rec.continuous = true;
-      rec.interimResults = true;
+      rec.interimResults = false;
       // Autodetect language but default to RU or EN
       rec.lang = 'ru-RU';
 
@@ -150,26 +151,16 @@ export function AddRecordForm({ carId, currentCarMileage, onRecordAdded, onCance
 
       rec.onend = () => {
         setIsListening(false);
-        if (transcriptRef.current.trim()) {
-          handleAiParse(transcriptRef.current);
+        const textToParse = normalizeVoiceTranscript(transcriptRef.current.trim());
+        if (textToParse) {
+          handleAiParse(textToParse);
         } else {
           setParseError('Не удалось распознать текст. Пожалуйста, повторите ввод.');
         }
       };
 
       rec.onresult = (event: any) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
-
-        const currentText = finalTranscript || interimTranscript;
+        const currentText = extractFinalSpeechTranscript(event.results);
         if (currentText) {
           setSpeechTranscript(currentText);
           transcriptRef.current = currentText;

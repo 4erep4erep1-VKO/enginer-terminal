@@ -8,6 +8,7 @@ import { Mic, MicOff, Send, X, Sparkles, Bot, ArrowRight, CornerDownLeft, Volume
 import { parseServiceTranscript } from '../lib/serviceRecordParser';
 import { ParsedServiceEntry } from '../types/car';
 import { useUserSettings } from './UserSettingsContext';
+import { normalizeVoiceTranscript, extractFinalSpeechTranscript } from '../lib/voiceNormalizer';
 
 interface VoiceRecordModalProps {
   isOpen: boolean;
@@ -79,7 +80,7 @@ export function VoiceRecordModal({
       const recognition = new SpeechRecognition();
       recognition.lang = 'ru-RU';
       recognition.continuous = true;
-      recognition.interimResults = true;
+      recognition.interimResults = false;
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -87,12 +88,14 @@ export function VoiceRecordModal({
       };
 
       recognition.onresult = (event: any) => {
-        let currentText = '';
-        for (let i = 0; i < event.results.length; i++) {
-          currentText += event.results[i][0].transcript;
-        }
-        if (currentText) {
-          setTranscript(currentText);
+        const cleanedText = extractFinalSpeechTranscript(event.results);
+        if (cleanedText) {
+          setTranscript(prev => {
+            // If prev is empty or user is continuously talking
+            if (!prev) return cleanedText;
+            // Deduplicate across ongoing speech chunks
+            return normalizeVoiceTranscript(`${prev} ${cleanedText}`);
+          });
         }
       };
 
@@ -138,18 +141,20 @@ export function VoiceRecordModal({
   };
 
   const handleProcessTranscript = async () => {
-    if (!transcript.trim()) {
+    const cleanedText = normalizeVoiceTranscript(transcript);
+    if (!cleanedText.trim()) {
       setErrorMessage('Пожалуйста, надиктуйте или напишите выполненные работы');
       return;
     }
 
+    setTranscript(cleanedText);
     stopListening();
     setIsParsing(true);
     setErrorMessage('');
 
     try {
       if (navigator.vibrate) navigator.vibrate(15);
-      const parsed = await parseServiceTranscript(transcript, currentOdometer, { make: carName });
+      const parsed = await parseServiceTranscript(cleanedText, currentOdometer, { make: carName });
       onParsedReady(parsed);
       onClose();
     } catch (err: any) {

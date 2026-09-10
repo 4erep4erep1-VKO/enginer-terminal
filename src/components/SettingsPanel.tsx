@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useUserSettings } from './UserSettingsContext';
 import { Currency, DistanceUnit, VolumeUnit, PressureUnit, AssistantTone, Car, MaintenanceRecord } from '../types';
 import { generateServiceBookPdf } from '../lib/serviceBookPdf';
+import { getStandardDemoRecords } from '../lib/dataIntegrity';
 import { 
   DollarSign, 
   Gauge, 
@@ -21,19 +22,23 @@ import {
   Settings,
   Car as CarIcon,
   Loader2,
-  Receipt
+  Receipt,
+  Database,
+  RefreshCw
 } from 'lucide-react';
 
 interface SettingsPanelProps {
   cars?: Car[];
   activeCarId?: string | null;
   records?: MaintenanceRecord[];
+  onImportDemoData?: () => void;
 }
 
 export function SettingsPanel({
   cars: propCars,
   activeCarId: propActiveCarId,
   records: propRecords,
+  onImportDemoData,
 }: SettingsPanelProps = {}) {
   const { settings, updateSettings, currencySymbol, distanceLabel, formatCurrency, formatMileage } = useUserSettings();
 
@@ -69,6 +74,50 @@ export function SettingsPanel({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfSuccessMessage, setPdfSuccessMessage] = useState<string | null>(null);
   const [pdfErrorMessage, setPdfErrorMessage] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importSuccessMsg, setImportSuccessMsg] = useState<string | null>(null);
+
+  const handleImportDemo = () => {
+    if (navigator.vibrate) navigator.vibrate(20);
+    setIsImporting(true);
+    setImportSuccessMsg(null);
+    try {
+      if (onImportDemoData) {
+        onImportDemoData();
+      } else {
+        const currentCars = getCars();
+        let targetCarId = activeCarId || currentCars[0]?.id;
+        if (!targetCarId) {
+          const fallbackCar: Car = {
+            id: `demo-car-${Date.now()}`,
+            make: 'LADA',
+            model: 'Granta FL',
+            year: 2021,
+            engine: '1.6л 16V (106 л.с.)',
+            mileage: 48500,
+            vin: 'XTA219020M1234567',
+            licensePlate: '01 777 AAA',
+            ownerId: 'local-owner',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          localStorage.setItem('terminal_cars_v2', JSON.stringify([fallbackCar]));
+          localStorage.setItem('terminal_active_car_id_v2', fallbackCar.id);
+          targetCarId = fallbackCar.id;
+        }
+        const demoRecs = getStandardDemoRecords(targetCarId);
+        localStorage.setItem('terminal_records_v2', JSON.stringify(demoRecs));
+        // Also dispatch storage event for cross-component re-read if needed
+        window.dispatchEvent(new Event('storage'));
+      }
+      setImportSuccessMsg('Демо-данные успешно импортированы! История синхронизирована с локальной базой.');
+      setTimeout(() => setImportSuccessMsg(null), 5000);
+    } catch (err) {
+      console.error('Error importing demo data:', err);
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const selectedCar = cars.find(c => c.id === selectedCarIdForPdf) || cars[0] || null;
   const carRecords = selectedCar ? records.filter(r => r.carId === selectedCar.id) : [];
@@ -144,6 +193,86 @@ export function SettingsPanel({
               Единицы измерения, стиль консультаций ИИ-ассистента и формирование официальной сервисной книжки.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* 0 Records Warning & Direct Action Banner (when records.length === 0) */}
+      {records.length === 0 && (
+        <div 
+          id="card-empty-records-notice"
+          className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 sm:p-5 text-amber-200 space-y-3 shadow-lg"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-amber-300 flex items-center gap-2">
+                Внимание: в базе 0 записей истории
+              </h3>
+              <p className="text-xs text-amber-200/80 leading-relaxed">
+                На этом мобильном устройстве пока не загружены записи сервисной книжки. Нажмите кнопку ниже, чтобы восстановить базовую демонстрационную историю обслуживания или синхронизировать хранилище.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            id="btn-import-demo-banner"
+            onClick={handleImportDemo}
+            disabled={isImporting}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
+          >
+            {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+            Импортировать демо-данные / Синхронизировать
+          </button>
+        </div>
+      )}
+
+      {/* Data Synchronization & Store Management */}
+      <div className="bg-[#111622] border border-[#1E273D] rounded-2xl p-4 sm:p-5 relative space-y-3.5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[#06B6D4]">
+              <Database className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-100 flex items-center gap-2">
+                Синхронизация и локальное хранилище
+                <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-slate-800 text-cyan-400 border border-slate-700">
+                  {records.length} {records.length === 1 ? 'запись' : records.length >= 2 && records.length <= 4 ? 'записи' : 'записей'} в базе
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Контроль локальных данных PWA и быстрое восстановление истории обслуживания.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {importSuccessMsg && (
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            {importSuccessMsg}
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#0B0E14] border border-[#1E273D] p-3.5 rounded-xl">
+          <div className="text-xs text-slate-300 space-y-0.5">
+            <div className="font-semibold text-slate-200">Восстановление сервисной истории</div>
+            <div className="text-[11px] text-slate-400">
+              Импортирует регламентные работы (масло ДВС, фильтры, колодки, свечи, жидкости) для выбранного автомобиля.
+            </div>
+          </div>
+          <button
+            type="button"
+            id="btn-import-demo-settings"
+            onClick={handleImportDemo}
+            disabled={isImporting}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#1E273D] hover:bg-cyan-500/20 hover:text-cyan-300 hover:border-cyan-500/40 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+          >
+            {isImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Импортировать демо-данные / Синхронизировать
+          </button>
         </div>
       </div>
 

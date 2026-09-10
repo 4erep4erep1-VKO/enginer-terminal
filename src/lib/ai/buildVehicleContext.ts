@@ -7,6 +7,7 @@ import { CarProfile, ServiceRecord } from '../../types/car';
 import { MaintenanceRecord, Car } from '../../types';
 import { calculateAllFluidsHealth, FluidHealthCalculation, FluidKey } from '../calcFluidHealth';
 import { VehicleContextResult, VehicleMemorySummary } from '../../types/chat';
+import { useCarStore } from '../../store/useCarStore';
 
 /**
  * Normalizes input car to unified representation
@@ -59,7 +60,7 @@ function normalizeCarData(car: CarProfile | Car | null | undefined) {
  * Formats:
  * [ПАСПОРТ АВТОМОБИЛЯ]
  * [ПОСЛЕДНИЕ РЕМОНТЫ И ТО]
- * [ЖИЗНЕННЫЙ ЦИКЛ ЖИДКОСТЕЙ (DUAL-LIMIT)]
+ * [СОСТОЯНИЕ И РЕСУРС ТЕХНИЧЕСКИХ ЖИДКОСТЕЙ]
  * [СВЯЗЬ С ТЕКУЩИМ ВОПРОСОМ И ИНТЕРАКТИВНАЯ ДИАГНОСТИКА]
  */
 export function buildVehicleContext(
@@ -71,13 +72,36 @@ export function buildVehicleContext(
     tasks?: any[];
   }
 ): VehicleContextResult {
-  const normCar = normalizeCarData(car);
+  // Resolve car from useCarStore if not passed
+  let targetCar = car;
+  if (!targetCar) {
+    try {
+      targetCar = useCarStore.getState().getActiveCar();
+    } catch {
+      // ignore
+    }
+  }
+
+  // Resolve history from useCarStore if empty
+  let targetHistory = history;
+  if (!targetHistory || targetHistory.length === 0) {
+    try {
+      const storeRecs = useCarStore.getState().getRecordsForActiveCar();
+      if (storeRecs && storeRecs.length > 0) {
+        targetHistory = storeRecs;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const normCar = normalizeCarData(targetCar);
   const carId = normCar?.id || null;
   const currentOdometer = normCar?.currentOdometer || 0;
 
   // 1. Filter and sort history for this car
-  const relevantCarRecords = Array.isArray(history)
-    ? history.filter(r => !carId || !r.carId || r.carId === carId)
+  const relevantCarRecords = Array.isArray(targetHistory)
+    ? targetHistory.filter(r => !carId || !r.carId || r.carId === carId)
     : [];
 
   relevantCarRecords.sort((a, b) => {
@@ -123,16 +147,17 @@ export function buildVehicleContext(
     recentRepairsBlock = `[ПОСЛЕДНИЕ РЕМОНТЫ И ТО]\n${repairLines.join('\n')}`;
   }
 
-  // 4. Calculate [ЖИЗНЕННЫЙ ЦИКЛ ЖИДКОСТЕЙ (DUAL-LIMIT)]
+  // 4. Calculate [СОСТОЯНИЕ И РЕСУРС ТЕХНИЧЕСКИХ ЖИДКОСТЕЙ]
   let fluidsHealth: Record<FluidKey, FluidHealthCalculation> | null = null;
-  let fluidsLifecycleBlock = `[ЖИЗНЕННЫЙ ЦИКЛ ЖИДКОСТЕЙ (DUAL-LIMIT)]\nДанные по жидкостям не рассчитаны.`;
+  let fluidsLifecycleBlock = `[СОСТОЯНИЕ И РЕСУРС ТЕХНИЧЕСКИХ ЖИДКОСТЕЙ]\nДанные по жидкостям не рассчитаны.`;
   const criticalWarnings: string[] = [];
 
   try {
+    const calculationCarId = carId || 'active-car';
     // Map records to MaintenanceRecord array for calculation
     const maintenanceRecords: MaintenanceRecord[] = relevantCarRecords.map(r => ({
       id: r.id || 'rec',
-      carId: r.carId || carId || '',
+      carId: calculationCarId, // Ensure matching carId so calculateAllFluidsHealth matches
       date: (r as any).date || new Date().toISOString().split('T')[0],
       description: (r as any).title || (r as any).description || '',
       category: (r as any).category || 'Oil & Fluids',
@@ -145,45 +170,34 @@ export function buildVehicleContext(
     }));
 
     fluidsHealth = calculateAllFluidsHealth({
-      carId,
+      carId: calculationCarId,
       currentMileage: currentOdometer,
       records: maintenanceRecords,
     });
 
-    const fluidLines: string[] = [];
-    const fluids = [
-      { key: 'engine_oil' as FluidKey, label: 'Моторное масло' },
-      { key: 'brake_fluid' as FluidKey, label: 'Тормозная жидкость' },
-      { key: 'coolant' as FluidKey, label: 'Антифриз' },
-      { key: 'transmission_oil' as FluidKey, label: 'Масло в КПП' },
-    ];
+    const formatFluidLine = (label: string, key: FluidKey) => {
+      const data = fluidsHealth?.[key];
+      const resource = Math.max(0, Math.min(100, Math.round(data?.remainingHealth ?? 100)));
+      const lastDate = data?.lastServicedDate ? formatDateRu(data.lastServicedDate) : 'нет данных';
+      const lastKm = (data?.hasServiceRecord || (data && data.lastServicedKm > 0))
+        ? data.lastServicedKm.toLocaleString('ru-RU')
+        : (data?.lastServicedDate ? String(data.lastServicedKm ?? 0) : '0');
 
-    fluids.forEach(item => {
-      const data = fluidsHealth?.[item.key];
-      if (!data) return;
-
-      const health = Math.max(0, Math.min(100, Math.round(data.remainingHealth)));
-      let statusNote = '';
-
-      if (data.statusLevel === 'critical' || health < 10) {
-        if (data.isTimeExceeded && data.isKmExceeded) {
-          statusNote = ' (Просрочено по пробегу и времени!)';
-        } else if (data.isKmExceeded) {
-          statusNote = ' (Просрочено по пробегу!)';
-        } else if (data.isTimeExceeded) {
-          statusNote = ' (Просрочено по времени!)';
-        } else {
-          statusNote = ' (Критический износ!)';
-        }
-        criticalWarnings.push(`${item.label}: износ ${100 - health}%, требуется срочная замена`);
-      } else if (data.statusLevel === 'replace_due' || health <= 30) {
-        statusNote = ' (Скоро замена)';
+      if (data && (data.statusLevel === 'critical' || resource < 10)) {
+        criticalWarnings.push(`${label}: износ ${100 - resource}%, требуется срочная замена`);
       }
 
-      fluidLines.push(`- ${item.label}: ${health}% ресурса${statusNote}`);
-    });
+      return `- ${label}: ${resource}% ресурса (Последняя замена: ${lastDate}, пробег: ${lastKm} км)`;
+    };
 
-    fluidsLifecycleBlock = `[ЖИЗНЕННЫЙ ЦИКЛ ЖИДКОСТЕЙ (DUAL-LIMIT)]\n${fluidLines.join('\n')}`;
+    const fluidLines: string[] = [
+      formatFluidLine('Моторное масло', 'engine_oil'),
+      formatFluidLine('Тормозная жидкость', 'brake_fluid'),
+      formatFluidLine('Антифриз (ОЖ)', 'coolant'),
+      formatFluidLine('Масло КПП', 'transmission_oil'),
+    ];
+
+    fluidsLifecycleBlock = `[СОСТОЯНИЕ И РЕСУРС ТЕХНИЧЕСКИХ ЖИДКОСТЕЙ]\n${fluidLines.join('\n')}`;
   } catch (err) {
     console.warn('[buildVehicleContext] Failed to compute fluids health:', err);
   }
@@ -234,6 +248,7 @@ export function buildVehicleContext(
 
   adviceLines.push(`[ПРАВИЛА ИНТЕРАКТИВНОЙ ДИАГНОСТИКИ СИМПТОМОВ ВАСИЛИЧА]`);
   adviceLines.push(`1. ТЫ ПОМНИШЬ ЭТУ МАШИНУ: Всегда опирайся на паспортные данные (${normCar?.fullTitle || 'автомобиль'}, пробег ${currentOdometer.toLocaleString('ru-RU')} км) и историю прошлых замен.`);
+  adviceLines.push(`- Если пользователь спрашивает про любую жидкость (масло, антифриз, тормозуха), ищи ответ в блоке [СОСТОЯНИЕ И РЕСУРС ТЕХНИЧЕСКИХ ЖИДКОСТЕЙ] и истории ТО, называй конкретные даты и пробеги.`);
 
   if (matchedPastRecords.length > 0) {
     const topMatch = matchedPastRecords[0];
@@ -256,6 +271,8 @@ export function buildVehicleContext(
   if (criticalWarnings.length > 0) {
     adviceLines.push(`4. КРИТИЧЕСКИЕ РЕСУРСЫ: У автомобиля есть просроченные жидкости (${criticalWarnings.join('; ')}). Если симптом косвенно связан с ними — деликатно предупреди водителя.`);
   }
+
+  adviceLines.push(`5. ПРАВИЛО ИСТОЧНИКОВ И БЕЗОПАСНОСТИ: Когда ты называешь точные моменты затяжки болтов/гаек, технические зазоры свечей, объемы или допуски жидкостей, ВСЕГДА добавляй в конце фразы источник и дисклеймер. Пример формата: 'Затяжка болтов ГБЦ: 20 Н·м + довернуть на 90° (Источник: Технологическая инструкция ВАЗ / Руководство по ремонту). ⚠️ Всегда перепроверяйте критические моменты по заводской документации!'`);
 
   diagnosticAdviceBlock = adviceLines.join('\n');
 

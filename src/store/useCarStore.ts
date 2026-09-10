@@ -35,37 +35,74 @@ const STORAGE_CARS_KEY = 'terminal_cars_v2';
 const STORAGE_ACTIVE_CAR_KEY = 'terminal_active_car_id_v2';
 const STORAGE_RECORDS_KEY = 'terminal_records_v2';
 
-// Helper to convert legacy Car to CarProfile
+export const DEFAULT_FALLBACK_CAR: CarProfile = {
+  id: 'demo-car-granta',
+  brand: 'LADA',
+  make: 'LADA',
+  model: 'Granta FL',
+  year: 2021,
+  engine: { volume: '1.6л', type: 'Бензин', power: '106 л.с.', code: '21127' },
+  transmission: 'МКПП',
+  driveType: 'Передний',
+  vin: 'XTA219020M1234567',
+  licensePlate: '01 777 AAA',
+  currentOdometer: 48500,
+  mileage: 48500,
+  notes: 'Семейный автомобиль',
+  ownerId: 'local-owner',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+// Helper to safely convert legacy or incomplete Car to validated CarProfile
 export function normalizeCarToProfile(car: any): CarProfile {
-  const brand = car.brand || car.make || 'LADA';
-  const currentOdometer = Number(car.currentOdometer ?? car.mileage ?? 0);
-  const engine = typeof car.engine === 'object' && car.engine !== null
-    ? car.engine
-    : {
-        volume: typeof car.engine === 'string' ? car.engine.split(' ')[0] || '1.6л' : '1.6л',
-        type: 'Бензин',
-        power: typeof car.engine === 'string' && car.engine.includes('л.с.') ? car.engine : undefined,
-      };
+  if (!car || typeof car !== 'object') {
+    return { ...DEFAULT_FALLBACK_CAR, id: `car-${Date.now()}-${Math.random().toString(36).substr(2, 4)}` };
+  }
+
+  const brand = String(car.brand || car.make || DEFAULT_FALLBACK_CAR.brand).trim() || DEFAULT_FALLBACK_CAR.brand;
+  const model = String(car.model || DEFAULT_FALLBACK_CAR.model).trim() || DEFAULT_FALLBACK_CAR.model;
+  const currentOdometer = Math.max(0, Number(car.currentOdometer ?? car.mileage ?? car.odometer ?? DEFAULT_FALLBACK_CAR.currentOdometer) || 0);
+  const parsedYear = Number(car.year);
+  const year = parsedYear > 1950 && parsedYear < 2100 ? parsedYear : DEFAULT_FALLBACK_CAR.year;
+
+  let engine: any = DEFAULT_FALLBACK_CAR.engine;
+  if (typeof car.engine === 'object' && car.engine !== null) {
+    engine = {
+      volume: String(car.engine.volume || '1.6л'),
+      type: String(car.engine.type || 'Бензин'),
+      power: car.engine.power ? String(car.engine.power) : undefined,
+      code: car.engine.code ? String(car.engine.code) : undefined,
+    };
+  } else if (typeof car.engine === 'string' && car.engine.trim()) {
+    engine = {
+      volume: car.engine.split(' ')[0] || '1.6л',
+      type: 'Бензин',
+      power: car.engine.includes('л.с.') ? car.engine : undefined,
+    };
+  }
+
+  const id = String(car.id || `car-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`);
 
   return {
-    id: car.id || `car-${Date.now()}`,
+    id,
     brand,
-    model: car.model || 'Granta',
-    generation: car.generation || undefined,
-    year: Number(car.year || 2021),
+    model,
+    generation: car.generation ? String(car.generation) : undefined,
+    year,
     engine,
-    transmission: car.transmission || 'МКПП',
-    driveType: car.driveType || 'Передний',
-    vin: car.vin || undefined,
-    licensePlate: car.licensePlate || undefined,
+    transmission: String(car.transmission || 'МКПП'),
+    driveType: String(car.driveType || 'Передний'),
+    vin: car.vin ? String(car.vin) : undefined,
+    licensePlate: car.licensePlate ? String(car.licensePlate) : undefined,
     currentOdometer,
     photoUrl: car.photoUrl || car.imageUrl || undefined,
-    notes: car.notes || undefined,
+    notes: car.notes ? String(car.notes) : undefined,
     // Aliases for backward compatibility
     make: brand,
     mileage: currentOdometer,
     imageUrl: car.photoUrl || car.imageUrl || undefined,
-    ownerId: car.ownerId || 'local-owner',
+    ownerId: String(car.ownerId || 'local-owner'),
     createdAt: car.createdAt || new Date().toISOString(),
     updatedAt: car.updatedAt || new Date().toISOString(),
   };
@@ -94,11 +131,36 @@ export function mapServiceCategoryToLegacy(cat: ServiceCategory): RecordCategory
 
 // Helper to convert legacy MaintenanceRecord to ServiceRecord
 export function normalizeRecordToService(r: any): ServiceRecord {
-  const title = r.title || r.description || 'Обслуживание';
-  const odometer = Number(r.odometer ?? r.mileage ?? 0);
-  const costParts = Number(r.costParts ?? r.partsPrice ?? 0);
-  const costWork = Number(r.costWork ?? r.laborPrice ?? 0);
-  const totalCost = Number(r.totalCost ?? (costParts + costWork));
+  if (!r || typeof r !== 'object') {
+    return {
+      id: `rec-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      carId: '',
+      date: new Date().toISOString().split('T')[0],
+      odometer: 0,
+      title: 'Обслуживание',
+      category: 'maintenance',
+      worksDone: ['Обслуживание'],
+      partsUsed: [],
+      costWork: 0,
+      costParts: 0,
+      totalCost: 0,
+      source: 'manual',
+      description: 'Обслуживание',
+      mileage: 0,
+      partsPrice: 0,
+      laborPrice: 0,
+      attachments: [],
+      photoUrls: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  const title = String(r.title || r.description || 'Обслуживание');
+  const odometer = Math.max(0, Number(r.odometer ?? r.mileage ?? 0) || 0);
+  const costParts = Math.max(0, Number(r.costParts ?? r.partsPrice ?? 0) || 0);
+  const costWork = Math.max(0, Number(r.costWork ?? r.laborPrice ?? 0) || 0);
+  const totalCost = Math.max(0, Number(r.totalCost ?? (costParts + costWork)) || 0);
 
   let partsUsed: ServicePartUsed[] = [];
   if (Array.isArray(r.partsUsed)) {
@@ -120,10 +182,16 @@ export function normalizeRecordToService(r: any): ServiceRecord {
     ? (r.category as ServiceCategory)
     : mapLegacyCategoryToService(r.category);
 
+  const photos: string[] = Array.from(new Set([
+    ...(Array.isArray(r.attachments) ? r.attachments : []),
+    ...(Array.isArray(r.photoUrls) ? r.photoUrls : []),
+    ...(r.photoReceiptUrl ? [r.photoReceiptUrl] : [])
+  ])).filter(Boolean);
+
   return {
-    id: r.id || `rec-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-    carId: r.carId,
-    date: r.date ? r.date.split('T')[0] : new Date().toISOString().split('T')[0],
+    id: String(r.id || `rec-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`),
+    carId: String(r.carId || ''),
+    date: r.date ? String(r.date).split('T')[0] : new Date().toISOString().split('T')[0],
     odometer,
     title,
     category,
@@ -132,8 +200,10 @@ export function normalizeRecordToService(r: any): ServiceRecord {
     costWork,
     costParts,
     totalCost,
-    comment: r.comment || undefined,
+    comment: r.comment ? String(r.comment) : undefined,
     source: r.source || 'manual',
+    attachments: photos,
+    photoUrls: photos,
     // Aliases
     description: title,
     mileage: odometer,
@@ -152,14 +222,16 @@ export const useCarStore = create<CarStoreState>((set, get) => ({
 
   getActiveCar: () => {
     const { cars, activeCarId } = get();
-    if (!activeCarId) return cars[0] || null;
-    return cars.find(c => c.id === activeCarId) || cars[0] || null;
+    if (!Array.isArray(cars) || cars.length === 0) return DEFAULT_FALLBACK_CAR;
+    const found = activeCarId ? cars.find(c => c && c.id === activeCarId) : null;
+    return found || cars[0] || DEFAULT_FALLBACK_CAR;
   },
 
   getRecordsForActiveCar: () => {
     const { records, activeCarId } = get();
+    if (!Array.isArray(records)) return [];
     if (!activeCarId) return records;
-    return records.filter(r => r.carId === activeCarId);
+    return records.filter(r => r && r.carId === activeCarId);
   },
 
   setActiveCarId: (id: string) => {
@@ -334,58 +406,72 @@ export const useCarStore = create<CarStoreState>((set, get) => ({
 
   syncFromLocalStorage: () => {
     try {
-      // 1. Cars
-      const rawCarsStr = localStorage.getItem(STORAGE_CARS_KEY);
+      // 1. Cars (check current storage key, then legacy keys for seamless migration)
+      let rawCarsStr = localStorage.getItem(STORAGE_CARS_KEY);
+      if (!rawCarsStr) {
+        const legacyKeys = ['cars', 'terminal_cars', 'garage_cars', 'cars_v1'];
+        for (const k of legacyKeys) {
+          const val = localStorage.getItem(k);
+          if (val) {
+            rawCarsStr = val;
+            break;
+          }
+        }
+      }
+
       let loadedCars: CarProfile[] = [];
       if (rawCarsStr) {
         try {
           const parsed = JSON.parse(rawCarsStr);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            loadedCars = parsed.map(normalizeCarToProfile);
+            loadedCars = parsed
+              .filter(c => c && typeof c === 'object')
+              .map(normalizeCarToProfile);
           }
+        } catch (e) {
+          console.warn('Corrupted cars in localStorage, fallback to default:', e);
+        }
+      }
+
+      // Default fallback car if empty or missing required fields
+      if (loadedCars.length === 0) {
+        loadedCars = [{ ...DEFAULT_FALLBACK_CAR }];
+        try {
+          localStorage.setItem(STORAGE_CARS_KEY, JSON.stringify(loadedCars));
         } catch (e) {}
       }
 
-      // Default fallback car if empty
-      if (loadedCars.length === 0) {
-        const defaultCar: CarProfile = {
-          id: 'demo-car-granta',
-          brand: 'LADA',
-          make: 'LADA',
-          model: 'Granta FL',
-          year: 2021,
-          engine: { volume: '1.6л', type: 'Бензин', power: '106 л.с.', code: '21127' },
-          transmission: 'МКПП',
-          driveType: 'Передний',
-          vin: 'XTA219020M1234567',
-          licensePlate: '01 777 AAA',
-          currentOdometer: 48500,
-          mileage: 48500,
-          notes: 'Семейный автомобиль',
-          ownerId: 'local-owner',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        loadedCars = [defaultCar];
-        localStorage.setItem(STORAGE_CARS_KEY, JSON.stringify(loadedCars));
-      }
-
-      // 2. Active Car ID
+      // 2. Active Car ID validation
       const savedActiveId = localStorage.getItem(STORAGE_ACTIVE_CAR_KEY);
-      const activeCarId = loadedCars.some(c => c.id === savedActiveId)
+      const activeCarId = loadedCars.some(c => c && c.id === savedActiveId)
         ? savedActiveId!
         : loadedCars[0].id;
 
-      // 3. Records
-      const rawRecordsStr = localStorage.getItem(STORAGE_RECORDS_KEY);
+      // 3. Records (check current and legacy keys)
+      let rawRecordsStr = localStorage.getItem(STORAGE_RECORDS_KEY);
+      if (!rawRecordsStr) {
+        const legacyRecordKeys = ['records', 'terminal_records', 'maintenance_records'];
+        for (const k of legacyRecordKeys) {
+          const val = localStorage.getItem(k);
+          if (val) {
+            rawRecordsStr = val;
+            break;
+          }
+        }
+      }
+
       let loadedRecords: ServiceRecord[] = [];
       if (rawRecordsStr) {
         try {
           const parsed = JSON.parse(rawRecordsStr);
           if (Array.isArray(parsed)) {
-            loadedRecords = parsed.map(normalizeRecordToService);
+            loadedRecords = parsed
+              .filter(r => r && typeof r === 'object')
+              .map(normalizeRecordToService);
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('Corrupted records in localStorage:', e);
+        }
       }
 
       set({
@@ -396,7 +482,12 @@ export const useCarStore = create<CarStoreState>((set, get) => ({
       });
     } catch (err) {
       console.error('Error syncing CarStore from LocalStorage:', err);
-      set({ isLoaded: true });
+      set({
+        cars: [{ ...DEFAULT_FALLBACK_CAR }],
+        activeCarId: DEFAULT_FALLBACK_CAR.id,
+        records: [],
+        isLoaded: true,
+      });
     }
   },
 }));

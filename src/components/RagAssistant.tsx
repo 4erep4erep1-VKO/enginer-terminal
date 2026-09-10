@@ -41,6 +41,9 @@ import {
 } from 'lucide-react';
 import { useUserSettings } from './UserSettingsContext';
 import { GlowText } from './GlowText';
+import { normalizeVoiceTranscript, extractFinalSpeechTranscript } from '../lib/voiceNormalizer';
+
+const VASILICH_503_MESSAGE = "Запрос выработался с задержкой или пропала связь. Попробуй повторить еще раз!";
 
 interface RagAssistantProps {
   activeCar: Car | null;
@@ -317,7 +320,9 @@ export function RagAssistant({
       'регламент то', 'сколько проехал', 'мои записи', 'последняя замена', 'прошлая замена',
       'чек', 'расходы', 'сколько потратил', 'сколько потрачено', 'когда была замена',
       'была ли замена', 'затраты', 'стоимость то', 'потратил на ремонт', 'что делать на то',
-      'когда на то', 'пора на то', 'что по регламенту для моей'
+      'когда на то', 'пора на то', 'что по регламенту для моей',
+      'жидкост', 'ресурс', 'состояни', 'масло двс', 'масло кпп', 'тормозн', 'антифриз', 'ож',
+      'остаток масла', 'остаток жидкост', 'износ масл', 'ресурс масл', 'состояние масл'
     ].some(k => q.includes(k));
 
     // Diagnostic & symptoms queries where vehicle history & past repairs are essential
@@ -565,7 +570,7 @@ export function RagAssistant({
     setIsRecording(false);
     setRecordingState('idle');
 
-    const textToSend = spokenTextRef.current.trim();
+    const textToSend = normalizeVoiceTranscript(spokenTextRef.current.trim());
     // Очищаем временный сэмпл распознанной речи
     spokenTextRef.current = '';
 
@@ -867,7 +872,7 @@ export function RagAssistant({
     const cleanPayload = sanitizeChatPayload({
       questionText,
       activeCar,
-      records: shouldIncludeHistory ? records : [],
+      records: records || [],
       parts: shouldIncludeHistory ? parts : [],
       tasks: shouldIncludeHistory ? tasks : [],
       diagnosticSessions: shouldIncludeHistory ? diagnosticSessions : [],
@@ -879,11 +884,33 @@ export function RagAssistant({
     });
 
     try {
-      let response = await fetch('/api/rag/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cleanPayload)
-      });
+      let response: Response;
+      try {
+        response = await fetch('/api/rag/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cleanPayload)
+        });
+
+        // Auto-retry once on 503 / 502 / 504 with 1.5s delay
+        if (response.status === 503 || response.status === 502 || response.status === 504) {
+          console.warn(`[RagAssistant] Server returned ${response.status}, retrying after 1.5s...`);
+          await new Promise(r => setTimeout(r, 1500));
+          response = await fetch('/api/rag/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cleanPayload)
+          });
+        }
+      } catch (fetchErr: any) {
+        console.warn('[RagAssistant] Network error, retrying after 1.5s...', fetchErr);
+        await new Promise(r => setTimeout(r, 1500));
+        response = await fetch('/api/rag/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cleanPayload)
+        });
+      }
 
       // Auto-recover if 413 Payload Too Large is encountered
       if (response.status === 413) {
@@ -909,6 +936,9 @@ export function RagAssistant({
       }
 
       if (!response.ok) {
+        if (response.status === 503) {
+          throw new Error(VASILICH_503_MESSAGE);
+        }
         if (response.status === 413) {
           throw new Error('Размер запроса превышает лимит сервера (HTTP 413). Попробуйте сформулировать вопрос короче.');
         }
@@ -916,7 +946,7 @@ export function RagAssistant({
       }
 
       const data = await response.json();
-      const rawAnswer = data.answer || 'Ответ сформирован.';
+      const rawAnswer = data.answer || data.message || 'Ответ сформирован.';
 
       let structuredDiagnostic: DiagnosticResponse | undefined = undefined;
       if (data.diagnosticResponse) {
@@ -947,10 +977,14 @@ export function RagAssistant({
       setMessages([...newMessagesList, botMsg]);
     } catch (err: any) {
       console.error(err);
+      const is503 = err?.message?.includes('503') || err?.message?.includes('Запрос выработался с задержкой');
+      const errorText = is503
+        ? VASILICH_503_MESSAGE
+        : `Не удалось связаться с Василичем: ${err.message}. Проверьте соединение с интернетом.`;
       const errorMsg: Message = {
         id: Math.random().toString(36).substr(2, 9),
         sender: 'assistant',
-        text: `Не удалось связаться с Василичем: ${err.message}. Проверьте соединение с интернетом.`,
+        text: errorText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setTypingMessageId(errorMsg.id);
@@ -984,7 +1018,7 @@ export function RagAssistant({
       const recognition = new SpeechRecognition();
       recognition.lang = 'ru-RU';
       recognition.continuous = true;
-      recognition.interimResults = true;
+      recognition.interimResults = false;
       recognition.maxAlternatives = 1;
 
       // Audio engine active and ready for input
@@ -1002,20 +1036,11 @@ export function RagAssistant({
       };
 
       recognition.onresult = (event: any) => {
-        // Collect all transcripts safely without slicing or cutting leading characters
-        const cleanText = Array.from(event.results)
-          .map((result: any) => (result && result[0] ? result[0].transcript : ''))
-          .join('')
-          .trimStart();
+        const cleanText = extractFinalSpeechTranscript(event.results);
 
-        // Automatically capitalize first letter
-        const capitalizedText = cleanText 
-          ? cleanText.charAt(0).toUpperCase() + cleanText.slice(1)
-          : '';
-
-        if (capitalizedText) {
-          spokenTextRef.current = capitalizedText;
-          setInputValue(capitalizedText);
+        if (cleanText) {
+          spokenTextRef.current = cleanText;
+          setInputValue(cleanText);
 
           // Reset silence timer on any speech activity
           if (silenceTimerRef.current) {
@@ -1024,7 +1049,7 @@ export function RagAssistant({
 
           // Delay auto-send until 2.0 seconds of complete silence
           silenceTimerRef.current = setTimeout(() => {
-            const textToSend = spokenTextRef.current.trim();
+            const textToSend = normalizeVoiceTranscript(spokenTextRef.current.trim());
             if (textToSend) {
               if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
               stopSpeechRecognition(true);
@@ -1111,7 +1136,7 @@ export function RagAssistant({
     const cleanPayload = sanitizeChatPayload({
       questionText,
       activeCar,
-      records: shouldIncludeHistory ? records : [],
+      records: records || [],
       parts: shouldIncludeHistory ? parts : [],
       tasks: shouldIncludeHistory ? tasks : [],
       diagnosticSessions: shouldIncludeHistory ? diagnosticSessions : [],
@@ -1123,11 +1148,33 @@ export function RagAssistant({
     });
 
     try {
-      let response = await fetch('/api/rag/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cleanPayload)
-      });
+      let response: Response;
+      try {
+        response = await fetch('/api/rag/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cleanPayload)
+        });
+
+        // Auto-retry once on 503 / 502 / 504 with 1.5s delay
+        if (response.status === 503 || response.status === 502 || response.status === 504) {
+          console.warn(`[RagAssistant] Server returned ${response.status} in sendMessageDirectly, retrying after 1.5s...`);
+          await new Promise(r => setTimeout(r, 1500));
+          response = await fetch('/api/rag/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cleanPayload)
+          });
+        }
+      } catch (fetchErr: any) {
+        console.warn('[RagAssistant] Network error in sendMessageDirectly, retrying after 1.5s...', fetchErr);
+        await new Promise(r => setTimeout(r, 1500));
+        response = await fetch('/api/rag/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cleanPayload)
+        });
+      }
 
       // Auto-recover if 413 Payload Too Large is encountered
       if (response.status === 413) {
@@ -1153,6 +1200,9 @@ export function RagAssistant({
       }
 
       if (!response.ok) {
+        if (response.status === 503) {
+          throw new Error(VASILICH_503_MESSAGE);
+        }
         if (response.status === 413) {
           throw new Error('Размер запроса превышает лимит сервера (HTTP 413). Попробуйте сформулировать вопрос короче.');
         }
@@ -1160,7 +1210,7 @@ export function RagAssistant({
       }
 
       const data = await response.json();
-      const rawAnswer = data.answer || 'Ответ сформирован.';
+      const rawAnswer = data.answer || data.message || 'Ответ сформирован.';
 
       let structuredDiagnostic: DiagnosticResponse | undefined = undefined;
       if (data.diagnosticResponse) {
@@ -1191,10 +1241,14 @@ export function RagAssistant({
       setMessages(prev => [...prev, botMsg]);
     } catch (err: any) {
       console.error(err);
+      const is503 = err?.message?.includes('503') || err?.message?.includes('Запрос выработался с задержкой');
+      const errorText = is503
+        ? VASILICH_503_MESSAGE
+        : `Не удалось связаться с Василичем: ${err.message}. Проверьте соединение с интернетом.`;
       const errorMsg: Message = {
         id: Math.random().toString(36).substr(2, 9),
         sender: 'assistant',
-        text: `Не удалось связаться с Василичем: ${err.message}. Проверьте соединение с интернетом.`,
+        text: errorText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setTypingMessageId(errorMsg.id);
@@ -1529,18 +1583,20 @@ export function RagAssistant({
         {vehicleMemorySummary && (
           <div 
             id="bar-vehicle-memory"
-            className="px-3.5 sm:px-4 py-2 bg-[#0A0E17]/95 border-b border-[#1E273D]/80 flex items-center justify-between text-[11px] text-slate-400 gap-2 shrink-0 backdrop-blur-sm shadow-inner"
+            className="px-3.5 sm:px-4 py-2 bg-[#0A0E17]/95 border-b border-cyan-500/20 flex items-center justify-between text-[11px] text-slate-400 gap-2 shrink-0 backdrop-blur-sm shadow-inner"
           >
             <div className="flex items-center gap-1.5 truncate">
-              <span className="inline-flex items-center gap-1 text-cyan-400 font-medium shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                Память машины:
+              <span className="inline-flex items-center gap-1.5 text-cyan-400 font-medium shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(6,182,212,0.9)] animate-pulse" />
+                <span>Память машины:</span>
               </span>
               <span className="text-slate-200 font-semibold truncate">{vehicleMemorySummary.carHeadline}</span>
               <span className="text-slate-600 hidden xs:inline">·</span>
               <span className="text-slate-300 font-mono text-[10px] hidden xs:inline">{vehicleMemorySummary.currentOdometer.toLocaleString('ru-RU')} км</span>
-              <span className="text-slate-600 hidden sm:inline">·</span>
-              <span className="text-slate-400 text-[10px] hidden sm:inline">ТО: {vehicleMemorySummary.recordsCount} зап.</span>
+              <span className="text-slate-600">·</span>
+              <span className="text-cyan-400 font-mono text-[10px] font-medium shrink-0">
+                (Записей: {records.length})
+              </span>
             </div>
             {vehicleMemorySummary.fluidsSummary && vehicleMemorySummary.fluidsSummary.length > 0 && (
               <div className="flex items-center gap-1 shrink-0">
@@ -1548,12 +1604,12 @@ export function RagAssistant({
                   <span
                     key={fluid.key}
                     title={`${fluid.name}: ресурс ${fluid.health}% (${fluid.statusText})`}
-                    className={`px-1.5 py-0.5 rounded text-[9px] font-medium border ${
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${
                       fluid.isOverdue || fluid.health <= 15
                         ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
                         : fluid.health <= 40
                         ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                        : 'bg-emerald-500/10 border-cyan-500/30 text-cyan-300 shadow-[0_0_6px_rgba(6,182,212,0.15)]'
                     }`}
                   >
                     {fluid.name.split(' ')[0]}: {fluid.health}%
@@ -1779,15 +1835,30 @@ export function RagAssistant({
             }
 
             // Assistant Message
+            const isCurrentlyStreaming = typingMessageId === m.id;
+
             return (
               <div key={m.id} className="group relative flex flex-col items-start w-full max-w-full mr-auto">
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-0.5 pl-1">
-                  <span className="text-[#06B6D4] font-medium">Василич</span>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-1 pl-1">
+                  <span className="text-[#06B6D4] font-medium flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${isCurrentlyStreaming ? 'bg-cyan-400 shadow-[0_0_6px_rgba(6,182,212,0.9)] animate-pulse' : 'bg-cyan-500/70'}`} />
+                    Василич
+                  </span>
                   <span>·</span>
                   <span>{m.timestamp}</span>
+                  {isCurrentlyStreaming && (
+                    <span className="text-[9px] font-mono text-cyan-300 px-1.5 py-0.2 bg-cyan-500/10 border border-cyan-500/25 rounded tracking-wider flex items-center gap-1 animate-pulse">
+                      <span className="w-1 h-1 rounded-full bg-cyan-400" />
+                      STREAMING
+                    </span>
+                  )}
                 </div>
 
-                <div className="w-full max-w-[96%] sm:max-w-[90%] bg-[#111622] border border-[#1E273D] rounded-2xl rounded-tl-sm px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-[13px] leading-relaxed text-slate-200 shadow-sm relative">
+                <div className={`w-full max-w-[96%] sm:max-w-[90%] bg-[#111622] rounded-2xl rounded-tl-sm px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-[13px] leading-relaxed text-[#e2e8f0] relative transition-all duration-300 ${
+                  isCurrentlyStreaming 
+                    ? 'border border-cyan-500/35 shadow-[0_0_18px_rgba(6,182,212,0.14)] neon-message-in' 
+                    : 'border border-[#1E273D] shadow-sm'
+                }`}>
                   {m.diagnosticResponse && m.diagnosticResponse.possibleCauses?.length > 0 ? (
                     <DiagnosticResponseCard
                       response={m.diagnosticResponse}
@@ -1985,13 +2056,15 @@ export function RagAssistant({
           })}
 
           {isLoading && (
-            <div className="flex flex-col items-start w-full max-w-full mr-auto">
-              <div className="text-[10px] text-[#06B6D4] font-medium mb-0.5 pl-1">
-                Василич думает...
+            <div className="flex flex-col items-start w-full max-w-full mr-auto neon-message-in">
+              <div className="text-[10px] text-[#06B6D4] font-medium mb-1 pl-1 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(6,182,212,0.9)] animate-pulse" />
+                <span>Василич анализирует...</span>
               </div>
-              <div className="px-3.5 py-2.5 border border-[#1E273D] bg-[#111622] text-xs text-slate-300 rounded-2xl rounded-tl-sm flex items-center gap-2.5 shadow-sm">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#06B6D4]" />
-                <span>{loadingStatusText}</span>
+              <div className="px-3.5 py-2.5 border border-cyan-500/25 bg-[#111622] text-xs text-slate-200 rounded-2xl rounded-tl-sm flex items-center gap-2.5 shadow-[0_0_12px_rgba(6,182,212,0.1)]">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#06B6D4] shrink-0" />
+                <span className="neon-text-stream">{loadingStatusText}</span>
+                <span className="neon-cursor" aria-hidden="true" />
               </div>
             </div>
           )}
@@ -2076,6 +2149,13 @@ export function RagAssistant({
               </button>
             </div>
           </form>
+
+          {/* AI Safety Disclaimer */}
+          <div className="w-full max-w-4xl mx-auto text-center pt-1.5 px-2 select-none">
+            <p className="text-[10px] sm:text-[11px] text-slate-500 leading-tight">
+              Василич — ИИ-ассистент. Проверяйте критические моменты затяжки и спецификации в заводском руководстве (ТОиР).
+            </p>
+          </div>
         </div>
 
       </div>
@@ -2168,64 +2248,100 @@ function FormattedMessage({
   }, [displayText, animate, onType, animatedText.length, text.length, onComplete]);
 
   return (
-    <div className="space-y-1 font-sans text-xs sm:text-[13px] relative">
+    <div className={`space-y-1.5 font-sans text-xs sm:text-[13px] relative transition-all ${
+      isTyping ? 'neon-text-stream' : 'neon-text-stream-settled'
+    }`}>
       {lines.map((line, idx) => {
+        const isLastLine = idx === lines.length - 1;
+
         if (line.startsWith('### ')) {
           return (
-            <h4 key={idx} className="text-xs font-semibold text-[#06B6D4] mt-2 mb-0.5">
-              {line.substring(4)}
+            <h4 key={idx} className="text-xs font-semibold text-[#06B6D4] mt-2 mb-0.5 flex items-center flex-wrap">
+              <span>{line.substring(4)}</span>
+              {isLastLine && isTyping && <span className="neon-cursor" aria-hidden="true" />}
             </h4>
           );
         }
         if (line.startsWith('## ') || line.startsWith('# ')) {
           const headerText = line.startsWith('## ') ? line.substring(3) : line.substring(2);
           return (
-            <h3 key={idx} className="text-xs sm:text-[13px] font-bold text-white mt-2 mb-0.5">
-              {headerText}
+            <h3 key={idx} className="text-xs sm:text-[13px] font-bold text-white mt-2 mb-0.5 flex items-center flex-wrap">
+              <span>{headerText}</span>
+              {isLastLine && isTyping && <span className="neon-cursor" aria-hidden="true" />}
             </h3>
           );
         }
         if (line.startsWith('* ') || line.startsWith('- ') || line.startsWith('• ')) {
-          const content = parseInlineFormatting(line.replace(/^[\*\-•]\s*/, ''));
+          const content = parseInlineFormatting(line.replace(/^[\*\-•]\s*/, ''), isTyping);
           return (
-            <div key={idx} className="flex items-start gap-1.5 ml-0.5 py-0.5 text-slate-200">
-              <span className="text-[#06B6D4] select-none text-xs mt-0.5">•</span>
-              <span className="flex-1 leading-relaxed">{content}</span>
+            <div key={idx} className="flex items-start gap-1.5 ml-0.5 py-0.5 text-[#e2e8f0]">
+              <span className="text-[#06B6D4] select-none text-xs mt-0.5 shrink-0">•</span>
+              <span className="flex-1 leading-relaxed">
+                {content}
+                {isLastLine && isTyping && <span className="neon-cursor" aria-hidden="true" />}
+              </span>
             </div>
           );
         }
         const numberedMatch = line.match(/^(\d+[\.\)])\s+(.*)/);
         if (numberedMatch) {
           return (
-            <div key={idx} className="flex items-start gap-1.5 ml-0.5 py-0.5 text-slate-200">
-              <span className="text-[#06B6D4] font-semibold text-xs mt-0.5">{numberedMatch[1]}</span>
-              <span className="flex-1 leading-relaxed">{parseInlineFormatting(numberedMatch[2])}</span>
+            <div key={idx} className="flex items-start gap-1.5 ml-0.5 py-0.5 text-[#e2e8f0]">
+              <span className="text-[#06B6D4] font-semibold text-xs mt-0.5 shrink-0">{numberedMatch[1]}</span>
+              <span className="flex-1 leading-relaxed">
+                {parseInlineFormatting(numberedMatch[2], isTyping)}
+                {isLastLine && isTyping && <span className="neon-cursor" aria-hidden="true" />}
+              </span>
             </div>
           );
         }
         if (line.trim() === '') {
-          return <div key={idx} className="h-0.5" />;
+          return (
+            <div key={idx} className="h-1">
+              {isLastLine && isTyping && <span className="neon-cursor" aria-hidden="true" />}
+            </div>
+          );
         }
-        return <p key={idx} className="leading-relaxed text-slate-200">{parseInlineFormatting(line)}</p>;
+        return (
+          <p key={idx} className="leading-relaxed text-[#e2e8f0]">
+            {parseInlineFormatting(line, isTyping)}
+            {isLastLine && isTyping && <span className="neon-cursor" aria-hidden="true" />}
+          </p>
+        );
       })}
-      {isTyping && (
-        <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-[#06B6D4] animate-pulse align-middle" />
-      )}
     </div>
   );
 }
 
-function parseInlineFormatting(text: string) {
+function parseInlineFormatting(text: string, isTyping: boolean = false) {
   const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="text-cyan-300 font-semibold">{part.slice(2, -2)}</strong>;
+      return (
+        <strong 
+          key={i} 
+          className={`font-semibold transition-colors ${
+            isTyping 
+              ? 'text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.45)]' 
+              : 'text-cyan-300'
+          }`}
+        >
+          {part.slice(2, -2)}
+        </strong>
+      );
     }
     if (part.startsWith('*') && part.endsWith('*')) {
       return <em key={i} className="text-slate-300 italic">{part.slice(1, -1)}</em>;
     }
     if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="bg-[#0B0E14] border border-[#1E273D] text-[11px] text-[#06B6D4] px-1 py-0.5 rounded font-mono">{part.slice(1, -1)}</code>;
+      return (
+        <code 
+          key={i} 
+          className="bg-[#0B0E14] border border-cyan-500/20 text-[11px] text-[#06B6D4] px-1 py-0.5 rounded font-mono shadow-[0_0_6px_rgba(6,182,212,0.12)]"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
     }
     return part;
   });

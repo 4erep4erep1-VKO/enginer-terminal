@@ -34,6 +34,7 @@ export interface CarProfile {
   // Backward-compatibility properties with legacy Car type
   make?: string;                                    // Alias for brand
   mileage?: number;                                 // Alias for currentOdometer
+  odometer?: number;                                // Alias for currentOdometer
   imageUrl?: string;                                // Alias for photoUrl
   ownerId?: string;
   userId?: string;

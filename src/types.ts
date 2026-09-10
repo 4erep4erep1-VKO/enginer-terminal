@@ -28,6 +28,7 @@ export interface Car {
   vin?: string;
   licensePlate?: string;
   mileage: number;
+  odometer?: number;
   imageUrl?: string;
   bodyType?: BodyType;
   ownerId: string;
@@ -67,7 +68,9 @@ export interface MaintenanceRecord {
   carId: string;
   userId?: string;
   description: string;
+  title?: string;
   mileage: number;
+  odometer?: number;
   partsPrice: number;
   laborPrice: number;
   date: string;

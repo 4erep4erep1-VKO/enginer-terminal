@@ -22,11 +22,6 @@ function getAiClient(): GoogleGenAI {
     }
     aiInstance = new GoogleGenAI({
       apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
     });
   }
   return aiInstance;
@@ -51,6 +46,10 @@ app.use((err: any, req: Request, res: Response, next: any) => {
 });
 
 const PORT = 3000;
+
+app.get("/api/health", (req: Request, res: Response) => {
+  res.json({ status: "ok" });
+});
 
 // Hardcoded PDF manual extracts to simulate a vector search database of automotive manuals
 const CAR_MANUALS_DB = [
@@ -143,7 +142,7 @@ Format JSON:
 }`;
 
     let response: any = null;
-    const candidateModels = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.7-flash"];
+    const candidateModels = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
     let lastError: any = null;
 
     for (const modelName of candidateModels) {
@@ -256,7 +255,7 @@ app.post("/api/parse-service-record", async (req: Request, res: Response): Promi
 }`;
 
     let response: any = null;
-    const candidateModels = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+    const candidateModels = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
 
     for (const modelName of candidateModels) {
       try {
@@ -308,7 +307,9 @@ function classifyQuestionIntent(questionText: string, contextMode?: string): 're
     'следующее то', 'регламент то', 'сколько проехал', 'мои записи', 'последняя замена',
     'прошлая замена', 'чек', 'расходы', 'сколько потратил', 'сколько потрачено',
     'когда была замена', 'была ли замена', 'затраты', 'стоимость то', 'потратил на ремонт',
-    'что делать на то', 'когда на то', 'пора на то', 'что по регламенту для моей'
+    'что делать на то', 'когда на то', 'пора на то', 'что по регламенту для моей',
+    'жидкост', 'ресурс', 'состояни', 'масло двс', 'масло кпп', 'тормозн', 'антифриз', 'ож',
+    'остаток масла', 'остаток жидкост', 'износ масл', 'ресурс масл', 'состояние масл'
   ];
 
   // 2. Pure Technical reference keywords
@@ -418,7 +419,7 @@ const handleRagAsk = async (req: Request, res: Response): Promise<void> => {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     const activeCarId = carProfile?.id;
     let carRecords: any[] = [];
-    if (!isReferenceMode && Array.isArray(records)) {
+    if (Array.isArray(records)) {
       carRecords = activeCarId 
         ? records.filter((r: any) => r.carId === activeCarId || (!r.carId && !records.some((other: any) => other.carId && other.carId !== activeCarId)))
         : records;
@@ -626,6 +627,7 @@ ${toneInstruction}
 
 2. ПАМЯТЬ АВТОМОБИЛЯ (ВАСИЛИЧ ПОМНИТ ТВОЮ МАШИНУ):
    - Ты действительно помнишь эту конкретную машину (${carTitle}, текущий пробег ${currentMileage.toLocaleString('ru-RU')} км).
+   - Если пользователь спрашивает про любую жидкость (масло, антифриз, тормозуха), ищи ответ в блоке [СОСТОЯНИЕ И РЕСУРС ТЕХНИЧЕСКИХ ЖИДКОСТЕЙ] и истории ТО, называй конкретные даты и пробеги.
    - Если в истории ТО есть запись — называй точные даты и пробеги («Масло последний раз меняли 15 марта 2024 года на 45 000 км. Сейчас 52 000 — прошло 7 000 км.»).
    - Если информации нет — честно и прямо скажи: «По остальным работам у меня записей нет.» Ничего не выдумывай!
 
@@ -683,12 +685,21 @@ ${toneInstruction}
      3. Назови 1-2 самые вероятные причины и задай РОВНО ОДИН конкретный вопрос для уточнения симптома.
      4. ОБЯЗАТЕЛЬНО заполни поле "quickOptions" массивом из 2-4 коротких вариантов ответа для быстрых кнопок в UI (например: ["На холодную", "На горячую", "Постоянно"] или ["Глухой стук", "Звонкий металлический"]).
 
+6. ПРАВИЛО ИСТОЧНИКОВ И БЕЗОПАСНОСТИ:
+   - Когда ты называешь точные моменты затяжки болтов/гаек, технические зазоры свечей, объемы или допуски жидкостей, ВСЕГДА добавляй в конце фразы источник и дисклеймер.
+   - Пример формата: 
+     'Затяжка болтов ГБЦ: 20 Н·м + довернуть на 90° (Источник: Технологическая инструкция ВАЗ / Руководство по ремонту). ⚠️ Всегда перепроверяйте критические моменты по заводской документации!'
+
 ${isReferenceMode ? `
 ДАННЫЕ АВТОМОБИЛЯ (МОДИФИКАЦИЯ):
 ${carContextText}
 
+${vehicleContextResult.fluidsLifecycleBlock}
+
 РЕЖИМ ОТВЕТА: БЫСТРЫЙ СПРАВОЧНИК (FAST REFERENCE MODE)
 - Запрос пользователя классифицирован как справочный (моменты затяжки, допуски масел, артикулы, зазоры клапанов, схемы, общие вопросы).
+- Если пользователь спрашивает про любую жидкость (масло, антифриз, тормозуха), ищи ответ в блоке [СОСТОЯНИЕ И РЕСУРС ТЕХНИЧЕСКИХ ЖИДКОСТЕЙ] и истории ТО, называй конкретные даты и пробеги.
+- ПРАВИЛО ИСТОЧНИКОВ И БЕЗОПАСНОСТИ: Когда ты называешь точные моменты затяжки болтов/гаек, технические зазоры свечей, объемы или допуски жидкостей, ВСЕГДА добавляй в конце фразы источник и дисклеймер. Пример: 'Затяжка болтов ГБЦ: 20 Н·м + довернуть на 90° (Источник: Технологическая инструкция ВАЗ / Руководство по ремонту). ⚠️ Всегда перепроверяйте критические моменты по заводской документации!'
 - Давай точные технические данные, каталожные допуски и регламенты для ${carContextText}.
 ` : `
 РЕАЛЬНАЯ СИСТЕМНАЯ ДАТА:
@@ -757,7 +768,7 @@ ${contextString}
     }
 
     let response: any = null;
-    const candidateModels = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.7-flash"];
+    const candidateModels = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
     let lastError: any = null;
 
     for (const modelName of candidateModels) {
@@ -1279,7 +1290,39 @@ ${pendingTasks}
     });
   } catch (err: any) {
     console.error("Error in RAG assistant:", err);
-    res.status(500).json({ error: "Assistant error", details: err.message });
+    const is503OrOverload = 
+      err?.status === 503 || 
+      err?.statusCode === 503 || 
+      err?.code === 'ETIMEDOUT' ||
+      err?.code === 'ECONNRESET' ||
+      err?.message?.includes('503') || 
+      err?.message?.includes('overloaded') ||
+      err?.message?.includes('UNAVAILABLE') ||
+      err?.message?.includes('deadline exceeded');
+
+    const vasilichFallback = "Запрос выработался с задержкой или пропала связь. Попробуй повторить еще раз!";
+    if (is503OrOverload) {
+      res.status(200).json({
+        answer: vasilichFallback,
+        message: vasilichFallback,
+        intent: "analytical",
+        actions: [],
+        quickOptions: [],
+        diagnosticResponse: {
+          summary: vasilichFallback,
+          severity: "info",
+          actions: []
+        }
+      });
+      return;
+    }
+
+    res.status(500).json({ 
+      error: "Assistant error", 
+      details: err.message,
+      answer: vasilichFallback,
+      message: vasilichFallback
+    });
   }
 };
 

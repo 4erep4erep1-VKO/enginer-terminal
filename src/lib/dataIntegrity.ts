@@ -454,3 +454,77 @@ export function migrateAndSanitizeLocalStorage(): {
     };
   }
 }
+
+/**
+ * Returns a rich set of realistic vehicle maintenance records for demo or recovery
+ */
+export function getStandardDemoRecords(carId: string): MaintenanceRecord[] {
+  return [
+    {
+      id: `rec-demo-1-${Date.now()}`,
+      carId,
+      date: '2024-03-15',
+      mileage: 45000,
+      category: 'Engine',
+      description: 'Замена масла ДВС (Synthetic 5W-40) и масляного фильтра MANN W914/2',
+      partsPrice: 18500,
+      laborPrice: 3500,
+      partsUsed: ['Масло Synthetic 5W-40 4л', 'Масляный фильтр MANN W914/2'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: `rec-demo-2-${Date.now() + 1}`,
+      carId,
+      date: '2023-11-20',
+      mileage: 40200,
+      category: 'Brakes',
+      description: 'Замена передних тормозных колодок Bosch и ревизия направляющих суппортов',
+      partsPrice: 12000,
+      laborPrice: 4000,
+      partsUsed: ['Колодки передние Bosch', 'Смазка направляющих TRW'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: `rec-demo-3-${Date.now() + 2}`,
+      carId,
+      date: '2023-08-05',
+      mileage: 35000,
+      category: 'Other',
+      description: 'Комплексная замена салонного угольного и воздушного фильтра ДВС',
+      partsPrice: 6500,
+      laborPrice: 1500,
+      partsUsed: ['Салонный фильтр угольный', 'Воздушный фильтр Big Filter'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: `rec-demo-4-${Date.now() + 3}`,
+      carId,
+      date: '2023-02-14',
+      mileage: 29800,
+      category: 'Electrical',
+      description: 'Замена свечей зажигания NGK V-Line 11 и проверка высоковольтных проводов',
+      partsPrice: 8400,
+      laborPrice: 2000,
+      partsUsed: ['Свечи NGK V-Line (4 шт.)'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: `rec-demo-5-${Date.now() + 4}`,
+      carId,
+      date: '2022-09-10',
+      mileage: 21500,
+      category: 'Oil & Fluids',
+      description: 'Замена тормозной жидкости DOT-4 с прокачкой контуров ABS',
+      partsPrice: 4200,
+      laborPrice: 3800,
+      partsUsed: ['Жидкость тормозная DOT-4 Felix 1л'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ];
+}
+

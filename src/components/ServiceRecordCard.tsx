@@ -44,17 +44,19 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
   const { formatCurrency, formatMileage } = useUserSettings();
   const [cardLightboxImg, setCardLightboxImg] = useState<string | null>(null);
 
-  const totalCost = (record.partsPrice || 0) + (record.laborPrice || 0);
+  if (!record) return null;
 
-  // Unified list of photo receipts and documents
+  const totalCost = (record?.partsPrice ?? 0) + (record?.laborPrice ?? 0);
+
+  // Unified list of photo receipts and documents with optional chaining
   const allPhotos = Array.from(new Set([
-    ...(record.attachments || []),
-    ...(record.photoUrls || []),
-    ...(record.photoReceiptUrl ? [record.photoReceiptUrl] : [])
+    ...(record?.attachments || []),
+    ...(record?.photoUrls || []),
+    ...(record?.photoReceiptUrl ? [record.photoReceiptUrl] : [])
   ])).filter(Boolean);
 
   // Helper to get node/category icon
-  const getCategoryIcon = (category: RecordCategory) => {
+  const getCategoryIcon = (category?: RecordCategory) => {
     switch (category) {
       case 'Engine':
         return Cpu;
@@ -78,7 +80,7 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
   };
 
   // Helper to get system tag based on category
-  const getSystemTag = (category: RecordCategory) => {
+  const getSystemTag = (category?: RecordCategory) => {
     switch (category) {
       case 'Engine': return 'Раздел-01: Двигатель';
       case 'Suspension': return 'Раздел-02: Подвеска и ходовая';
@@ -92,13 +94,13 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
     }
   };
 
-  const CategoryIcon = getCategoryIcon(record.category);
+  const CategoryIcon = getCategoryIcon(record?.category);
 
   return (
     <div 
       onClick={() => {
         if (navigator.vibrate) navigator.vibrate(10);
-        if (onSelect) onSelect(record);
+        if (onSelect && record) onSelect(record);
       }}
       className="bg-[#111622] hover:bg-[#151C2C] border border-[#1E273D] hover:border-cyan-500/30 rounded-2xl p-3.5 sm:p-4 transition-all group cursor-pointer font-sans relative overflow-hidden shadow-sm"
     >
@@ -112,10 +114,10 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
 
           <div className="min-w-0 flex-1">
             <h4 className="text-xs sm:text-sm font-semibold text-slate-100 leading-snug group-hover:text-cyan-300 transition-colors">
-              {record.description}
+              {record?.description || record?.title || 'Запись ТО'}
             </h4>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              {CATEGORY_NAMES[record.category] || record.category}
+              {(record?.category && CATEGORY_NAMES[record.category]) || record?.category || 'Обслуживание'}
             </div>
           </div>
         </div>
@@ -123,12 +125,12 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
         {/* Date & Badges */}
         <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pl-10 sm:pl-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {record.relatedDtc && (
+            {record?.relatedDtc && (
               <span className="bg-rose-950/80 border border-rose-500/30 text-rose-300 text-[10px] font-mono px-1.5 py-0.5 rounded-md">
                 {record.relatedDtc}
               </span>
             )}
-            {record.source === 'task' && (
+            {record?.source === 'task' && (
               <span className="bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded-md">
                 Из плана
               </span>
@@ -149,7 +151,7 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
             )}
             <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
               <Calendar className="w-3 h-3 text-slate-500 sm:hidden" />
-              {record.date}
+              {record?.date || ''}
             </span>
           </div>
 
@@ -160,11 +162,11 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
               onClick={(e) => {
                 e.stopPropagation();
                 if (navigator.vibrate) navigator.vibrate(15);
-                onEdit(record);
+                if (record) onEdit(record);
               }}
               className="p-1 rounded-lg border border-[#1E273D] hover:border-cyan-500/40 bg-[#0B0E14] text-slate-400 hover:text-white transition-colors cursor-pointer"
               title="Редактировать"
-              id={`btn-quick-edit-${record.id}`}
+              id={`btn-quick-edit-${record?.id || 'new'}`}
             >
               <Edit3 className="w-3.5 h-3.5" />
             </button>
@@ -180,32 +182,35 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
           <div className="inline-flex items-center text-xs text-slate-300 bg-[#0B0E14] border border-[#1E273D] px-2.5 py-1 rounded-lg w-fit">
             <Gauge className="w-3.5 h-3.5 mr-1.5 text-[#06B6D4] shrink-0" />
             <span className="text-slate-400 mr-1">Пробег:</span>
-            <span className="font-semibold text-slate-100 font-mono">{formatMileage(record.mileage)}</span>
+            <span className="font-semibold text-slate-100 font-mono">{formatMileage(record?.mileage ?? record?.odometer ?? 0)}</span>
           </div>
 
           {/* Parts Used */}
-          {record.partsUsed && record.partsUsed.length > 0 && (
+          {(record?.partsUsed?.length ?? 0) > 0 && (
             <div className="space-y-1">
               <div className="text-[11px] text-slate-400 flex items-center gap-1">
                 <Layers className="w-3 h-3 text-[#06B6D4]" />
                 <span>Замененные запчасти:</span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {record.partsUsed.map((part, idx) => (
-                  <span 
-                    key={idx}
-                    className="text-[11px] bg-[#0B0E14] border border-[#1E273D] text-slate-300 px-2 py-0.5 rounded-md"
-                    title={part}
-                  >
-                    {part}
-                  </span>
-                ))}
+                {record?.partsUsed?.map((part: any, idx) => {
+                  const partName = typeof part === 'string' ? part : (part?.name || String(part));
+                  return (
+                    <span 
+                      key={idx}
+                      className="text-[11px] bg-[#0B0E14] border border-[#1E273D] text-slate-300 px-2 py-0.5 rounded-md"
+                      title={partName}
+                    >
+                      {partName}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* Voice transcript */}
-          {record.voiceTranscript && (
+          {record?.voiceTranscript && (
             <div className="text-[11px] bg-[#0B0E14] border border-[#1E273D] rounded-lg p-2 text-slate-400 italic leading-relaxed">
               «{record.voiceTranscript}»
             </div>
@@ -215,16 +220,16 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
         {/* Cost Summary */}
         <div className="md:col-span-5 lg:col-span-4 border-t md:border-t-0 md:border-l border-[#1E273D] pt-2 md:pt-0 md:pl-3 flex flex-col justify-between">
           <div className="space-y-1 text-xs">
-            {record.partsPrice > 0 && (
+            {(record?.partsPrice ?? 0) > 0 && (
               <div className="flex justify-between text-slate-400">
                 <span>Запчасти:</span>
-                <span className="font-mono text-slate-300">{formatCurrency(record.partsPrice)}</span>
+                <span className="font-mono text-slate-300">{formatCurrency(record?.partsPrice ?? 0)}</span>
               </div>
             )}
-            {record.laborPrice > 0 && (
+            {(record?.laborPrice ?? 0) > 0 && (
               <div className="flex justify-between text-slate-400">
                 <span>Работы:</span>
-                <span className="font-mono text-slate-300">{formatCurrency(record.laborPrice)}</span>
+                <span className="font-mono text-slate-300">{formatCurrency(record?.laborPrice ?? 0)}</span>
               </div>
             )}
           </div>
@@ -286,10 +291,10 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
             onClick={(e) => {
               e.stopPropagation();
               if (navigator.vibrate) navigator.vibrate(15);
-              onEdit(record);
+              if (record) onEdit(record);
             }}
             className="text-xs text-slate-300 hover:text-white border border-[#1E273D] hover:border-cyan-500/40 bg-[#151C2C] px-3 py-1.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-colors font-medium"
-            id={`btn-edit-${record.id}`}
+            id={`btn-edit-${record?.id || 'new'}`}
             title="Редактировать запись"
           >
             <Edit3 className="w-3.5 h-3.5 text-[#06B6D4]" />
@@ -302,10 +307,10 @@ export function ServiceRecordCard({ record, onDelete, onEdit, onSelect }: Servic
             onClick={(e) => {
               e.stopPropagation();
               if (navigator.vibrate) navigator.vibrate(15);
-              onDelete(record.id);
+              if (record?.id) onDelete(record.id);
             }}
             className="text-xs text-rose-400 hover:text-rose-200 border border-[#1E273D] hover:border-rose-500/40 bg-[#151C2C] px-3 py-1.5 rounded-xl cursor-pointer transition-colors flex items-center gap-1.5 font-medium"
-            id={`btn-del-${record.id}`}
+            id={`btn-del-${record?.id || 'new'}`}
             title="Удалить запись"
           >
             <Trash2 className="w-3.5 h-3.5" />

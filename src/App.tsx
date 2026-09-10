@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Car, MaintenanceRecord, Part, VehicleTask, DiagnosticSession, RecordCategory } from './types';
-import { migrateAndSanitizeLocalStorage } from './lib/dataIntegrity';
+import { migrateAndSanitizeLocalStorage, getStandardDemoRecords } from './lib/dataIntegrity';
 import { ServiceHub } from './components/ServiceHub';
 import { GarageHub } from './components/GarageHub';
 import { RagAssistant } from './components/RagAssistant';
@@ -444,6 +444,36 @@ export default function App() {
         setConfirmState(prev => ({ ...prev, isOpen: false }));
       }
     });
+  };
+
+  const handleImportDemoData = () => {
+    let targetCar = activeCar;
+    if (!targetCar && cars.length > 0) {
+      targetCar = cars[0];
+    }
+    if (!targetCar) {
+      const fallbackCar: Car = {
+        id: `demo-car-${Date.now()}`,
+        make: 'LADA',
+        model: 'Granta FL',
+        year: 2021,
+        engine: '1.6л 16V (106 л.с.)',
+        mileage: 48500,
+        vin: 'XTA219020M1234567',
+        licensePlate: '01 777 AAA',
+        ownerId: 'local-owner',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      setCars([fallbackCar]);
+      setActiveCarId(fallbackCar.id);
+      targetCar = fallbackCar;
+    }
+
+    const demoRecords = getStandardDemoRecords(targetCar.id);
+    setRecords(demoRecords);
+    localStorage.setItem('terminal_records_v2', JSON.stringify(demoRecords));
+    return demoRecords.length;
   };
 
   const handleDeletePart = (id: string) => {
@@ -1013,7 +1043,6 @@ export default function App() {
           }
         }}
         onOpenVoiceRecord={handleOpenVoiceRecord}
-        onOpenTechSpecs={() => setShowTechSpecs(true)}
         urgentMaintenanceCount={activeCarUrgentCount}
         hasCriticalIssues={hasCriticalUrgent}
       />
@@ -1182,7 +1211,6 @@ export default function App() {
                   setActiveTab('garage');
                   setGarageSubTab('parts');
                 }}
-                onOpenTechSpecs={() => setShowTechSpecs(true)}
                 onNavigateTab={(tab, dtcCode) => {
                   if (dtcCode) setFocusedDtcCode(dtcCode);
                   setActiveTab(tab);
@@ -1331,6 +1359,7 @@ export default function App() {
                 onUsePart={handleUsePart}
                 partsSearchFilter={partsSearchFilter}
                 initialSubTab={garageSubTab}
+                onImportDemoData={handleImportDemoData}
               />
             </ErrorBoundary>
           </div>

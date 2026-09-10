@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { MaintenanceRecord, RecordCategory } from '../types';
 import { useUserSettings } from './UserSettingsContext';
+import { normalizeVoiceTranscript } from '../lib/voiceNormalizer';
 import { 
   X, 
   Check, 
@@ -73,7 +74,7 @@ export function SimpleAddRecordModal({
   const handleToggleVoice = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Голосовой ввод не поддерживается в вашем браузере. Используйте поле ввода текста.');
+      setErrorMsg('Голосовой ввод не поддерживается в вашем браузере. Используйте поле ввода текста.');
       return;
     }
 
@@ -96,7 +97,8 @@ export function SimpleAddRecordModal({
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         if (transcript) {
-          parseVoiceTranscript(transcript);
+          const cleaned = normalizeVoiceTranscript(transcript);
+          parseVoiceTranscript(cleaned);
         }
       };
 

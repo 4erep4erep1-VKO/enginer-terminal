@@ -158,7 +158,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    return {
+      user: null,
+      firebaseUser: null,
+      loading: false,
+      signInWithEmail: async () => ({ error: 'Auth not initialized' }),
+      signUpWithEmail: async () => ({ error: 'Auth not initialized' }),
+      signInWithGoogle: async () => ({ error: 'Auth not initialized' }),
+      signInAsDemoUser: () => {},
+      signOut: async () => {},
+    };
   }
   return context;
 };

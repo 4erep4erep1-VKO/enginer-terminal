@@ -289,3 +289,91 @@
   opacity: 0;
   animation: glowIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ================================================================
+   NEON TEXT STREAMING & TERMINAL CARET SYSTEM
+   ================================================================ */
+
+/* Terminal Caret Blinking */
+@keyframes neonCursorBlink {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.9), 0 0 16px rgba(6, 182, 212, 0.45);
+    background-color: #06B6D4;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 0.15;
+    box-shadow: 0 0 2px rgba(6, 182, 212, 0.2);
+    background-color: rgba(6, 182, 212, 0.4);
+    transform: scaleY(0.9);
+  }
+}
+
+.neon-cursor {
+  display: inline-block;
+  width: 6px;
+  height: 1.15em;
+  margin-left: 2px;
+  vertical-align: -0.2em;
+  background-color: #06B6D4;
+  border-radius: 1px;
+  animation: neonCursorBlink 0.75s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.9), 0 0 16px rgba(6, 182, 212, 0.45);
+}
+
+/* Neon Text Stream Glow Utility (text-shadow: 0 0 8px rgba(6, 182, 212, 0.4)) */
+.neon-text-stream {
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+  color: #E2E8F0;
+  transition: text-shadow 0.35s ease, color 0.35s ease;
+}
+
+/* Settled readable text state */
+.neon-text-stream-settled {
+  text-shadow: none;
+  color: #E2E8F0;
+  transition: text-shadow 0.4s ease, color 0.4s ease;
+}
+
+/* Freshly revealed characters/words */
+@keyframes neonCharAppear {
+  0% {
+    opacity: 0.2;
+    color: #67E8F9;
+    text-shadow: 0 0 12px rgba(6, 182, 212, 0.9), 0 0 20px rgba(6, 182, 212, 0.5);
+  }
+  60% {
+    opacity: 1;
+    color: #A5F3FC;
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.45);
+  }
+  100% {
+    opacity: 1;
+    color: #E2E8F0;
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+  }
+}
+
+.neon-token-active {
+  display: inline-block;
+  animation: neonCharAppear 0.35s ease-out forwards;
+}
+
+/* Assistant Message Bubble Entrance */
+@keyframes neonMessageEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.2);
+    border-color: rgba(6, 182, 212, 0.45);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.neon-message-in {
+  animation: neonMessageEntrance 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

@@ -54,7 +54,6 @@ interface VehicleDashboardProps {
   onOpenAddRecordWithVoice?: () => void;
   onOpenAddTask: () => void;
   onOpenAddPart: () => void;
-  onOpenTechSpecs: () => void;
   onNavigateTab: (tab: 'dashboard' | 'obd' | 'service' | 'rag' | 'garage', dtcCode?: string) => void;
   onNavigateToRagWithQuestion: (question: string) => void;
   onViewRecord: (record: MaintenanceRecord) => void;
@@ -79,7 +78,6 @@ export function VehicleDashboard({
   onOpenAddRecordWithVoice,
   onOpenAddTask,
   onOpenAddPart,
-  onOpenTechSpecs,
   onNavigateTab,
   onNavigateToRagWithQuestion,
   onViewRecord,
@@ -129,11 +127,11 @@ export function VehicleDashboard({
       onAction: () => void;
     }> = [];
 
-    const currentMileage = activeCar.mileage || 0;
+    const currentMileage = activeCar?.odometer ?? activeCar?.mileage ?? 0;
     const now = new Date();
 
     // 0. Smart Reminders & Mileage Forecasts (from Василич Dual-Limit & Average Daily Run)
-    if (smartCarInsights.reminders.length > 0) {
+    if ((smartCarInsights?.reminders?.length ?? 0) > 0) {
       smartCarInsights.reminders.forEach(rem => {
         items.push({
           id: rem.id,
@@ -376,14 +374,14 @@ export function VehicleDashboard({
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-                    {activeCar.make} {activeCar.model}
+                    {activeCar?.make || activeCar?.brand || 'Автомобиль'} {activeCar?.model || ''}
                   </h1>
-                  {activeCar.year && (
+                  {activeCar?.year && (
                     <span className="text-xs text-slate-200 font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
                       {activeCar.year} г.
                     </span>
                   )}
-                  {activeCar.licensePlate && (
+                  {activeCar?.licensePlate && (
                     <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-black/70 text-cyan-300 border border-cyan-500/30">
                       {activeCar.licensePlate}
                     </span>
@@ -431,7 +429,7 @@ export function VehicleDashboard({
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl sm:text-4xl font-mono font-extrabold text-white tracking-tight leading-none drop-shadow-sm">
-                  {activeCar.mileage?.toLocaleString('ru-RU') || 0}
+                  {(activeCar?.odometer ?? activeCar?.mileage ?? 0).toLocaleString('ru-RU')}
                 </span>
                 <span className="text-xs font-mono font-bold text-cyan-400 uppercase bg-cyan-950/70 px-2.5 py-0.5 rounded-md border border-cyan-500/30">
                   {distanceLabel}
@@ -448,7 +446,7 @@ export function VehicleDashboard({
                     min="0"
                     value={tempMileage}
                     onChange={(e) => setTempMileage(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder={String(activeCar.mileage || 0)}
+                    placeholder={String(activeCar?.odometer ?? activeCar?.mileage ?? 0)}
                     className="min-h-[48px] bg-[#090C12] border-2 border-cyan-500 text-white py-2 px-3 text-sm font-mono w-32 rounded-xl outline-none font-bold"
                     autoFocus
                   />
@@ -489,7 +487,7 @@ export function VehicleDashboard({
                   <button
                     type="button"
                     onClick={() => {
-                      setTempMileage(activeCar.mileage || 0);
+                      setTempMileage(activeCar?.odometer ?? activeCar?.mileage ?? 0);
                       setIsEditingMileage(true);
                     }}
                     className="min-h-[48px] w-12 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95 shadow-sm"
@@ -650,7 +648,7 @@ export function VehicleDashboard({
                 </h3>
               </div>
               <span className="text-[11px] text-slate-400 font-mono">
-                {activeCar.make} {activeCar.model}
+                {activeCar?.make || ''} {activeCar?.model || ''}
               </span>
             </div>
 
@@ -795,24 +793,24 @@ export function VehicleDashboard({
             <div className="space-y-2.5">
               {recentRecords.map((record) => {
                 const photos = Array.from(new Set([
-                  ...(record.attachments || []),
-                  ...(record.photoUrls || []),
-                  ...(record.photoReceiptUrl ? [record.photoReceiptUrl] : [])
+                  ...(record?.attachments || []),
+                  ...(record?.photoUrls || []),
+                  ...(record?.photoReceiptUrl ? [record.photoReceiptUrl] : [])
                 ])).filter(Boolean);
 
                 return (
                   <div
-                    key={record.id}
-                    onClick={() => onViewRecord(record)}
+                    key={record?.id || Math.random()}
+                    onClick={() => record && onViewRecord(record)}
                     className="p-3 sm:p-3.5 rounded-xl bg-[#111827] border border-slate-700/80 hover:border-cyan-500/40 hover:bg-[#162032] cursor-pointer flex items-center justify-between gap-3 transition-all"
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs sm:text-sm font-bold text-white truncate">
-                          {record.description}
+                          {record?.description || record?.title || 'Обслуживание'}
                         </span>
                         <span className="text-[10px] px-2 py-0.5 rounded bg-black/60 text-slate-300 font-mono border border-slate-700">
-                          {record.date}
+                          {record?.date || ''}
                         </span>
                         {photos.length > 0 && (
                           <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-500/30 flex items-center gap-1">
@@ -822,10 +820,10 @@ export function VehicleDashboard({
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1 text-xs text-slate-300 font-mono">
-                        {record.mileage && (
-                          <span>{record.mileage.toLocaleString('ru-RU')} {distanceLabel}</span>
+                        {(record?.mileage ?? record?.odometer) !== undefined && (
+                          <span>{(record?.mileage ?? record?.odometer ?? 0).toLocaleString('ru-RU')} {distanceLabel}</span>
                         )}
-                        {record.category && (
+                        {record?.category && (
                           <span className="text-slate-400">• {record.category}</span>
                         )}
                       </div>
@@ -833,7 +831,7 @@ export function VehicleDashboard({
 
                     <div className="text-right shrink-0">
                       <span className="text-sm sm:text-base font-bold font-mono text-emerald-400">
-                        {formatCurrency((record.partsPrice || 0) + (record.laborPrice || 0))}
+                        {formatCurrency((record?.partsPrice ?? 0) + (record?.laborPrice ?? 0))}
                       </span>
                     </div>
                   </div>
@@ -858,13 +856,15 @@ export function VehicleDashboard({
       <SimpleAddRecordModal
         isOpen={isSimpleAddOpen}
         onClose={() => setIsSimpleAddOpen(false)}
-        carId={activeCar.id}
-        carName={`${activeCar.make} ${activeCar.model}`}
-        currentCarMileage={activeCar.mileage || 0}
+        carId={activeCar?.id || ''}
+        carName={`${activeCar?.make || ''} ${activeCar?.model || ''}`.trim() || 'Автомобиль'}
+        currentCarMileage={activeCar?.odometer ?? activeCar?.mileage ?? 0}
         onRecordAdded={(rec) => {
           onOpenAddRecord();
-          if (rec.mileage && activeCar.mileage && rec.mileage > activeCar.mileage) {
-            onQuickUpdateMileage(rec.mileage);
+          const recMileage = rec?.odometer ?? rec?.mileage;
+          const curMileage = activeCar?.odometer ?? activeCar?.mileage ?? 0;
+          if (recMileage && recMileage > curMileage) {
+            onQuickUpdateMileage(recMileage);
           }
         }}
       />

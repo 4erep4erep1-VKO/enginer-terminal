@@ -55,27 +55,30 @@ export function ShowMechanicModal({
   // Generate copyable text summary
   const generateTextSummary = () => {
     const lines: string[] = [];
+    const carOdo = car?.odometer ?? car?.mileage ?? 0;
     lines.push(`📋 СВОДКА ДЛЯ АВТОМАСТЕРА / СТО`);
     lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`🚗 Автомобиль: ${car.make} ${car.model} ${car.year ? `(${car.year} г.в.)` : ''}`);
-    if (car.engine) lines.push(`⚙️ Двигатель: ${car.engine}`);
-    if (car.licensePlate) lines.push(`🔢 Госномер: ${car.licensePlate}`);
-    if (car.vin) lines.push(`🪪 VIN: ${car.vin}`);
-    lines.push(`⏱️ Текущий пробег: ${car.mileage?.toLocaleString('ru-RU') || 0} ${distanceLabel}`);
+    lines.push(`🚗 Автомобиль: ${car?.make || 'Автомобиль'} ${car?.model || ''} ${car?.year ? `(${car.year} г.в.)` : ''}`.trim());
+    if (car?.engine) lines.push(`⚙️ Двигатель: ${car.engine}`);
+    if (car?.licensePlate) lines.push(`🔢 Госномер: ${car.licensePlate}`);
+    if (car?.vin) lines.push(`🪪 VIN: ${car.vin}`);
+    lines.push(`⏱️ Текущий пробег: ${carOdo.toLocaleString('ru-RU')} ${distanceLabel}`);
     lines.push(``);
 
     if (lastRecord) {
-      const kmAgo = car.mileage && lastRecord.mileage ? Math.max(0, car.mileage - lastRecord.mileage) : null;
+      const recOdo = lastRecord.mileage ?? (lastRecord as any).odometer ?? 0;
+      const kmAgo = carOdo > 0 && recOdo > 0 ? Math.max(0, carOdo - recOdo) : null;
       lines.push(`🕒 ПОСЛЕДНЕЕ ОБСЛУЖИВАНИЕ:`);
-      lines.push(`• Дата: ${lastRecord.date} (при пробеге ${(lastRecord.mileage || 0).toLocaleString('ru-RU')} ${distanceLabel}${kmAgo !== null ? `, ${kmAgo.toLocaleString('ru-RU')} км назад` : ''})`);
-      lines.push(`• Работы: ${lastRecord.description}`);
+      lines.push(`• Дата: ${lastRecord.date} (при пробеге ${recOdo.toLocaleString('ru-RU')} ${distanceLabel}${kmAgo !== null ? `, ${kmAgo.toLocaleString('ru-RU')} км назад` : ''})`);
+      lines.push(`• Работы: ${lastRecord.description || lastRecord.title || 'Обслуживание'}`);
       lines.push(``);
     }
 
     if (recentRecords.length > 0) {
       lines.push(`🔧 ЧТО ДЕЛАЛИ НЕДАВНО:`);
       recentRecords.forEach(r => {
-        lines.push(`• ${r.date} (${(r.mileage || 0).toLocaleString('ru-RU')} ${distanceLabel}): ${r.description}`);
+        const rOdo = r.mileage ?? (r as any).odometer ?? 0;
+        lines.push(`• ${r.date} (${rOdo.toLocaleString('ru-RU')} ${distanceLabel}): ${r.description || r.title || 'Обслуживание'}`);
       });
       lines.push(``);
     }
@@ -139,19 +142,19 @@ export function ShowMechanicModal({
               <div className="flex items-center gap-2">
                 <CarIcon className="w-4 h-4 text-[#06B6D4]" />
                 <span className="text-xs sm:text-sm font-bold text-white">
-                  {car.make} {car.model} {car.year && `(${car.year})`}
+                  {car?.make || 'Автомобиль'} {car?.model || ''} {car?.year && `(${car.year})`}
                 </span>
               </div>
               <div className="flex items-center gap-1 text-xs font-mono font-medium text-[#06B6D4] bg-cyan-500/10 px-2 py-0.5 rounded-lg border border-cyan-500/20">
                 <Gauge className="w-3.5 h-3.5" />
-                <span>{car.mileage?.toLocaleString('ru-RU') || 0} {distanceLabel}</span>
+                <span>{(car?.odometer ?? car?.mileage ?? 0).toLocaleString('ru-RU')} {distanceLabel}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5 mt-2 text-xs text-slate-400 font-mono flex-wrap">
-              {car.engine && <span>Двигатель: <strong className="text-slate-200">{car.engine}</strong></span>}
-              {car.licensePlate && <span>Госномер: <strong className="text-slate-200">{car.licensePlate}</strong></span>}
-              {car.vin && <span className="text-[11px] text-slate-500">VIN: {car.vin}</span>}
+              {car?.engine && <span>Двигатель: <strong className="text-slate-200">{car.engine}</strong></span>}
+              {car?.licensePlate && <span>Госномер: <strong className="text-slate-200">{car.licensePlate}</strong></span>}
+              {car?.vin && <span className="text-[11px] text-slate-500">VIN: {car.vin}</span>}
             </div>
           </div>
 
@@ -164,14 +167,16 @@ export function ShowMechanicModal({
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="text-xs sm:text-sm font-semibold text-white">
-                    {lastRecord.description}
+                    {lastRecord.description || lastRecord.title || 'Обслуживание'}
                   </p>
                   <div className="flex items-center gap-2 mt-1 text-xs text-slate-400 font-mono">
                     <span>{lastRecord.date}</span>
-                    {lastRecord.mileage && <span>• {lastRecord.mileage.toLocaleString('ru-RU')} {distanceLabel}</span>}
-                    {car.mileage && lastRecord.mileage && (
+                    {(lastRecord.mileage ?? (lastRecord as any).odometer) !== undefined && (
+                      <span>• {(lastRecord.mileage ?? (lastRecord as any).odometer ?? 0).toLocaleString('ru-RU')} {distanceLabel}</span>
+                    )}
+                    {((car?.odometer ?? car?.mileage ?? 0) > 0) && (lastRecord.mileage ?? (lastRecord as any).odometer) && (
                       <span className="text-[#06B6D4]">
-                        • {(car.mileage - lastRecord.mileage).toLocaleString('ru-RU')} км назад
+                        • {Math.max(0, (car?.odometer ?? car?.mileage ?? 0) - (lastRecord.mileage ?? (lastRecord as any).odometer ?? 0)).toLocaleString('ru-RU')} км назад
                       </span>
                     )}
                   </div>

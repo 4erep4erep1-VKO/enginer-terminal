@@ -24,6 +24,7 @@ interface GarageHubProps {
   onUsePart: (part: Part) => void;
   partsSearchFilter?: string;
   initialSubTab?: 'cars' | 'parts' | 'settings';
+  onImportDemoData?: () => void;
 }
 
 export function GarageHub({
@@ -40,6 +41,7 @@ export function GarageHub({
   onUsePart,
   partsSearchFilter = '',
   initialSubTab = 'cars',
+  onImportDemoData,
 }: GarageHubProps) {
   const [subTab, setSubTab] = useState<'cars' | 'parts' | 'settings'>(initialSubTab);
 
@@ -133,6 +135,7 @@ export function GarageHub({
           cars={cars} 
           activeCarId={activeCarId} 
           records={records} 
+          onImportDemoData={onImportDemoData}
         />
       )}
 
